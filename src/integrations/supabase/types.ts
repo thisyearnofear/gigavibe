@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          criteria: Json
+          description: string
+          icon: string
+          id: string
+          name: string
+        }
+        Insert: {
+          criteria: Json
+          description: string
+          icon: string
+          id?: string
+          name: string
+        }
+        Update: {
+          criteria?: Json
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       ai_model_configs: {
         Row: {
           cost_per_1k_tokens: number | null
@@ -84,6 +108,103 @@ export type Database = {
         }
         Relationships: []
       }
+      exercises: {
+        Row: {
+          created_at: string
+          created_by_ai: boolean | null
+          description: string | null
+          difficulty: Database["public"]["Enums"]["exercise_difficulty"]
+          id: string
+          name: string
+          notes: Json
+          type: Database["public"]["Enums"]["exercise_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by_ai?: boolean | null
+          description?: string | null
+          difficulty: Database["public"]["Enums"]["exercise_difficulty"]
+          id?: string
+          name: string
+          notes: Json
+          type: Database["public"]["Enums"]["exercise_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by_ai?: boolean | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["exercise_difficulty"]
+          id?: string
+          name?: string
+          notes?: Json
+          type?: Database["public"]["Enums"]["exercise_type"]
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_exercise_sessions: {
+        Row: {
+          completed_at: string
+          exercise_id: string
+          id: string
+          performance_data: Json | null
+          score: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          exercise_id: string
+          id?: string
+          performance_data?: Json | null
+          score: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          exercise_id?: string
+          id?: string
+          performance_data?: Json | null
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_exercise_sessions_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -93,6 +214,8 @@ export type Database = {
     }
     Enums: {
       ai_model_type: "openai" | "anthropic" | "gemini"
+      exercise_difficulty: "beginner" | "intermediate" | "advanced"
+      exercise_type: "scale" | "arpeggio" | "interval" | "vibrato"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -209,6 +332,8 @@ export const Constants = {
   public: {
     Enums: {
       ai_model_type: ["openai", "anthropic", "gemini"],
+      exercise_difficulty: ["beginner", "intermediate", "advanced"],
+      exercise_type: ["scale", "arpeggio", "interval", "vibrato"],
     },
   },
 } as const
