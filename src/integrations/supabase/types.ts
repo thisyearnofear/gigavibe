@@ -9,7 +9,81 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ai_model_configs: {
+        Row: {
+          cost_per_1k_tokens: number | null
+          id: string
+          is_enabled: boolean | null
+          max_tokens: number | null
+          model: Database["public"]["Enums"]["ai_model_type"]
+          rate_limit_per_minute: number | null
+          temperature: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cost_per_1k_tokens?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          max_tokens?: number | null
+          model: Database["public"]["Enums"]["ai_model_type"]
+          rate_limit_per_minute?: number | null
+          temperature?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cost_per_1k_tokens?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          max_tokens?: number | null
+          model?: Database["public"]["Enums"]["ai_model_type"]
+          rate_limit_per_minute?: number | null
+          temperature?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_usage: {
+        Row: {
+          completion_tokens: number | null
+          error_message: string | null
+          estimated_cost: number | null
+          id: string
+          model: Database["public"]["Enums"]["ai_model_type"]
+          prompt_tokens: number | null
+          request_time: string | null
+          response_time_ms: number | null
+          status: string | null
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          error_message?: string | null
+          estimated_cost?: number | null
+          id?: string
+          model: Database["public"]["Enums"]["ai_model_type"]
+          prompt_tokens?: number | null
+          request_time?: string | null
+          response_time_ms?: number | null
+          status?: string | null
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          error_message?: string | null
+          estimated_cost?: number | null
+          id?: string
+          model?: Database["public"]["Enums"]["ai_model_type"]
+          prompt_tokens?: number | null
+          request_time?: string | null
+          response_time_ms?: number | null
+          status?: string | null
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +92,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      ai_model_type: "openai" | "anthropic" | "gemini"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +207,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      ai_model_type: ["openai", "anthropic", "gemini"],
+    },
   },
 } as const
