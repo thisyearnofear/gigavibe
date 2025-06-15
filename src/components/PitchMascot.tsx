@@ -11,11 +11,11 @@ const PitchMascot = ({ isInTune, isListening, volume }: PitchMascotProps) => {
   const [expression, setExpression] = useState('neutral');
 
   useEffect(() => {
-    if (!isListening || volume < 5) {
-      setExpression('sleeping');
+    if (!isListening || volume < 2) {
+      setExpression('waiting');
     } else if (isInTune) {
       setExpression('happy');
-    } else if (volume > 20) {
+    } else if (volume > 10) {
       setExpression('listening');
     } else {
       setExpression('neutral');
@@ -26,7 +26,7 @@ const PitchMascot = ({ isInTune, isListening, volume }: PitchMascotProps) => {
     switch (expression) {
       case 'happy': return '✨ ✨';
       case 'listening': return '👀';
-      case 'sleeping': return '😴';
+      case 'waiting': return '• •';
       default: return '• •';
     }
   };
@@ -35,14 +35,14 @@ const PitchMascot = ({ isInTune, isListening, volume }: PitchMascotProps) => {
     switch (expression) {
       case 'happy': return '😊';
       case 'listening': return '🎵';
-      case 'sleeping': return '💤';
+      case 'waiting': return '◡';
       default: return '◡';
     }
   };
 
   const getMessage = () => {
     if (!isListening) return "Tap to start singing!";
-    if (volume < 5) return "I can't hear you yet...";
+    if (volume < 2) return "I can't hear you yet...";
     if (isInTune) return "Perfect! Keep it up! 🎉";
     return "You're doing great!";
   };

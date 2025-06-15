@@ -4,10 +4,11 @@ import { useEffect, useRef } from 'react';
 interface WaveformVisualizerProps {
   waveform: number[];
   isActive: boolean;
+  volume?: number;
   className?: string;
 }
 
-const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisualizerProps) => {
+const WaveformVisualizer = ({ waveform, isActive, volume = 0, className = '' }: WaveformVisualizerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -33,24 +34,28 @@ const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisu
       return;
     }
 
-    // Create gradient with neutral colors
+    // Dynamic gradient based on volume
     const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.8)');
-    gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.8)');
-    gradient.addColorStop(1, 'rgba(236, 72, 153, 0.6)');
+    const intensity = Math.min(1, volume / 50);
+    
+    gradient.addColorStop(0, `rgba(99, 102, 241, ${0.5 + intensity * 0.3})`);
+    gradient.addColorStop(0.5, `rgba(139, 92, 246, ${0.6 + intensity * 0.3})`);
+    gradient.addColorStop(1, `rgba(236, 72, 153, ${0.4 + intensity * 0.4})`);
 
     ctx.strokeStyle = gradient;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = Math.max(2, Math.min(4, 2 + intensity));
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Draw waveform
+    // Draw waveform with dynamic scaling
     ctx.beginPath();
     const sliceWidth = width / waveform.length;
     
     for (let i = 0; i < waveform.length; i++) {
       const x = i * sliceWidth;
-      const y = (waveform[i] * height / 2) + height / 2;
+      // Apply volume-based scaling to waveform amplitude
+      const scaledSample = waveform[i] * (1 + intensity * 0.5);
+      const y = (scaledSample * height / 2) + height / 2;
       
       if (i === 0) {
         ctx.moveTo(x, y);
@@ -61,12 +66,12 @@ const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisu
     
     ctx.stroke();
 
-    // Add subtle glow effect
-    ctx.shadowColor = isActive ? 'rgba(99, 102, 241, 0.3)' : 'transparent';
-    ctx.shadowBlur = 8;
+    // Add volume-responsive glow effect
+    ctx.shadowColor = `rgba(99, 102, 241, ${intensity * 0.5})`;
+    ctx.shadowBlur = 4 + intensity * 8;
     ctx.stroke();
     
-  }, [waveform, isActive]);
+  }, [waveform, isActive, volume]);
 
   return (
     <canvas

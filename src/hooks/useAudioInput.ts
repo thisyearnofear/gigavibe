@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface AudioData {
@@ -9,6 +8,15 @@ interface AudioData {
   isInTune: boolean;
   volume: number;
   waveform: number[];
+}
+
+interface Recording {
+  id: string;
+  blob: Blob;
+  duration: number;
+  timestamp: Date;
+  size: number;
+  quality: 'high' | 'medium' | 'low';
 }
 
 const useAudioInput = () => {
@@ -22,14 +30,23 @@ const useAudioInput = () => {
     waveform: new Array(64).fill(0),
   });
   const [isListening, setIsListening] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [currentRecording, setCurrentRecording] = useState<Recording | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackTime, setPlaybackTime] = useState(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Float32Array | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const recordingStartTimeRef = useRef<number>(0);
 
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -60,7 +77,6 @@ const useAudioInput = () => {
     const bufferLength = buffer.length;
     const autocorrelation = new Float32Array(bufferLength);
     
-    // Autocorrelation
     for (let lag = 0; lag < bufferLength; lag++) {
       let sum = 0;
       for (let i = 0; i < bufferLength - lag; i++) {
@@ -69,13 +85,11 @@ const useAudioInput = () => {
       autocorrelation[lag] = sum;
     }
     
-    // Find the first peak after the initial peak
     let maxCorrelation = 0;
     let bestLag = -1;
     
-    // Start searching after a minimum frequency threshold
-    const minLag = Math.floor(sampleRate / 800); // 800 Hz max
-    const maxLag = Math.floor(sampleRate / 80);  // 80 Hz min
+    const minLag = Math.floor(sampleRate / 800);
+    const maxLag = Math.floor(sampleRate / 80);
     
     for (let lag = minLag; lag < maxLag && lag < bufferLength; lag++) {
       if (autocorrelation[lag] > maxCorrelation) {
@@ -86,7 +100,6 @@ const useAudioInput = () => {
     
     if (bestLag === -1) return 0;
     
-    // Interpolate for better accuracy
     const y1 = autocorrelation[bestLag - 1] || 0;
     const y2 = autocorrelation[bestLag];
     const y3 = autocorrelation[bestLag + 1] || 0;
@@ -110,19 +123,22 @@ const useAudioInput = () => {
     
     analyser.getFloatTimeDomainData(dataArray);
     
-    // Calculate volume (RMS)
     let sum = 0;
+    let peak = 0;
     for (let i = 0; i < dataArray.length; i++) {
-      sum += dataArray[i] * dataArray[i];
+      const sample = Math.abs(dataArray[i]);
+      sum += sample * sample;
+      peak = Math.max(peak, sample);
     }
-    const volume = Math.sqrt(sum / dataArray.length);
+    const rms = Math.sqrt(sum / dataArray.length);
+    const volume = Math.min(100, rms * 500);
     
-    // Get waveform data for visualization
-    const waveform = Array.from(dataArray.slice(0, 64));
+    const waveform = Array.from(dataArray.slice(0, 64)).map(sample => 
+      Math.max(-1, Math.min(1, sample * 3))
+    );
     
-    // Get pitch only if volume is above threshold
     let frequency = 0;
-    if (volume > 0.01) {
+    if (volume > 1) {
       frequency = getPitch(dataArray, audioContextRef.current!.sampleRate);
     }
     
@@ -135,12 +151,102 @@ const useAudioInput = () => {
       octave,
       cents,
       isInTune,
-      volume: volume * 100,
+      volume,
       waveform,
     });
 
     animationRef.current = requestAnimationFrame(analyzeAudio);
   }, [getPitch, frequencyToNote]);
+
+  const startRecording = useCallback(() => {
+    if (!streamRef.current) return;
+
+    recordedChunksRef.current = [];
+    recordingStartTimeRef.current = Date.now();
+    
+    const mediaRecorder = new MediaRecorder(streamRef.current, {
+      mimeType: 'audio/webm;codecs=opus'
+    });
+    
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        recordedChunksRef.current.push(event.data);
+      }
+    };
+    
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunksRef.current, { type: 'audio/webm' });
+      const duration = (Date.now() - recordingStartTimeRef.current) / 1000;
+      
+      const recording: Recording = {
+        id: Date.now().toString(),
+        blob,
+        duration,
+        timestamp: new Date(),
+        size: blob.size,
+        quality: blob.size > 1000000 ? 'high' : blob.size > 500000 ? 'medium' : 'low'
+      };
+      
+      setRecordings(prev => [recording, ...prev]);
+      setCurrentRecording(recording);
+    };
+    
+    mediaRecorderRef.current = mediaRecorder;
+    mediaRecorder.start(100);
+    setIsRecording(true);
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, [isRecording]);
+
+  const playRecording = useCallback((recording: Recording) => {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+    }
+    
+    const audio = new Audio(URL.createObjectURL(recording.blob));
+    audioElementRef.current = audio;
+    
+    audio.ontimeupdate = () => {
+      setPlaybackTime(audio.currentTime);
+    };
+    
+    audio.onended = () => {
+      setIsPlaying(false);
+      setPlaybackTime(0);
+    };
+    
+    audio.play();
+    setIsPlaying(true);
+    setCurrentRecording(recording);
+  }, []);
+
+  const pausePlayback = useCallback(() => {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const seekPlayback = useCallback((time: number) => {
+    if (audioElementRef.current) {
+      audioElementRef.current.currentTime = time;
+      setPlaybackTime(time);
+    }
+  }, []);
+
+  const exportRecording = useCallback(async (recording: Recording, format: 'wav' | 'mp3' = 'wav') => {
+    const url = URL.createObjectURL(recording.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recording-${recording.timestamp.toISOString().slice(0, 19)}.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
 
   const startListening = useCallback(async () => {
     try {
@@ -151,18 +257,20 @@ const useAudioInput = () => {
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
+          sampleRate: 44100,
+          channelCount: 1
         } 
       });
       
       streamRef.current = stream;
       setHasPermission(true);
       
-      audioContextRef.current = new AudioContext();
+      audioContextRef.current = new AudioContext({ sampleRate: 44100 });
       const source = audioContextRef.current.createMediaStreamSource(stream);
       
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 4096;
-      analyserRef.current.smoothingTimeConstant = 0.3;
+      analyserRef.current.smoothingTimeConstant = 0.1; // Less smoothing for more responsiveness
       
       dataArrayRef.current = new Float32Array(analyserRef.current.fftSize);
       
@@ -184,6 +292,15 @@ const useAudioInput = () => {
       animationRef.current = null;
     }
     
+    if (isRecording) {
+      stopRecording();
+    }
+    
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      setIsPlaying(false);
+    }
+    
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -197,7 +314,7 @@ const useAudioInput = () => {
     analyserRef.current = null;
     dataArrayRef.current = null;
     setIsListening(false);
-  }, []);
+  }, [isRecording, stopRecording]);
 
   useEffect(() => {
     return () => {
@@ -208,10 +325,21 @@ const useAudioInput = () => {
   return {
     audioData,
     isListening,
+    isRecording,
     hasPermission,
     error,
+    recordings,
+    currentRecording,
+    isPlaying,
+    playbackTime,
     startListening,
     stopListening,
+    startRecording,
+    stopRecording,
+    playRecording,
+    pausePlayback,
+    seekPlayback,
+    exportRecording,
   };
 };
 

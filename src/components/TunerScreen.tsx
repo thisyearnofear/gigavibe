@@ -5,15 +5,27 @@ import useAudioInput from '@/hooks/useAudioInput';
 import WaveformVisualizer from './WaveformVisualizer';
 import CircularPitchWheel from './CircularPitchWheel';
 import PitchMascot from './PitchMascot';
+import RecordingControls from './RecordingControls';
 
 const TunerScreen = () => {
   const { 
     audioData, 
     isListening, 
+    isRecording,
     hasPermission, 
     error, 
+    recordings,
+    currentRecording,
+    isPlaying,
+    playbackTime,
     startListening, 
-    stopListening 
+    stopListening,
+    startRecording,
+    stopRecording,
+    playRecording,
+    pausePlayback,
+    seekPlayback,
+    exportRecording
   } = useAudioInput();
 
   const { frequency, note, octave, cents, isInTune, volume, waveform } = audioData;
@@ -78,11 +90,12 @@ const TunerScreen = () => {
         />
       </div>
 
-      {/* Simplified Waveform Visualizer */}
+      {/* Enhanced Waveform Visualizer */}
       <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-200/50 w-full">
         <WaveformVisualizer 
           waveform={waveform} 
           isActive={isListening && volume > 1}
+          volume={volume}
           className="bg-slate-50 rounded-lg"
         />
         <div className="mt-2 text-center">
@@ -91,6 +104,21 @@ const TunerScreen = () => {
           </span>
         </div>
       </div>
+
+      {/* Recording Controls */}
+      <RecordingControls
+        isRecording={isRecording}
+        isPlaying={isPlaying}
+        playbackTime={playbackTime}
+        currentRecording={currentRecording}
+        recordings={recordings}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onPlayRecording={playRecording}
+        onPausePlayback={pausePlayback}
+        onSeekPlayback={seekPlayback}
+        onExportRecording={exportRecording}
+      />
     </div>
   );
 };
