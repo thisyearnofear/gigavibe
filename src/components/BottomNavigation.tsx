@@ -1,12 +1,12 @@
 
 import { Mic, Play, BarChart, Settings } from 'lucide-react';
 
-interface NavigationProps {
+interface BottomNavigationProps {
   activeScreen: string;
   setActiveScreen: (screen: string) => void;
 }
 
-const Navigation = ({ activeScreen, setActiveScreen }: NavigationProps) => {
+const BottomNavigation = ({ activeScreen, setActiveScreen }: BottomNavigationProps) => {
   const navItems = [
     { id: 'tuner', label: 'Tuner', icon: Mic },
     { id: 'practice', label: 'Practice', icon: Play },
@@ -15,8 +15,8 @@ const Navigation = ({ activeScreen, setActiveScreen }: NavigationProps) => {
   ];
 
   return (
-    <nav className="bg-white/10 backdrop-blur-md border-b border-white/20 px-4 py-2">
-      <div className="flex justify-around">
+    <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 max-w-md w-full bg-white/90 backdrop-blur-lg border-t border-slate-200/50 px-4 py-3 z-50">
+      <div className="flex justify-around items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeScreen === item.id;
@@ -25,13 +25,13 @@ const Navigation = ({ activeScreen, setActiveScreen }: NavigationProps) => {
             <button
               key={item.id}
               onClick={() => setActiveScreen(item.id)}
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 ${
+              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'bg-gradient-to-br from-purple-400/30 to-pink-400/30 text-purple-700 shadow-lg'
-                  : 'text-gray-600 hover:text-purple-600 hover:bg-white/10'
+                  ? 'text-indigo-600 bg-indigo-50'
+                  : 'text-slate-500 hover:text-indigo-500 hover:bg-slate-50'
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className={`w-5 h-5 ${isActive ? 'scale-110' : ''} transition-transform duration-200`} />
               <span className="text-xs font-medium">{item.label}</span>
             </button>
           );
@@ -41,4 +41,4 @@ const Navigation = ({ activeScreen, setActiveScreen }: NavigationProps) => {
   );
 };
 
-export default Navigation;
+export default BottomNavigation;

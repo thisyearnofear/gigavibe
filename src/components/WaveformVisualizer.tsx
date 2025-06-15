@@ -24,7 +24,7 @@ const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisu
     
     if (!isActive || waveform.length === 0) {
       // Draw flat line when inactive
-      ctx.strokeStyle = 'rgba(147, 51, 234, 0.3)';
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
@@ -33,11 +33,11 @@ const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisu
       return;
     }
 
-    // Create gradient
+    // Create gradient with neutral colors
     const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, 'rgba(147, 51, 234, 0.8)');
-    gradient.addColorStop(0.5, 'rgba(219, 39, 119, 0.8)');
-    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.8)');
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.8)');
+    gradient.addColorStop(1, 'rgba(236, 72, 153, 0.6)');
 
     ctx.strokeStyle = gradient;
     ctx.lineWidth = 2;
@@ -61,9 +61,9 @@ const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisu
     
     ctx.stroke();
 
-    // Add glow effect
-    ctx.shadowColor = isActive ? 'rgba(147, 51, 234, 0.5)' : 'transparent';
-    ctx.shadowBlur = 10;
+    // Add subtle glow effect
+    ctx.shadowColor = isActive ? 'rgba(99, 102, 241, 0.3)' : 'transparent';
+    ctx.shadowBlur = 8;
     ctx.stroke();
     
   }, [waveform, isActive]);
@@ -71,10 +71,10 @@ const WaveformVisualizer = ({ waveform, isActive, className = '' }: WaveformVisu
   return (
     <canvas
       ref={canvasRef}
-      width={320}
-      height={80}
+      width={280}
+      height={60}
       className={`rounded-lg ${className}`}
-      style={{ width: '100%', height: '80px' }}
+      style={{ width: '100%', height: '60px' }}
     />
   );
 };

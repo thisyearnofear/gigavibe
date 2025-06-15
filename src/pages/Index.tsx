@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
 import Header from '@/components/Header';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
+import BottomNavigation from '@/components/BottomNavigation';
 import TunerScreen from '@/components/TunerScreen';
 import PracticeScreen from '@/components/PracticeScreen';
 import ProgressScreen from '@/components/ProgressScreen';
@@ -27,13 +26,14 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col max-w-md mx-auto relative">
       <Header />
-      <Navigation activeScreen={activeScreen} setActiveScreen={setActiveScreen} />
-      <main className="flex-1 px-4 py-6 overflow-y-auto">
-        {renderScreen()}
+      <main className="flex-1 px-4 py-2 overflow-y-auto pb-20">
+        <div className="max-w-sm mx-auto">
+          {renderScreen()}
+        </div>
       </main>
-      <Footer />
+      <BottomNavigation activeScreen={activeScreen} setActiveScreen={setActiveScreen} />
     </div>
   );
 };

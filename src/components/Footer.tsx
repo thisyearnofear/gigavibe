@@ -27,51 +27,53 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-white/20 backdrop-blur-md border-t border-white/20 px-4 py-4">
-      <div className="flex items-center justify-between">
-        {/* Key Controls */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => changeKey('down')}
-            className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-          >
-            <ArrowDown className="w-4 h-4 text-purple-600" />
-          </button>
-          <div className="bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full">
-            <span className="text-sm font-bold text-purple-700">Key: {currentKey}</span>
+    <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 max-w-md w-full px-4 z-40">
+      <div className="bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-2xl px-4 py-3 shadow-lg">
+        <div className="flex items-center justify-between">
+          {/* Key Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => changeKey('down')}
+              className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"
+            >
+              <ArrowDown className="w-4 h-4 text-slate-600" />
+            </button>
+            <div className="bg-slate-100 px-3 py-1 rounded-full">
+              <span className="text-sm font-medium text-slate-700">Key: {currentKey}</span>
+            </div>
+            <button
+              onClick={() => changeKey('up')}
+              className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center hover:bg-slate-200 transition-colors"
+            >
+              <ArrowUp className="w-4 h-4 text-slate-600" />
+            </button>
           </div>
+
+          {/* Record Button with Pink Accent */}
           <button
-            onClick={() => changeKey('up')}
-            className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+            onClick={toggleRecording}
+            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+              isListening
+                ? 'bg-gradient-to-br from-red-400 to-pink-500 animate-pulse'
+                : 'bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600'
+            }`}
           >
-            <ArrowUp className="w-4 h-4 text-purple-600" />
+            {isListening ? (
+              <Square className="w-5 h-5 text-white" />
+            ) : (
+              <Mic className="w-5 h-5 text-white" />
+            )}
           </button>
-        </div>
 
-        {/* Record Button */}
-        <button
-          onClick={toggleRecording}
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-            isListening
-              ? 'bg-gradient-to-br from-red-400 to-pink-500 animate-pulse'
-              : 'bg-gradient-to-br from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500'
-          }`}
-        >
-          {isListening ? (
-            <Square className="w-6 h-6 text-white" />
-          ) : (
-            <Mic className="w-6 h-6 text-white" />
-          )}
-        </button>
-
-        {/* Status Indicator */}
-        <div className="w-20 flex justify-center">
-          <div className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-            isListening ? 'bg-red-400 animate-pulse' : 'bg-gray-300'
-          }`} />
+          {/* Status Indicator */}
+          <div className="w-20 flex justify-center">
+            <div className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+              isListening ? 'bg-pink-400 animate-pulse' : 'bg-slate-300'
+            }`} />
+          </div>
         </div>
       </div>
-    </footer>
+    </div>
   );
 };
 
