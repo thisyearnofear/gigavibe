@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Mic, MicOff, AlertCircle, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { Mic, MicOff, AlertCircle, BarChart3, Eye, EyeOff, MessageSquare } from 'lucide-react';
 import useAudioInput from '@/hooks/useAudioInput';
 import useVocalAnalysis from '@/hooks/useVocalAnalysis';
 import WaveformVisualizer from './WaveformVisualizer';
@@ -8,9 +8,11 @@ import CircularPitchWheel from './CircularPitchWheel';
 import PitchMascot from './PitchMascot';
 import RecordingControls from './RecordingControls';
 import VocalAnalysisDisplay from './VocalAnalysisDisplay';
+import AICoachingFeedback from './AICoachingFeedback';
 
 const TunerScreen = () => {
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showCoaching, setShowCoaching] = useState(false);
   
   const { 
     audioData, 
@@ -47,6 +49,10 @@ const TunerScreen = () => {
     setShowAnalysis(!showAnalysis);
   };
 
+  const handleToggleCoaching = () => {
+    setShowCoaching(!showCoaching);
+  };
+
   return (
     <div className="flex flex-col items-center space-y-6 py-4">
       {/* Permission & Error Handling */}
@@ -65,19 +71,35 @@ const TunerScreen = () => {
 
       {/* Controls Row */}
       <div className="flex items-center justify-between w-full">
-        <button
-          onClick={handleToggleAnalysis}
-          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-300 ${
-            showAnalysis
-              ? 'bg-indigo-500 text-white shadow-lg'
-              : 'bg-white/70 text-indigo-600 hover:bg-white/90'
-          }`}
-        >
-          {showAnalysis ? <EyeOff className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
-          <span className="text-sm font-medium">
-            {showAnalysis ? 'Hide' : 'Analysis'}
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleToggleAnalysis}
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all duration-300 text-sm ${
+              showAnalysis
+                ? 'bg-indigo-500 text-white shadow-lg'
+                : 'bg-white/70 text-indigo-600 hover:bg-white/90'
+            }`}
+          >
+            {showAnalysis ? <EyeOff className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
+            <span className="font-medium">
+              {showAnalysis ? 'Hide' : 'Analysis'}
+            </span>
+          </button>
+
+          <button
+            onClick={handleToggleCoaching}
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all duration-300 text-sm ${
+              showCoaching
+                ? 'bg-purple-500 text-white shadow-lg'
+                : 'bg-white/70 text-purple-600 hover:bg-white/90'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="font-medium">
+              {showCoaching ? 'Hide Coach' : 'AI Coach'}
+            </span>
+          </button>
+        </div>
 
         {/* Microphone Toggle Button */}
         <button
@@ -103,6 +125,17 @@ const TunerScreen = () => {
           Reset
         </button>
       </div>
+
+      {/* AI Coaching Feedback */}
+      {showCoaching && (
+        <div className="w-full">
+          <AICoachingFeedback 
+            vocalMetrics={metrics} 
+            isListening={isListening}
+            selectedModel="openai"
+          />
+        </div>
+      )}
 
       {/* Vocal Analysis Display */}
       {showAnalysis && (
