@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
 import { Mic, Square, ArrowUp, ArrowDown } from 'lucide-react';
+import useAudioInput from '@/hooks/useAudioInput';
 
 const Footer = () => {
-  const [isRecording, setIsRecording] = useState(false);
+  const { isListening, startListening, stopListening } = useAudioInput();
   const [currentKey, setCurrentKey] = useState('C');
 
   const keys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -18,7 +19,11 @@ const Footer = () => {
   };
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording);
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
   };
 
   return (
@@ -47,20 +52,24 @@ const Footer = () => {
         <button
           onClick={toggleRecording}
           className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-            isRecording
+            isListening
               ? 'bg-gradient-to-br from-red-400 to-pink-500 animate-pulse'
               : 'bg-gradient-to-br from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500'
           }`}
         >
-          {isRecording ? (
+          {isListening ? (
             <Square className="w-6 h-6 text-white" />
           ) : (
             <Mic className="w-6 h-6 text-white" />
           )}
         </button>
 
-        {/* Placeholder for balance */}
-        <div className="w-20"></div>
+        {/* Status Indicator */}
+        <div className="w-20 flex justify-center">
+          <div className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+            isListening ? 'bg-red-400 animate-pulse' : 'bg-gray-300'
+          }`} />
+        </div>
       </div>
     </footer>
   );
