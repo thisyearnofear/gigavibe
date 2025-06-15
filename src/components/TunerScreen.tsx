@@ -1,13 +1,17 @@
 
 import { useState } from 'react';
-import { Mic, MicOff, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, AlertCircle, BarChart3, Eye, EyeOff } from 'lucide-react';
 import useAudioInput from '@/hooks/useAudioInput';
+import useVocalAnalysis from '@/hooks/useVocalAnalysis';
 import WaveformVisualizer from './WaveformVisualizer';
 import CircularPitchWheel from './CircularPitchWheel';
 import PitchMascot from './PitchMascot';
 import RecordingControls from './RecordingControls';
+import VocalAnalysisDisplay from './VocalAnalysisDisplay';
 
 const TunerScreen = () => {
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  
   const { 
     audioData, 
     isListening, 
@@ -28,6 +32,7 @@ const TunerScreen = () => {
     exportRecording
   } = useAudioInput();
 
+  const { metrics, resetSession } = useVocalAnalysis(audioData, isListening);
   const { frequency, note, octave, cents, isInTune, volume, waveform } = audioData;
 
   const handleToggleListening = () => {
@@ -36,6 +41,10 @@ const TunerScreen = () => {
     } else {
       startListening();
     }
+  };
+
+  const handleToggleAnalysis = () => {
+    setShowAnalysis(!showAnalysis);
   };
 
   return (
@@ -54,12 +63,26 @@ const TunerScreen = () => {
         </div>
       )}
 
-      {/* Main Tuner Display */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 text-center shadow-sm border border-slate-200/50 w-full">
+      {/* Controls Row */}
+      <div className="flex items-center justify-between w-full">
+        <button
+          onClick={handleToggleAnalysis}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-300 ${
+            showAnalysis
+              ? 'bg-indigo-500 text-white shadow-lg'
+              : 'bg-white/70 text-indigo-600 hover:bg-white/90'
+          }`}
+        >
+          {showAnalysis ? <EyeOff className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
+          <span className="text-sm font-medium">
+            {showAnalysis ? 'Hide' : 'Analysis'}
+          </span>
+        </button>
+
         {/* Microphone Toggle Button */}
         <button
           onClick={handleToggleListening}
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 mb-6 mx-auto ${
+          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
             isListening
               ? 'bg-gradient-to-br from-red-400 to-pink-500 animate-pulse scale-110'
               : 'bg-gradient-to-br from-indigo-400 to-purple-500 hover:from-indigo-500 hover:to-purple-600 hover:scale-105'
@@ -72,6 +95,24 @@ const TunerScreen = () => {
           )}
         </button>
 
+        <button
+          onClick={resetSession}
+          disabled={!isListening}
+          className="px-4 py-2 rounded-xl bg-white/70 text-slate-600 hover:bg-white/90 disabled:opacity-50 text-sm font-medium"
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Vocal Analysis Display */}
+      {showAnalysis && (
+        <div className="w-full">
+          <VocalAnalysisDisplay metrics={metrics} isListening={isListening} />
+        </div>
+      )}
+
+      {/* Main Tuner Display */}
+      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 text-center shadow-sm border border-slate-200/50 w-full">
         {/* Mascot */}
         <PitchMascot 
           isInTune={isInTune} 
@@ -100,7 +141,7 @@ const TunerScreen = () => {
         />
         <div className="mt-2 text-center">
           <span className="text-xs text-slate-500">
-            Volume: {Math.round(volume)}%
+            Volume: {Math.round(volume)}% • Stability: {Math.round(metrics.stability.pitchConsistency)}%
           </span>
         </div>
       </div>
