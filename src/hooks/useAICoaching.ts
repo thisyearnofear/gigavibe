@@ -18,6 +18,7 @@ interface CoachingOptions {
   model: string;
   skillLevel: 'beginner' | 'intermediate' | 'advanced';
   autoFeedback: boolean;
+  personality: 'encouraging' | 'technical' | 'friendly';
 }
 
 export const useAICoaching = () => {
@@ -26,7 +27,8 @@ export const useAICoaching = () => {
   const [options, setOptions] = useState<CoachingOptions>({
     model: 'openai',
     skillLevel: 'beginner',
-    autoFeedback: false
+    autoFeedback: false,
+    personality: 'encouraging',
   });
 
   const requestFeedback = useCallback(async (vocalData: any) => {
@@ -42,7 +44,8 @@ export const useAICoaching = () => {
           vocalData,
           model: options.model,
           userId: user?.id,
-          skillLevel: options.skillLevel
+          skillLevel: options.skillLevel,
+          personality: options.personality,
         }
       });
 

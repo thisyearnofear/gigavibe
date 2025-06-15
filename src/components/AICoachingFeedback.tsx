@@ -102,6 +102,19 @@ const AICoachingFeedback = ({ vocalMetrics, isListening, selectedModel = 'openai
             </div>
             
             <div>
+              <label className="block text-xs text-slate-600 mb-1">Coaching Style</label>
+              <select
+                value={options.personality}
+                onChange={(e) => updateOptions({ personality: e.target.value as any })}
+                className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1"
+              >
+                <option value="encouraging">Encouraging</option>
+                <option value="technical">Technical</option>
+                <option value="friendly">Friendly</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs text-slate-600 mb-1">AI Model</label>
               <select
                 value={options.model}
