@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build -- --legacy-peer-deps"
+  command = "npm install --legacy-peer-deps && npm run build"
   functions = "netlify/functions"
   publish = "dist"
 
@@ -10,6 +10,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[edge_functions]]
   path = "/*"
