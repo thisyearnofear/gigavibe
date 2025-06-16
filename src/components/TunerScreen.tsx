@@ -1,57 +1,48 @@
-
-import { useState } from 'react';
-import { Mic, MicOff, AlertCircle, BarChart3, Eye, EyeOff, MessageSquare } from 'lucide-react';
-import useAudioInput from '@/hooks/useAudioInput';
-import useVocalAnalysis from '@/hooks/useVocalAnalysis';
-import WaveformVisualizer from './WaveformVisualizer';
-import CircularPitchWheel from './CircularPitchWheel';
-import PitchMascot from './PitchMascot';
-import RecordingControls from './RecordingControls';
-import VocalAnalysisDisplay from './VocalAnalysisDisplay';
-import AICoachingFeedback from './AICoachingFeedback';
+import {
+  Mic,
+  MicOff,
+  AlertCircle,
+  BarChart3,
+  Eye,
+  EyeOff,
+  MessageSquare,
+} from "lucide-react";
+import useVocalAnalysis from "@/hooks/useVocalAnalysis";
+import { useTunerControls } from "@/hooks/useTunerControls";
+import WaveformVisualizer from "./WaveformVisualizer";
+import CircularPitchWheel from "./CircularPitchWheel";
+import PitchMascot from "./PitchMascot";
+import RecordingControls from "./RecordingControls";
+import VocalAnalysisDisplay from "./VocalAnalysisDisplay";
+import AICoachingFeedback from "./AICoachingFeedback";
 
 const TunerScreen = () => {
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [showCoaching, setShowCoaching] = useState(false);
-  
-  const { 
-    audioData, 
-    isListening, 
+  const {
+    showAnalysis,
+    showCoaching,
+    audioData,
+    isListening,
     isRecording,
-    hasPermission, 
-    error, 
+    hasPermission,
+    error,
     recordings,
     currentRecording,
     isPlaying,
     playbackTime,
-    startListening, 
-    stopListening,
+    handleToggleListening,
+    handleToggleAnalysis,
+    handleToggleCoaching,
     startRecording,
     stopRecording,
     playRecording,
     pausePlayback,
     seekPlayback,
-    exportRecording
-  } = useAudioInput();
+    exportRecording,
+  } = useTunerControls();
 
   const { metrics, resetSession } = useVocalAnalysis(audioData, isListening);
-  const { frequency, note, octave, cents, isInTune, volume, waveform } = audioData;
-
-  const handleToggleListening = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
-
-  const handleToggleAnalysis = () => {
-    setShowAnalysis(!showAnalysis);
-  };
-
-  const handleToggleCoaching = () => {
-    setShowCoaching(!showCoaching);
-  };
+  const { frequency, note, octave, cents, isInTune, volume, waveform } =
+    audioData;
 
   return (
     <div className="flex flex-col items-center space-y-6 py-4">
@@ -76,13 +67,17 @@ const TunerScreen = () => {
             onClick={handleToggleAnalysis}
             className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all duration-300 text-sm ${
               showAnalysis
-                ? 'bg-indigo-500 text-white shadow-lg'
-                : 'bg-white/70 text-indigo-600 hover:bg-white/90'
+                ? "bg-indigo-500 text-white shadow-lg"
+                : "bg-white/70 text-indigo-600 hover:bg-white/90"
             }`}
           >
-            {showAnalysis ? <EyeOff className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
+            {showAnalysis ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <BarChart3 className="w-4 h-4" />
+            )}
             <span className="font-medium">
-              {showAnalysis ? 'Hide' : 'Analysis'}
+              {showAnalysis ? "Hide" : "Analysis"}
             </span>
           </button>
 
@@ -90,13 +85,13 @@ const TunerScreen = () => {
             onClick={handleToggleCoaching}
             className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all duration-300 text-sm ${
               showCoaching
-                ? 'bg-purple-500 text-white shadow-lg'
-                : 'bg-white/70 text-purple-600 hover:bg-white/90'
+                ? "bg-purple-500 text-white shadow-lg"
+                : "bg-white/70 text-purple-600 hover:bg-white/90"
             }`}
           >
             <MessageSquare className="w-4 h-4" />
             <span className="font-medium">
-              {showCoaching ? 'Hide Coach' : 'AI Coach'}
+              {showCoaching ? "Hide Coach" : "AI Coach"}
             </span>
           </button>
         </div>
@@ -106,8 +101,8 @@ const TunerScreen = () => {
           onClick={handleToggleListening}
           className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
             isListening
-              ? 'bg-gradient-to-br from-red-400 to-pink-500 animate-pulse scale-110'
-              : 'bg-gradient-to-br from-indigo-400 to-purple-500 hover:from-indigo-500 hover:to-purple-600 hover:scale-105'
+              ? "bg-gradient-to-br from-red-400 to-pink-500 animate-pulse scale-110"
+              : "bg-gradient-to-br from-indigo-400 to-purple-500 hover:from-indigo-500 hover:to-purple-600 hover:scale-105"
           }`}
         >
           {isListening ? (
@@ -129,8 +124,8 @@ const TunerScreen = () => {
       {/* AI Coaching Feedback */}
       {showCoaching && (
         <div className="w-full">
-          <AICoachingFeedback 
-            vocalMetrics={metrics} 
+          <AICoachingFeedback
+            vocalMetrics={metrics}
             isListening={isListening}
             selectedModel="openai"
           />
@@ -147,10 +142,10 @@ const TunerScreen = () => {
       {/* Main Tuner Display */}
       <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 text-center shadow-sm border border-slate-200/50 w-full">
         {/* Mascot */}
-        <PitchMascot 
-          isInTune={isInTune} 
-          isListening={isListening} 
-          volume={volume} 
+        <PitchMascot
+          isInTune={isInTune}
+          isListening={isListening}
+          volume={volume}
         />
 
         {/* Circular Pitch Wheel */}
@@ -166,15 +161,16 @@ const TunerScreen = () => {
 
       {/* Enhanced Waveform Visualizer */}
       <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-200/50 w-full">
-        <WaveformVisualizer 
-          waveform={waveform} 
+        <WaveformVisualizer
+          waveform={waveform}
           isActive={isListening && volume > 1}
           volume={volume}
           className="bg-slate-50 rounded-lg"
         />
         <div className="mt-2 text-center">
           <span className="text-xs text-slate-500">
-            Volume: {Math.round(volume)}% • Stability: {Math.round(metrics.stability.pitchConsistency)}%
+            Volume: {Math.round(volume)}% • Stability:{" "}
+            {Math.round(metrics.stability.pitchConsistency)}%
           </span>
         </div>
       </div>
