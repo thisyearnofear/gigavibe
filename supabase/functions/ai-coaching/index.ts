@@ -1,11 +1,14 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from './constants.ts';
+import { VocalData } from './types.ts';
+import { generateCoachingPrompt, parseFeedback } from './prompt-utils.ts';
+import { callOpenAICoaching } from './openai-handler.ts';
+import { callAnthropicCoaching } from './anthropic-handler.ts';
+import { callGeminiCoaching } from './gemini-handler.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -21,7 +24,7 @@ serve(async (req) => {
     const startTime = Date.now();
 
     // Generate coaching prompt based on vocal analysis
-    const coachingPrompt = generateCoachingPrompt(vocalData, skillLevel);
+    const coachingPrompt = generateCoachingPrompt(vocalData as VocalData, skillLevel);
 
     let response;
     let tokens = { prompt: 0, completion: 0, total: 0 };
@@ -96,172 +99,3 @@ serve(async (req) => {
     });
   }
 });
-
-function generateCoachingPrompt(vocalData: any, skillLevel: string) {
-  const { pitchRange, vibrato, stability, volume, formants, sessionStats } = vocalData;
-  
-  return `Analyze this vocal performance data and provide coaching advice:
-
-PERFORMANCE DATA:
-- Pitch Range: ${pitchRange.lowestNote} to ${pitchRange.highestNote}
-- Pitch Stability: ${Math.round(stability.pitchConsistency)}%
-- Average Deviation: ${Math.round(stability.averageDeviation)} cents
-- Volume Control: Current ${Math.round(volume.current)}%, Average ${Math.round(volume.average)}%
-- Vibrato: ${vibrato.detected ? `Detected (${vibrato.rate.toFixed(1)}Hz, ${vibrato.depth.toFixed(1)} cents)` : 'Not detected'}
-- Vowel Sound: ${formants.vowelEstimate}
-- Session Duration: ${Math.round(sessionStats.duration)}s
-- Notes Hit: ${sessionStats.notesHit.join(', ')}
-- Overall Score: ${Math.round(sessionStats.accuracyScore)}/100
-
-SKILL LEVEL: ${skillLevel}
-
-Provide feedback in this format:
-[TECHNIQUE] - Technical advice about breath, posture, or vocal technique
-[PITCH] - Specific pitch accuracy feedback
-[RHYTHM] - Timing and flow observations
-[BREATH] - Breathing and support suggestions
-
-Limit feedback to 2-3 sentences per category. Focus on the most important improvement areas.`;
-}
-
-function parseFeedback(text: string) {
-  const categories = {
-    technique: '',
-    pitch: '',
-    rhythm: '',
-    breath: ''
-  };
-
-  const techniqueMatch = text.match(/\[TECHNIQUE\](.*?)(?=\[|$)/s);
-  const pitchMatch = text.match(/\[PITCH\](.*?)(?=\[|$)/s);
-  const rhythmMatch = text.match(/\[RHYTHM\](.*?)(?=\[|$)/s);
-  const breathMatch = text.match(/\[BREATH\](.*?)(?=\[|$)/s);
-
-  if (techniqueMatch) categories.technique = techniqueMatch[1].trim();
-  if (pitchMatch) categories.pitch = pitchMatch[1].trim();
-  if (rhythmMatch) categories.rhythm = rhythmMatch[1].trim();
-  if (breathMatch) categories.breath = breathMatch[1].trim();
-
-  return {
-    text,
-    categories
-  };
-}
-
-async function callOpenAICoaching(prompt: string, config: any, personality: string) {
-  const systemPrompts = {
-    encouraging: 'You are an encouraging, expert vocal coach who provides positive and motivational feedback to help singers improve their technique and confidence. Always start with a positive reinforcement.',
-    technical: 'You are a technical, expert vocal coach. Provide precise, data-driven feedback focusing on the mechanics of singing. Use specific terminology related to vocal pedagogy.',
-    friendly: 'You are a friendly and approachable vocal coach. Use a conversational and casual tone. Make feedback feel like a helpful tip from a friend who is also a vocal expert.'
-  };
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { 
-          role: 'system', 
-          content: systemPrompts[personality] || systemPrompts['encouraging']
-        },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: config.max_tokens,
-      temperature: 0.7,
-    }),
-  });
-
-  const data = await response.json();
-  return {
-    text: data.choices[0].message.content,
-    tokens: {
-      prompt: data.usage.prompt_tokens,
-      completion: data.usage.completion_tokens,
-      total: data.usage.total_tokens
-    }
-  };
-}
-
-async function callAnthropicCoaching(prompt: string, config: any, personality: string) {
-  const systemPrompts = {
-    encouraging: 'You are an encouraging, expert vocal coach who provides positive and motivational feedback to help singers improve their technique and confidence. Always start with a positive reinforcement.',
-    technical: 'You are a technical, expert vocal coach. Provide precise, data-driven feedback focusing on the mechanics of singing. Use specific terminology related to vocal pedagogy.',
-    friendly: 'You are a friendly and approachable vocal coach. Use a conversational and casual tone. Make feedback feel like a helpful tip from a friend who is also a vocal expert.'
-  };
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': Deno.env.get('ANTHROPIC_API_KEY')!,
-      'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: config.max_tokens,
-      system: systemPrompts[personality] || systemPrompts['encouraging'],
-      messages: [
-        { 
-          role: 'user', 
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-    }),
-  });
-
-  const data = await response.json();
-  return {
-    text: data.content[0].text,
-    tokens: {
-      prompt: data.usage.input_tokens,
-      completion: data.usage.output_tokens,
-      total: data.usage.input_tokens + data.usage.output_tokens
-    }
-  };
-}
-
-async function callGeminiCoaching(prompt: string, config: any, personality: string) {
-  const systemPrompts = {
-    encouraging: 'You are an encouraging, expert vocal coach who provides positive and motivational feedback to help singers improve their technique and confidence. Always start with a positive reinforcement.',
-    technical: 'You are a technical, expert vocal coach. Provide precise, data-driven feedback focusing on the mechanics of singing. Use specific terminology related to vocal pedagogy.',
-    friendly: 'You are a friendly and approachable vocal coach. Use a conversational and casual tone. Make feedback feel like a helpful tip from a friend who is also a vocal expert.'
-  };
-  const systemPrompt = systemPrompts[personality] || systemPrompts['encouraging'];
-
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${Deno.env.get('GOOGLE_AI_API_KEY')}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{ 
-        parts: [{ 
-          text: `${systemPrompt} ${prompt}`
-        }] 
-      }],
-      generationConfig: {
-        maxOutputTokens: config.max_tokens,
-        temperature: 0.7,
-      }
-    }),
-  });
-
-  const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text;
-  
-  const estimatedTokens = Math.ceil(text.length / 4);
-  
-  return {
-    text,
-    tokens: {
-      prompt: Math.ceil(prompt.length / 4),
-      completion: estimatedTokens,
-      total: Math.ceil(prompt.length / 4) + estimatedTokens
-    }
-  };
-}
