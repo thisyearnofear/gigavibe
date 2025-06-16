@@ -2,7 +2,6 @@
   command = "npm run build -- --legacy-peer-deps"
   functions = "netlify/functions"
   publish = "dist"
->>>>>>> REPLACE
 
 [[redirects]]
   from = "/*"
