@@ -1,201 +1,173 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState } from 'react'; // Removed useEffect, useCallback, useRef
 import useAudioInput from '@/hooks/useAudioInput';
 import { useEnhancedAudioAnalysis } from '@/hooks/useEnhancedAudioAnalysis';
 import { useProgressData } from '@/hooks/useProgressData';
+import { usePitchPerfectGame } from '@/hooks/usePitchPerfectGame'; // Import the new game hook
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { Volume2, Mic, AlertTriangle, Info, CheckCircle, XCircle, Music } from 'lucide-react';
 
-// Helper to convert note string (e.g., "C#4") to frequency
-const noteToFrequency = (noteName: string): number => {
-  const noteParts = noteName.match(/([A-G]#?)([0-9])/);
-  if (!noteParts) return 0;
-
-  const note = noteParts[1];
-  const octave = parseInt(noteParts[2]);
-
-  const noteMap: { [key: string]: number } = {
-    'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11
-  };
-  const noteIndex = noteMap[note];
-  if (noteIndex === undefined) return 0;
-
-  const A4 = 440;
-  const n = noteIndex - 9 + (octave - 4) * 12;
-  return A4 * Math.pow(2, n / 12);
-};
-
-const TARGET_NOTES = [
-  { name: "C4", duration: 2500 },
-  { name: "E4", duration: 2500 },
-  { name: "G4", duration: 2500 },
-  { name: "A4", duration: 3000 },
-  { name: "F4", duration: 2000 },
-  { name: "D4", duration: 2500 },
-  { name: "B3", duration: 2500 },
-];
+// TARGET_NOTES and noteToFrequency are now primarily managed or utilized within usePitchPerfectGame or a shared utility.
+// The component itself doesn't need to redefine or directly use them if the hook provides all necessary derived states.
 
 const PitchPerfectChallenge = () => {
-  const { audioData, isListening, startListening, stopListening, hasPermission, error: audioError } = useAudioInput();
-  const enhancedAudio = useEnhancedAudioAnalysis({ audioData, isListening, volumeThreshold: 2, stabilityWindow: 200 });
-  const { savePitchPerfectScore, isSavingScore } = useProgressData(); // Get save function and loading state
+  const {
+    audioData,
+    isListening,
+    startListening: hookStartListening,
+    stopListening: hookStopListening,
+    hasPermission,
+    error: audioError
+  } = useAudioInput();
 
-  const [gameState, setGameState] = useState<'idle' | 'playing' | 'finished'>('idle');
-  const [currentTargetNoteIndex, setCurrentTargetNoteIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [feedback, setFeedback] = useState('');
+  const enhancedAudio = useEnhancedAudioAnalysis({ audioData, isListening, volumeThreshold: 2, stabilityWindow: 200 });
+  const { savePitchPerfectScore } = useProgressData();
+
   const [showInstructions, setShowInstructions] = useState(true);
 
-  // For tracking game session data
-  const gameStartTimeRef = useRef<number | null>(null);
-  const notesAttemptedRef = useRef(0);
-  const notesCorrectRef = useRef(0);
-  const lastScoredTimeRef = useRef<number>(0); // To prevent rapid scoring for the same note
+  const {
+    gameState,
+    score,
+    feedback,
+    currentTargetNote,
+    targetFrequency,
+    startGame: triggerGameStart,
+    stopGame: triggerGameStop,
+    isSavingScore,
+  } = usePitchPerfectGame({
+    enhancedAudio,
+    isListening,
+    startListening: hookStartListening,
+    stopListening: hookStopListening,
+    saveScoreFn: savePitchPerfectScore,
+  });
 
-  const currentTargetNote = TARGET_NOTES[currentTargetNoteIndex];
-  const targetFrequency = currentTargetNote ? noteToFrequency(currentTargetNote.name) : 0;
-
-  const startGame = async () => {
-    if (!hasPermission && hasPermission !== null) {
-        alert("Microphone permission is required to play. Please enable it in your browser settings.");
+  const handleStartGameFlow = async () => {
+    if (!hasPermission && hasPermission !== null) { // If permission state is known and denied
+        toast({ title: "Microphone Required", description: "Please enable microphone permission in your browser settings to play.", variant: "warning", duration: 5000, icon: <AlertTriangle /> });
         return;
     }
-    await startListening();
-    if (error) {
-        alert(`Error starting audio: ${error}. Please ensure your microphone is connected and permissions are granted.`);
-        return;
-    }
-    setGameState('playing');
-    setCurrentTargetNoteIndex(0);
-    setScore(0);
-    setFeedback(`Sing: ${TARGET_NOTES[0].name}`);
-    setShowInstructions(false);
-  };
 
-  const stopGame = () => {
-    stopListening();
-    setGameState('finished');
-    setFeedback(`Game Over! Final Score: ${score}`);
-  };
+    try {
+      // Always try to start listening; this handles initial permission prompt if hasPermission is null
+      await hookStartListening();
 
-  const advanceNote = useCallback(() => {
-    if (currentTargetNoteIndex < TARGET_NOTES.length - 1) {
-      setCurrentTargetNoteIndex(prevIndex => prevIndex + 1);
-      setFeedback(`Sing: ${TARGET_NOTES[currentTargetNoteIndex + 1].name}`);
-    } else {
-      stopGame();
-    }
-  }, [currentTargetNoteIndex]);
-
-  useEffect(() => {
-    if (gameState !== 'playing' || !isListening || !currentTargetNote) return;
-
-    let noteTimer: NodeJS.Timeout;
-
-    if (enhancedAudio.isStable && enhancedAudio.volume > 5 && targetFrequency > 0) {
-      const userFrequency = enhancedAudio.smoothedFrequency;
-      const diff = Math.abs(userFrequency - targetFrequency);
-      const centsDiff = Math.abs(1200 * Math.log2(userFrequency / targetFrequency));
-
-      if (centsDiff < 30) { // Within ~30 cents (quarter-tone)
-        setScore(s => s + 10); // Points for being close
-        setFeedback(`Great! Holding ${currentTargetNote.name}`);
-      } else if (centsDiff < 70) { // Within ~70 cents (more than a quarter tone but less than a semitone)
-         setScore(s => s + 2);
-         setFeedback(`A bit off for ${currentTargetNote.name}. Try adjusting!`);
-      } else {
-        setFeedback(`Way off for ${currentTargetNote.name}. Target: ${targetFrequency.toFixed(1)} Hz, You: ${userFrequency.toFixed(1)} Hz`);
+      // Check audioError *after* attempting to start listening.
+      // useAudioInput sets this error if navigator.mediaDevices.getUserMedia fails.
+      if (audioError) {
+          toast({ title: "Audio Error", description: `Could not start microphone: ${audioError}. Please check permissions and connection.`, variant: "destructive", duration: 5000, icon: <XCircle /> });
+          // hookStopListening(); // Optional: ensure it's stopped if it somehow partially started with an error.
+          return;
       }
+      // If startListening was successful (no error thrown and audioError is not set by the hook)
+      setShowInstructions(false);
+      triggerGameStart();
+    } catch (err) {
+      // This catch block is for unexpected errors from hookStartListening promise itself, though typically errors are set in `audioError` state.
+      toast({ title: "Setup Error", description: "Could not initialize audio for the game.", variant: "destructive", duration: 5000, icon: <XCircle /> });
+      console.error("Error in game flow setup:", err);
     }
-
-    // Timer for current note's duration
-    noteTimer = setTimeout(() => {
-        advanceNote();
-    }, currentTargetNote.duration);
-
-    return () => {
-      clearTimeout(noteTimer);
-    };
-  }, [gameState, isListening, enhancedAudio, currentTargetNote, targetFrequency, advanceNote]);
+  };
 
 
-  if (hasPermission === null && gameState === 'idle') {
-    return (
-      <div className="p-4 bg-white rounded-lg shadow-md text-center">
-        <p className="text-lg font-semibold mb-4">Requesting microphone permission...</p>
-        <Button onClick={startGame}>Allow Microphone</Button>
-         {error && <p className="text-red-500 mt-2">{error}</p>}
+   if (hasPermission === null && gameState === 'idle') {
+     return (
+      <div className="p-6 bg-white rounded-xl shadow-lg text-center flex flex-col items-center space-y-4">
+        <Mic size={48} className="text-indigo-500" />
+        <p className="text-xl font-semibold text-gray-700">Microphone Access</p>
+        <p className="text-gray-600">We need your permission to use the microphone for this game.</p>
+        <Button onClick={doStartGame} disabled={isSavingScore} className="bg-indigo-500 hover:bg-indigo-600">
+          Allow Microphone
+        </Button>
+         {audioError && <p className="text-red-500 mt-2 text-sm"><AlertTriangle className="inline mr-1 h-4 w-4" />{audioError}</p>}
       </div>
-    );
-  }
+     );
+   }
 
-  if (showInstructions && gameState === 'idle') {
-    return (
-      <div className="p-6 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl shadow-xl text-center">
-        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-6">
+   if (showInstructions && gameState === 'idle') {
+     return (
+      <div className="p-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-xl shadow-2xl text-center text-white">
+        <Music size={56} className="mx-auto mb-4 text-pink-300" />
+        <h2 className="text-4xl font-bold mb-6">
           Pitch Perfect Challenge!
         </h2>
-        <p className="text-gray-700 mb-4 text-lg">
+        <p className="mb-4 text-lg opacity-90">
           Test your vocal accuracy! When the game starts, you'll see a target note.
         </p>
-        <p className="text-gray-700 mb-6 text-lg">
+        <p className="mb-8 text-lg opacity-90">
           Sing the note as steadily and accurately as you can. Let's see how high you can score!
         </p>
         <Button
-          onClick={startGame}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+          onClick={doStartGame}
+          disabled={isSavingScore}
+          className="bg-white text-purple-600 hover:bg-pink-100 font-bold py-4 px-10 rounded-full text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
         >
           Start Challenge
         </Button>
-        {error && <p className="text-red-500 mt-4">{error}</p>}
+        {audioError && <p className="text-pink-200 mt-4 text-sm"><AlertTriangle className="inline mr-1 h-4 w-4" />{audioError}</p>}
       </div>
-    );
-  }
+     );
+   }
 
-  return (
-    <div className="p-4 bg-white rounded-lg shadow-md flex flex-col items-center space-y-4">
-      <h2 className="text-2xl font-semibold text-indigo-600">Pitch Perfect Challenge</h2>
+   return (
+    <div className="p-6 bg-white rounded-xl shadow-2xl flex flex-col items-center space-y-5 w-full max-w-lg mx-auto">
+      <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
+        Pitch Perfect Challenge
+      </h2>
 
       {gameState === 'playing' && currentTargetNote && (
-        <div className="my-4 p-6 border-2 border-dashed border-indigo-300 rounded-lg bg-indigo-50 w-full max-w-xs text-center">
-          <p className="text-xl text-indigo-700 font-medium">Target Note:</p>
-          <p className="text-4xl font-bold text-indigo-500 my-2">{currentTargetNote.name}</p>
-          <p className="text-sm text-gray-600">(~{targetFrequency.toFixed(1)} Hz)</p>
+        <div className="my-3 p-6 border-4 border-dashed border-indigo-300 rounded-xl bg-indigo-50 w-full text-center shadow-inner">
+          <p className="text-sm text-indigo-500 font-semibold tracking-wider">TARGET NOTE</p>
+          <p className="text-6xl font-bold text-indigo-600 my-1 tracking-tight">{currentTargetNote.name}</p>
+          <p className="text-sm text-gray-500">(Target: {targetFrequency.toFixed(0)} Hz)</p>
         </div>
       )}
 
       {isListening && gameState === 'playing' && (
-        <div className="my-2 p-4 border border-gray-300 rounded-lg bg-gray-50 w-full max-w-xs text-center">
-          <p className="text-lg text-gray-700">Your Pitch:</p>
-          <p className="text-3xl font-bold text-purple-600 my-1">
+        <div className="my-2 p-5 border-2 border-purple-300 rounded-xl bg-purple-50 w-full text-center shadow-inner">
+          <p className="text-sm text-purple-500 font-semibold tracking-wider">YOUR PITCH</p>
+          <p className="text-5xl font-bold text-purple-600 my-1">
             {enhancedAudio.isStable && enhancedAudio.volume > 5 ? `${enhancedAudio.note}${enhancedAudio.octave}` : '--'}
           </p>
           <p className="text-sm text-gray-500">
-            ({enhancedAudio.isStable && enhancedAudio.volume > 5 ? enhancedAudio.smoothedFrequency.toFixed(1) : '0.0'} Hz)
+            ({enhancedAudio.isStable && enhancedAudio.volume > 5 ? enhancedAudio.smoothedFrequency.toFixed(0) : '0'} Hz)
           </p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+          <div className="w-full bg-purple-200 rounded-full h-3 mt-3 overflow-hidden">
             <div
-              className="bg-blue-500 h-2.5 rounded-full"
+              className="bg-gradient-to-r from-pink-400 to-purple-500 h-3 rounded-full transition-all duration-150 ease-in-out"
               style={{ width: `${Math.min(enhancedAudio.volume, 100)}%` }}
             ></div>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Volume</p>
+          <div className="flex items-center justify-center text-xs text-purple-500 mt-1">
+            <Volume2 size={14} className="mr-1" /> Volume
+          </div>
         </div>
       )}
 
-      <p className="text-lg font-medium text-gray-800">{feedback}</p>
-      <p className="text-2xl font-bold text-green-500">Score: {score}</p>
+      <div className="h-10 flex items-center justify-center">
+        <p className="text-md font-medium text-gray-600 text-center px-2">{feedback}</p>
+      </div>
+      <p className={`text-5xl font-bold ${score > 0 ? 'text-green-500' : 'text-gray-700'} transition-colors duration-300`}>Score: {score}</p>
 
-      {gameState === 'idle' && (
-        <Button onClick={startGame}>Start Game</Button>
-      )}
-      {gameState === 'playing' && (
-        <Button onClick={stopGame} variant="destructive">Stop Game</Button>
-      )}
-      {gameState === 'finished' && (
-        <Button onClick={startGame}>Play Again?</Button>
-      )}
-       {error && <p className="text-red-500 mt-2">{error}</p>}
+      <div className="flex space-x-4 mt-3 pt-2 border-t border-gray-200 w-full justify-center">
+        {gameState === 'idle' && !showInstructions && (
+          <Button onClick={doStartGame} disabled={isSavingScore} size="lg" className="bg-indigo-500 hover:bg-indigo-600">
+            <Info className="mr-2 h-5 w-5" /> Start Game
+          </Button>
+        )}
+        {gameState === 'playing' && (
+          <Button onClick={() => doStopGame(false)} variant="destructive" size="lg" disabled={isSavingScore} className="bg-red-500 hover:bg-red-600">
+             <XCircle className="mr-2 h-5 w-5" /> Stop Game
+          </Button>
+        )}
+        {gameState === 'finished' && (
+          <Button onClick={doStartGame} disabled={isSavingScore} size="lg" className="bg-green-500 hover:bg-green-600 text-white">
+            <CheckCircle className="mr-2 h-5 w-5" /> Play Again?
+          </Button>
+        )}
+      </div>
+       {audioError && !showInstructions && <p className="text-red-500 mt-2 text-sm"><AlertTriangle className="inline mr-1 h-4 w-4" />{audioError}</p>}
+       {isSavingScore && <p className="text-blue-500 mt-2 text-sm animate-pulse">Saving score...</p>}
     </div>
   );
 };

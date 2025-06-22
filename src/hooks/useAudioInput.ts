@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { PitchDetector } from 'pitchy';
 
 interface AudioData {
   frequency: number;
+  clarity?: number; // Added clarity from pitchy
   note: string;
   octave: number;
   cents: number;
@@ -22,6 +24,7 @@ interface Recording {
 const useAudioInput = () => {
   const [audioData, setAudioData] = useState<AudioData>({
     frequency: 0,
+    clarity: 0,
     note: 'A',
     octave: 4,
     cents: 0,
@@ -47,15 +50,18 @@ const useAudioInput = () => {
   const recordedChunksRef = useRef<Blob[]>([]);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
+  const pitchDetectorRef = useRef<PitchDetector<Float32Array> | null>(null);
+
 
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
   const frequencyToNote = useCallback((frequency: number) => {
-    if (frequency === 0) return { note: 'A', octave: 4, cents: 0 };
+    if (frequency <= 0) return { note: 'A', octave: 4, cents: 0 }; // Return default for 0 or negative frequency
     
     const A4 = 440;
-    const C0 = A4 * Math.pow(2, -4.75);
+    const C0 = A4 * Math.pow(2, -4.75); // C0 reference
     
+    // Ensure frequency is above C0 before processing
     if (frequency > C0) {
       const h = Math.round(12 * Math.log2(frequency / C0));
       const octave = Math.floor(h / 12);
@@ -64,89 +70,58 @@ const useAudioInput = () => {
       const cents = Math.round((exactNote - h) * 100);
       
       return {
-        note: noteNames[n],
+        note: noteNames[n < 0 ? n + 12 : n], // Handle potential negative n from rounding
         octave,
         cents: Math.max(-50, Math.min(50, cents))
       };
     }
     
-    return { note: 'A', octave: 4, cents: 0 };
+    return { note: 'A', octave: 4, cents: 0 }; // Default if below C0
   }, []);
 
-  const getPitch = useCallback((buffer: Float32Array, sampleRate: number): number => {
-    const bufferLength = buffer.length;
-    const autocorrelation = new Float32Array(bufferLength);
-    
-    for (let lag = 0; lag < bufferLength; lag++) {
-      let sum = 0;
-      for (let i = 0; i < bufferLength - lag; i++) {
-        sum += buffer[i] * buffer[i + lag];
-      }
-      autocorrelation[lag] = sum;
-    }
-    
-    let maxCorrelation = 0;
-    let bestLag = -1;
-    
-    const minLag = Math.floor(sampleRate / 800);
-    const maxLag = Math.floor(sampleRate / 80);
-    
-    for (let lag = minLag; lag < maxLag && lag < bufferLength; lag++) {
-      if (autocorrelation[lag] > maxCorrelation) {
-        maxCorrelation = autocorrelation[lag];
-        bestLag = lag;
-      }
-    }
-    
-    if (bestLag === -1) return 0;
-    
-    const y1 = autocorrelation[bestLag - 1] || 0;
-    const y2 = autocorrelation[bestLag];
-    const y3 = autocorrelation[bestLag + 1] || 0;
-    
-    const a = (y1 - 2 * y2 + y3) / 2;
-    const b = (y3 - y1) / 2;
-    
-    let adjustedLag = bestLag;
-    if (a !== 0) {
-      adjustedLag = bestLag - b / (2 * a);
-    }
-    
-    return sampleRate / adjustedLag;
-  }, []);
 
   const analyzeAudio = useCallback(() => {
-    if (!analyserRef.current || !dataArrayRef.current) return;
+    if (!analyserRef.current || !dataArrayRef.current || !pitchDetectorRef.current || !audioContextRef.current) {
+      if (isListening) animationRef.current = requestAnimationFrame(analyzeAudio);
+      return;
+    }
 
     const analyser = analyserRef.current;
     const dataArray = dataArrayRef.current;
+    const pitchDetector = pitchDetectorRef.current;
+    const sampleRate = audioContextRef.current.sampleRate;
     
     analyser.getFloatTimeDomainData(dataArray);
     
     let sum = 0;
-    let peak = 0;
+    // Calculate RMS volume
     for (let i = 0; i < dataArray.length; i++) {
-      const sample = Math.abs(dataArray[i]);
-      sum += sample * sample;
-      peak = Math.max(peak, sample);
+      sum += dataArray[i] * dataArray[i];
     }
     const rms = Math.sqrt(sum / dataArray.length);
-    const volume = Math.min(100, rms * 500);
+    const volume = Math.min(100, rms * 350); // Adjusted multiplier for potentially more sensitive volume
     
     const waveform = Array.from(dataArray.slice(0, 64)).map(sample => 
-      Math.max(-1, Math.min(1, sample * 3))
+      Math.max(-1, Math.min(1, sample * 3)) // Keep waveform visualization
     );
     
     let frequency = 0;
-    if (volume > 1) {
-      frequency = getPitch(dataArray, audioContextRef.current!.sampleRate);
+    let clarity = 0;
+
+    if (volume > 1) { // Only detect pitch if volume is significant
+      const [pitch, pitchClarity] = pitchDetector.findPitch(dataArray, sampleRate);
+      if (pitch > 0 && pitchClarity > 0.7) { // Use pitchy's clarity; threshold can be adjusted
+        frequency = pitch;
+        clarity = pitchClarity;
+      }
     }
     
     const { note, octave, cents } = frequencyToNote(frequency);
-    const isInTune = Math.abs(cents) < 10 && frequency > 0;
+    const isInTune = Math.abs(cents) < 10 && frequency > 0; // Standard in-tune check
     
     setAudioData({
       frequency,
+      clarity,
       note,
       octave,
       cents,
@@ -155,8 +130,10 @@ const useAudioInput = () => {
       waveform,
     });
 
-    animationRef.current = requestAnimationFrame(analyzeAudio);
-  }, [getPitch, frequencyToNote]);
+    if (isListening) { // Continue animation loop only if still listening
+        animationRef.current = requestAnimationFrame(analyzeAudio);
+    }
+  }, [isListening, frequencyToNote]); // Added isListening to dependencies
 
   const startRecording = useCallback(() => {
     if (!streamRef.current) return;
