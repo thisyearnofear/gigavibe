@@ -1,13 +1,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
-import { Play, Pause, RotateCcw, AlertCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, AlertCircle, Gamepad2, ArrowLeft, Zap } from 'lucide-react'; // Added Zap
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import PitchPerfectChallenge from '@/components/games/PitchPerfectChallenge';
+import RhythmMaster from '@/components/games/RhythmMaster'; // Import RhythmMaster
+import { Button } from '@/components/ui/button';
 
 type Exercise = Tables<'exercises'>;
+type PracticeView = 'exercises' | 'pitchPerfectChallenge' | 'rhythmMaster'; // Added rhythmMaster
 
 const fetchExercises = async (): Promise<Exercise[]> => {
   const { data, error } = await supabase.from('exercises').select('*').order('created_at');
@@ -36,6 +40,7 @@ const PracticeScreen = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [progress, setProgress] = useState(0);
+  const [currentView, setCurrentView] = useState<PracticeView>('exercises');
 
   const { data: exercises, isLoading, error } = useQuery({
     queryKey: ['exercises'],
@@ -50,6 +55,7 @@ const PracticeScreen = () => {
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
+    // Placeholder: Actual exercise playing logic would go here
   };
 
   const resetExercise = () => {
@@ -57,7 +63,7 @@ const PracticeScreen = () => {
     setIsPlaying(false);
   };
   
-  const difficultyMap = {
+  const difficultyMap: { [key: string]: { label: string; className: string } } = {
     beginner: {
       label: 'Easy',
       className: 'bg-green-100 text-green-700',
@@ -70,12 +76,43 @@ const PracticeScreen = () => {
       label: 'Hard',
       className: 'bg-red-100 text-red-700',
     },
+    // Add a default or handle cases where difficulty might be undefined/null
+    unknown: {
+        label: 'N/A',
+        className: 'bg-gray-100 text-gray-700',
+    }
   };
 
   const currentExerciseDuration = useMemo(() => {
     if (!currentExercise?.notes) return 'N/A';
     return calculateDuration(currentExercise.notes);
   }, [currentExercise]);
+
+  const getDifficulty = (difficultyValue: string | undefined | null) => {
+    return difficultyMap[difficultyValue || 'unknown'] || difficultyMap.unknown;
+  }
+
+  if (currentView === 'pitchPerfectChallenge') {
+    return (
+      <div className="space-y-4">
+        <Button onClick={() => setCurrentView('exercises')} variant="outline" className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Practice
+        </Button>
+        <PitchPerfectChallenge />
+      </div>
+    );
+  }
+
+  if (currentView === 'rhythmMaster') {
+    return (
+      <div className="space-y-4">
+        <Button onClick={() => setCurrentView('exercises')} variant="outline" className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Practice
+        </Button>
+        <RhythmMaster />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -104,8 +141,8 @@ const PracticeScreen = () => {
               </h3>
               <div className="flex justify-between text-sm text-gray-600 mb-4">
                 <span>Duration: {currentExerciseDuration}</span>
-                <span className={`px-2 py-1 rounded-full text-xs capitalize ${difficultyMap[currentExercise.difficulty].className}`}>
-                  {difficultyMap[currentExercise.difficulty].label}
+                <span className={`px-2 py-1 rounded-full text-xs capitalize ${getDifficulty(currentExercise.difficulty).className}`}>
+                  {getDifficulty(currentExercise.difficulty).label}
                 </span>
               </div>
               
@@ -121,7 +158,7 @@ const PracticeScreen = () => {
               </div>
             </>
           ) : (
-             <div className="text-center text-gray-500 pt-8">No exercises available.</div>
+             <div className="text-center text-gray-500 pt-8">No exercises available. Select an exercise below or try a game!</div>
           )}
         </div>
 
@@ -148,10 +185,31 @@ const PracticeScreen = () => {
         </div>
       </div>
 
+      {/* Vocal Games Section */}
+      <div className="bg-white/20 backdrop-blur-md rounded-3xl p-6 shadow-lg border border-white/20">
+        <h3 className="text-lg font-semibold text-purple-700 mb-4">Vocal Games</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+                onClick={() => setCurrentView('pitchPerfectChallenge')}
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center space-y-2 min-h-[100px]"
+            >
+                <Gamepad2 className="w-8 h-8" />
+                <span className="font-semibold">Pitch Perfect Challenge</span>
+            </button>
+            <button
+                onClick={() => setCurrentView('rhythmMaster')}
+                className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center space-y-2 min-h-[100px]"
+            >
+                <Zap className="w-8 h-8" /> {/* Using Zap icon for Rhythm Master */}
+                <span className="font-semibold">Rhythm Master</span>
+            </button>
+        </div>
+      </div>
+
       {/* Exercise List */}
       <div className="bg-white/20 backdrop-blur-md rounded-3xl p-6 shadow-lg border border-white/20">
         <h3 className="text-lg font-semibold text-purple-700 mb-4">Available Exercises</h3>
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-60 overflow-y-auto pr-2"> {/* Added max-height and scroll */}
           {isLoading ? (
             [...Array(3)].map((_, i) => <Skeleton key={i} className="w-full h-20 rounded-2xl" />)
           ) : exercises && exercises.length > 0 ? (
@@ -174,14 +232,21 @@ const PracticeScreen = () => {
                     <div className="font-medium text-purple-700">{exercise.name}</div>
                     <div className="text-sm text-gray-600 capitalize">{calculateDuration(exercise.notes)}</div>
                   </div>
-                  <div className={`px-2 py-1 rounded-full text-xs capitalize ${difficultyMap[exercise.difficulty].className}`}>
-                    {difficultyMap[exercise.difficulty].label}
+                  <div className={`px-2 py-1 rounded-full text-xs capitalize ${getDifficulty(exercise.difficulty).className}`}>
+                    {getDifficulty(exercise.difficulty).label}
                   </div>
                 </div>
               </button>
             ))
           ) : (
-            <div className="text-center text-gray-500 py-4">No exercises found.</div>
+            !error && <div className="text-center text-gray-500 py-4">No exercises found.</div>
+          )}
+          {error && !isLoading && (
+             <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Loading Error</AlertTitle>
+              <AlertDescription>Could not load exercises. Please try again later.</AlertDescription>
+            </Alert>
           )}
         </div>
       </div>
