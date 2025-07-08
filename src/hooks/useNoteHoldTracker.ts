@@ -33,7 +33,7 @@ export const useNoteHoldTracker = ({
   });
 
   const holdStartTimeRef = useRef<number | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
 
   const isInTune = useCallback(() => {
     if (targetFrequency === 0 || currentFrequency === 0) return false;

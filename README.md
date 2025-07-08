@@ -1,123 +1,68 @@
-# GIGAVIBE - AI-Powered Vocal Training App
+# 🎤 GIGAVIBE: Vocal Performance Platform with Economic Value
 
-GIGAVIBE is a comprehensive vocal training application that combines real-time audio analysis, AI coaching, and interactive practice exercises to help singers improve their vocal skills.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-## Features
+## 🚀 Overview
 
-### 🎤 Real-Time Vocal Analysis
+GIGAVIBE is a revolutionary platform that transforms vocal performances into community-owned, tradeable assets. Combining TikTok-style discovery with real economic value, it leverages Farcaster for decentralized social interactions and Zora for performance coin trading. Users can record, rate, and share performances, with viral moments becoming tradeable coins through community validation.
 
-- **Pitch Detection**: Accurate frequency analysis with note identification and octave detection
-- **Vocal Metrics**: Track pitch range, stability, vibrato detection, and volume control
-- **Formant Analysis**: Vowel sound estimation and vocal tract analysis
-- **Visual Feedback**: Circular pitch wheel, waveform visualizer, and horizontal pitch tracking
+## 🎯 Key Features
 
-### 🎯 Interactive Practice Modes
+- **Vocal Reality Check**: Rate your performance and see how the community judges it.
+- **TikTok-Style Discovery**: Swipe through an endless feed of performances.
+- **Community Ownership**: Contributors (performers, voters, sharers) share in coin ownership.
+- **Performance Coins**: Viral performances become tradeable assets on Zora.
+- **Decentralized Architecture**: Built on Farcaster for social data and IPFS for storage.
 
-- **Sing Mode**: Guided vocal exercises with target notes and real-time feedback
-- **Analysis Mode**: Detailed vocal performance metrics and session statistics
-- **Coach Mode**: AI-powered coaching with personalized feedback and recommendations
+## 📅 Development Status
 
-### 📊 Progress Tracking
+- **Phase 1-4 Complete**: Foundation, UX revolution, viral mechanics, security, and decentralized stack.
+- **Current Focus**: Social optimization and ritual development for user retention.
+- **Next Steps**: Advanced discovery features, cross-platform sharing, and monetization.
 
-- **Session History**: Track your vocal training sessions over time
-- **Performance Analytics**: Detailed charts showing improvement trends
-- **Achievement System**: Unlock achievements as you reach vocal milestones
-- **Statistics Dashboard**: Comprehensive overview of your vocal development
+## 🏗 Technical Architecture
 
-### 🤖 AI-Powered Features
+- **Frontend**: Next.js 15, React 19, TypeScript, shadcn/ui for premium UX.
+- **Social Layer**: Farcaster protocol as a decentralized social database.
+- **Storage**: IPFS for permanent audio and metadata storage via Pinata.
+- **Market**: Zora SDK for performance coin creation and trading.
+- **Audio**: Web Audio API for real-time recording and analysis.
 
-- **AI Coaching**: Get personalized feedback based on your vocal performance
-- **Model Comparison**: Compare responses from different AI models (OpenAI, Anthropic, Google)
-- **Usage Analytics**: Track your AI coaching interactions and usage patterns
+## 📱 User Experience
 
-### ⚙️ Customizable Settings
+- **Dual Access**: MiniKit for seamless Farcaster client integration and SIWN for full web app features.
+- **Core Loop**: Challenge → Self-Rate → Community Judge → Reality Reveal → Share → Improve.
+- **Viral Moments**: Shareable content like "I thought 5⭐... they said 2⭐ 😅".
 
-- **Sensitivity Control**: Adjust microphone sensitivity for optimal detection
-- **Tuning Standard**: Customize reference pitch (default A440)
-- **Theme Options**: Light, dark, or auto theme selection
-- **Recording Options**: Auto-record functionality and export capabilities
+## 📊 Documentation
 
-## Project info
+For detailed information, refer to the consolidated documentation:
 
-**URL**: https://lovable.dev/projects/84780d44-7fea-4b63-b612-fa9fce4ff83b
+- **[Project Overview and Development History](docs/Project_Overview_and_Development_History.md)**: Covers phases, milestones, and key achievements.
+- **[Technical Architecture and Strategy](docs/Technical_Architecture_and_Strategy.md)**: Details Farcaster integration, data structures, and dual access strategy.
+- **[Roadmap and Future Plans](docs/Roadmap_and_Future_Plans.md)**: Outlines upcoming social optimizations, scaling strategies, and long-term vision.
 
-## How can I edit this code?
+## 🔧 Getting Started
 
-There are several ways of editing your application.
+1. **Clone Repository**: `git clone https://github.com/yourusername/gigavibe.git`
+2. **Install Dependencies**: `npm install`
+3. **Set Environment Variables**: Copy `.env.example` to `.env.local` and fill in API keys.
+4. **Run Development Server**: `npm run dev`
+5. **Open App**: Visit `http://localhost:3000` in your browser.
 
-**Use Lovable**
+## 🤝 Contributing
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/84780d44-7fea-4b63-b612-fa9fce4ff83b) and start prompting.
+We welcome contributions! Please read our contributing guidelines and code of conduct before submitting pull requests.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📜 License
 
-**Use your preferred IDE**
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 📞 Contact
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+For inquiries or support, reach out via Farcaster or open an issue on GitHub.
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## Getting Started
-
-1. **Grant Microphone Permission**: Allow the app to access your microphone for vocal analysis
-2. **Choose Your Mode**:
-   - Start with **Sing Mode** for guided exercises
-   - Use **Analysis Mode** to explore your vocal metrics
-   - Try **Coach Mode** for AI-powered feedback
-3. **Practice Regularly**: Use the Practice screen to work through structured vocal exercises
-4. **Track Progress**: Monitor your improvement on the Progress screen
-5. **Get AI Coaching**: Visit the AI Chat section for personalized vocal coaching
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- **Frontend**: React + TypeScript + Vite
-- **UI Framework**: shadcn-ui + Tailwind CSS
-- **Audio Processing**: Web Audio API for real-time vocal analysis
-- **AI Integration**: Multiple AI models (OpenAI, Anthropic, Google) via Supabase Edge Functions
-- **Database**: Supabase for progress tracking and user data
-- **State Management**: React Query for server state management
-- **Routing**: React Router for navigation
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/84780d44-7fea-4b63-b612-fa9fce4ff83b) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**GIGAVIBE: Where your voice becomes valuable! 🎤💰✨**

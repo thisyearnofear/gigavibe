@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Bot, Sparkles, Zap, MessageCircle, Volume2, X } from "lucide-react";
 import { useAICoaching } from "@/hooks/useAICoaching";
 import AICoachingSettings from "./AICoachingSettings";
@@ -9,13 +9,13 @@ interface AICoachingFeedbackProps {
   selectedModel?: string;
 }
 
-const modelIcons = {
+const modelIcons: Record<string, React.ReactElement> = {
   openai: <Bot className="w-4 h-4" />,
   anthropic: <Sparkles className="w-4 h-4" />,
   gemini: <Zap className="w-4 h-4" />,
 };
 
-const modelColors = {
+const modelColors: Record<string, string> = {
   openai: "from-green-400 to-emerald-500",
   anthropic: "from-purple-400 to-violet-500",
   gemini: "from-blue-400 to-cyan-500",
