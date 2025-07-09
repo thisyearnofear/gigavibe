@@ -169,20 +169,20 @@ export default function TradingInterface({ coin, onClose }: TradingInterfaceProp
         <div className="flex bg-gray-800 rounded-xl p-1 mb-6">
           <button
             onClick={() => setTradeType('buy')}
-            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all min-h-[44px] touch-manipulation flex items-center justify-center ${
               tradeType === 'buy'
                 ? 'bg-green-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                : 'text-gray-400 hover:text-white active:bg-gray-700'
             }`}
           >
             Buy
           </button>
           <button
             onClick={() => setTradeType('sell')}
-            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all min-h-[44px] touch-manipulation flex items-center justify-center ${
               tradeType === 'sell'
                 ? 'bg-red-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                : 'text-gray-400 hover:text-white active:bg-gray-700'
             }`}
           >
             Sell
@@ -197,7 +197,7 @@ export default function TradingInterface({ coin, onClose }: TradingInterfaceProp
             </label>
             <button
               onClick={setMaxAmount}
-              className="text-xs text-purple-400 hover:text-purple-300"
+              className="text-sm text-purple-400 hover:text-purple-300 px-2 py-1 rounded min-h-[32px] touch-manipulation"
             >
               Max: {getMaxAmount()}
             </button>
@@ -236,10 +236,10 @@ export default function TradingInterface({ coin, onClose }: TradingInterfaceProp
               <button
                 key={value}
                 onClick={() => setSlippage(value)}
-                className={`px-3 py-1 rounded-lg text-sm transition-all ${
+                className={`px-4 py-3 rounded-lg text-sm transition-all min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center ${
                   slippage === value
                     ? 'bg-purple-500 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:text-white'
+                    : 'bg-gray-800 text-gray-400 hover:text-white active:bg-gray-700'
                 }`}
               >
                 {value}%

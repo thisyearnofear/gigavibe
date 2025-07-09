@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, RotateCcw, Volume2, Mic } from "lucide-react";
 import { usePitchDetection } from "@/hooks/usePitchDetection";
+import { useRealAudioRecording } from "@/hooks/useRealAudioRecording";
 import { SunoService, ViralChallenge } from "@/lib/audio/SunoService";
 
 interface ViralChallengeProps {
@@ -21,6 +22,14 @@ export default function ViralChallengeComponent({
 }: ViralChallengeProps) {
   const { pitchData, isListening, startListening, stopListening } =
     usePitchDetection();
+  const {
+    isRecording,
+    audioBlob,
+    startRecording,
+    stopRecording,
+    clearRecording,
+    hasRecording,
+  } = useRealAudioRecording();
   const [phase, setPhase] = useState<
     "loading" | "listen" | "countdown" | "singing" | "complete"
   >("loading");
@@ -126,8 +135,21 @@ export default function ViralChallengeComponent({
         originalAudioRef.current.pause();
         setIsPlayingOriginal(false);
       } else {
+        // Reset time to beginning if needed
+        originalAudioRef.current.currentTime = 0;
         originalAudioRef.current.play();
         setIsPlayingOriginal(true);
+
+        // Limit playback to 30 seconds
+        setTimeout(() => {
+          if (
+            originalAudioRef.current &&
+            originalAudioRef.current.currentTime >= 30
+          ) {
+            originalAudioRef.current.pause();
+            setIsPlayingOriginal(false);
+          }
+        }, 30000);
       }
     }
   };
@@ -138,88 +160,26 @@ export default function ViralChallengeComponent({
         instrumentalAudioRef.current.pause();
         setIsPlayingInstrumental(false);
       } else {
+        // Reset time to beginning if needed
+        instrumentalAudioRef.current.currentTime = 0;
         instrumentalAudioRef.current.play();
         setIsPlayingInstrumental(true);
+
+        // Limit playback to 30 seconds
+        setTimeout(() => {
+          if (
+            instrumentalAudioRef.current &&
+            instrumentalAudioRef.current.currentTime >= 30
+          ) {
+            instrumentalAudioRef.current.pause();
+            setIsPlayingInstrumental(false);
+          }
+        }, 30000);
       }
     }
   };
 
-  const startChallenge = async () => {
-    setPhase("countdown");
-
-    // 3-second countdown
-    for (let i = 3; i > 0; i--) {
-      setTimeRemaining(i);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    setPhase("singing");
-    recordingStartTime.current = Date.now();
-
-    // Start recording and instrumental playback
-    await startListening();
-    playInstrumental();
-
-    // Set timer for challenge duration
-    const duration = currentChallenge?.duration || 30;
-    setTimeRemaining(duration);
-
-    timerRef.current = setInterval(() => {
-      const elapsed = (Date.now() - recordingStartTime.current) / 1000;
-      const remaining = Math.max(0, duration - elapsed);
-      setTimeRemaining(remaining);
-
-      if (remaining <= 0) {
-        completeChallenge();
-      }
-    }, 100);
-  };
-
-  const completeChallenge = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    stopListening();
-
-    if (instrumentalAudioRef.current) {
-      instrumentalAudioRef.current.pause();
-      setIsPlayingInstrumental(false);
-    }
-
-    // Get recorded audio blob from the pitch detection hook
-    // This assumes the usePitchDetection hook has been updated to return the recording
-    const audioBlob = new Blob([]); // This would be replaced with actual recording
-
-    // Upload recording to IPFS
-    const uploadRecording = async () => {
-      try {
-        const ipfsHash = await fetch("/api/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filename: `${currentChallenge.id}_${Date.now()}.wav`,
-            data: audioBlob,
-          }),
-        })
-          .then((res) => res.json())
-          .then((data) => data.ipfsHash);
-
-        setUserRecording(ipfsHash);
-      } catch (error) {
-        console.error("Failed to upload recording:", error);
-        // Fallback to a local identifier if upload fails
-        setUserRecording(`local_${Date.now()}`);
-      }
-    };
-
-    uploadRecording();
-
-    setPhase("complete");
-  };
-
+  // Reset challenge to initial state
   const resetChallenge = () => {
     setPhase("listen");
     setTimeRemaining(0);
@@ -231,6 +191,8 @@ export default function ViralChallengeComponent({
     }
 
     stopListening();
+    stopRecording();
+    clearRecording();
 
     if (originalAudioRef.current) {
       originalAudioRef.current.pause();
@@ -241,6 +203,120 @@ export default function ViralChallengeComponent({
       instrumentalAudioRef.current.pause();
       setIsPlayingInstrumental(false);
     }
+  };
+
+  const startChallenge = async () => {
+    try {
+      console.log("Starting challenge...");
+      setPhase("countdown");
+
+      // 3-second countdown
+      for (let i = 3; i > 0; i--) {
+        console.log(`Countdown: ${i}`);
+        setTimeRemaining(i);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      console.log("Countdown complete, starting singing phase");
+      setPhase("singing");
+      recordingStartTime.current = Date.now();
+
+      // Start recording and instrumental playback
+      console.log("Requesting microphone access...");
+      await startListening();
+      await startRecording();
+      console.log("Microphone access granted, starting recording and analysis");
+
+      console.log("Starting instrumental playback");
+      playInstrumental();
+
+      // Set timer for challenge duration
+      const duration = currentChallenge?.duration || 15;
+      setTimeRemaining(duration);
+
+      console.log(`Challenge will run for ${duration} seconds`);
+      timerRef.current = setInterval(() => {
+        const elapsed = (Date.now() - recordingStartTime.current) / 1000;
+        const remaining = Math.max(0, duration - elapsed);
+        setTimeRemaining(remaining);
+
+        if (remaining <= 0) {
+          completeChallenge();
+        }
+      }, 100);
+    } catch (error) {
+      console.error("Error starting challenge:", error);
+      // Fall back to listen phase if there's an error
+      setPhase("listen");
+      alert(
+        "Could not start the challenge. Please check microphone permissions and try again."
+      );
+    }
+  };
+
+  const completeChallenge = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    stopListening();
+    stopRecording();
+
+    if (instrumentalAudioRef.current) {
+      instrumentalAudioRef.current.pause();
+      setIsPlayingInstrumental(false);
+    }
+
+    // Get recorded audio blob from the real audio recording hook
+    if (!audioBlob) {
+      console.error("No audio recording available");
+      alert("Failed to record your performance. Please try again.");
+      setPhase("listen");
+      return;
+    }
+
+    // Upload recording to IPFS
+    const uploadRecording = async () => {
+      try {
+        // First convert the audioBlob to base64
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+
+        reader.onloadend = async () => {
+          try {
+            // Get base64 data (remove the data:audio/webm;base64, prefix)
+            const base64Data = reader.result?.toString().split(",")[1];
+
+            const ipfsHash = await fetch("/api/upload", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                filename: `${currentChallenge.id}_${Date.now()}.webm`,
+                data: base64Data,
+              }),
+            })
+              .then((res) => res.json())
+              .then((data) => data.ipfsHash);
+
+            setUserRecording(ipfsHash);
+          } catch (error) {
+            console.error("Failed to process recording:", error);
+            // Fallback to a local identifier if upload fails
+            setUserRecording(`local_${Date.now()}`);
+          }
+        };
+      } catch (error) {
+        console.error("Failed to upload recording:", error);
+        // Fallback to a local identifier if upload fails
+        setUserRecording(`local_${Date.now()}`);
+      }
+    };
+
+    uploadRecording();
+
+    setPhase("complete");
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -275,12 +351,32 @@ export default function ViralChallengeComponent({
           ref={originalAudioRef}
           src={currentChallenge.originalAudio}
           onEnded={() => setIsPlayingOriginal(false)}
+          onTimeUpdate={() => {
+            if (
+              originalAudioRef.current &&
+              originalAudioRef.current.currentTime >= 30
+            ) {
+              originalAudioRef.current.pause();
+              originalAudioRef.current.currentTime = 0;
+              setIsPlayingOriginal(false);
+            }
+          }}
           onLoadedData={() => console.log("Original audio loaded")}
         />
         <audio
           ref={instrumentalAudioRef}
           src={currentChallenge.instrumentalAudio}
           onEnded={() => setIsPlayingInstrumental(false)}
+          onTimeUpdate={() => {
+            if (
+              instrumentalAudioRef.current &&
+              instrumentalAudioRef.current.currentTime >= 30
+            ) {
+              instrumentalAudioRef.current.pause();
+              instrumentalAudioRef.current.currentTime = 0;
+              setIsPlayingInstrumental(false);
+            }
+          }}
           onLoadedData={() => console.log("Instrumental audio loaded")}
         />
 
@@ -342,10 +438,13 @@ export default function ViralChallengeComponent({
               </div>
 
               <motion.button
-                onClick={startChallenge}
-                className="w-full py-4 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl font-semibold text-lg"
+                onClick={() => {
+                  console.log("Ready to Sing button clicked");
+                  startChallenge();
+                }}
+                className="w-full py-4 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl font-semibold text-lg relative z-50"
                 whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: 0.95 }}
                 disabled={!currentChallenge}
               >
                 Ready to Sing!
@@ -406,11 +505,6 @@ export default function ViralChallengeComponent({
                 <h3 className="text-lg font-semibold mb-4">🎤 Singing Now!</h3>
 
                 <div className="space-y-4">
-                  <div className="text-4xl font-bold text-green-400">
-                    {Math.round(accuracy)}%
-                  </div>
-                  <div className="text-sm text-gray-300">Match Accuracy</div>
-
                   {/* Audio visualization */}
                   <div className="flex items-center justify-center gap-2 mt-4">
                     <Volume2 className="w-5 h-5 text-purple-400" />
@@ -448,7 +542,9 @@ export default function ViralChallengeComponent({
                   transition={{ duration: 1, repeat: Infinity }}
                 />
                 <span className="font-semibold">
-                  Recording your performance...
+                  {isRecording
+                    ? "Recording your performance..."
+                    : "Waiting for microphone..."}
                 </span>
               </div>
             </motion.div>
@@ -466,13 +562,47 @@ export default function ViralChallengeComponent({
               <h2 className="text-3xl font-bold mb-4">Performance Complete!</h2>
 
               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 mb-8">
-                <div className="text-5xl font-bold text-purple-400 mb-2">
-                  {Math.round(accuracy)}%
-                </div>
-                <p className="text-gray-300 mb-4">Similarity to Original</p>
-                <p className="text-sm text-gray-400">
-                  Now let's see what the community thinks...
+                <h3 className="text-lg font-semibold mb-4">How did you do?</h3>
+                <p className="text-gray-300 mb-6">
+                  Rate your own performance before letting the community judge
+                  it!
                 </p>
+
+                {/* Audio playback of recorded performance */}
+                {audioBlob && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold mb-2">
+                      Your Recording:
+                    </h4>
+                    <audio
+                      src={URL.createObjectURL(audioBlob)}
+                      controls
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-between mb-6">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <motion.button
+                      key={star}
+                      onClick={() => setAccuracy(star * 20)} // Convert 1-5 stars to percentage
+                      className={`text-3xl ${
+                        star * 20 <= accuracy
+                          ? "text-yellow-400"
+                          : "text-gray-600"
+                      }`}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      ⭐
+                    </motion.button>
+                  ))}
+                </div>
+
+                <div className="text-sm text-gray-400">
+                  The community will judge your performance next!
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -493,8 +623,11 @@ export default function ViralChallengeComponent({
                   className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  disabled={
+                    accuracy === 0 || !hasRecording || userRecording === ""
+                  }
                 >
-                  Continue to Rating
+                  Submit Performance
                 </motion.button>
               </div>
             </motion.div>

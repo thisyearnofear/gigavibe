@@ -110,10 +110,10 @@ export default function MainNavigation() {
               <motion.button
                 key={item.id}
                 onClick={() => setActiveScreen(item.id)}
-                className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200 ${
+                className={`flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-all duration-200 min-h-[56px] min-w-[56px] touch-manipulation ${
                   isActive
                     ? "text-purple-400"
-                    : "text-gray-400 hover:text-white"
+                    : "text-gray-400 hover:text-white active:bg-white/10"
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

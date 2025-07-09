@@ -168,10 +168,10 @@ export default function DiscoveryFeed({
                   refreshFeed();
                 }}
                 aria-pressed={feedType === type}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                className={`px-6 py-3 rounded-full text-sm font-medium transition-all min-h-[44px] touch-manipulation flex items-center justify-center ${
                   feedType === type
                     ? "bg-white text-black shadow-lg"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
+                    : "text-white/70 hover:text-white hover:bg-white/10 active:bg-white/20"
                 }`}
                 style={{
                   minWidth: "90px",

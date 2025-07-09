@@ -86,7 +86,7 @@ export default function SelfRating({
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoveredRating(star)}
                 onMouseLeave={() => setHoveredRating(0)}
-                className="p-2"
+                className="p-3 min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center rounded-lg"
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.9 }}
               >
@@ -128,10 +128,10 @@ export default function SelfRating({
                 <motion.button
                   key={option.id}
                   onClick={() => setConfidence(option.id)}
-                  className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 ${
+                  className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 min-h-[56px] touch-manipulation flex items-center justify-center ${
                     confidence === option.id
                       ? "border-purple-500 bg-purple-500/20"
-                      : "border-gray-600 bg-gray-800/50 hover:border-gray-500"
+                      : "border-gray-600 bg-gray-800/50 hover:border-gray-500 active:bg-gray-700/50"
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -150,7 +150,8 @@ export default function SelfRating({
         {rating > 0 && confidence && (
           <motion.button
             onClick={handleSubmit}
-            className={`w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold text-lg ${
+            disabled={isLoading}
+            className={`w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold text-lg min-h-[56px] touch-manipulation ${
               isLoading ? "opacity-70 cursor-not-allowed" : ""
             }`}
             initial={{ opacity: 0, y: 20 }}
@@ -158,7 +159,6 @@ export default function SelfRating({
             transition={{ duration: 0.4 }}
             whileHover={{ scale: isLoading ? 1 : 1.02 }}
             whileTap={{ scale: isLoading ? 1 : 0.98 }}
-            disabled={isLoading}
           >
             {isLoading ? "Processing..." : "Submit My Rating"}
           </motion.button>

@@ -290,7 +290,7 @@ export default function PeerJudging() {
           <p>{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            className="mt-4 px-6 py-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors min-h-[44px] touch-manipulation"
           >
             Try Again
           </button>
