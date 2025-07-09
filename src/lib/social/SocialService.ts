@@ -10,20 +10,12 @@ export class SocialService {
   async shareToFarcaster(result: ChallengeResult, challenge: VocalChallenge): Promise<void> {
     try {
       const shareText = this.generateShareText(result, challenge);
+      const imageUrl = await this.generateResultImage(result, challenge);
       
-      // This would use MiniKit's sharing capabilities
-      // For now, we'll log the share text and prepare the data structure
-      console.log('Sharing to Farcaster:', shareText);
-      
-      // TODO: Implement actual Farcaster sharing via MiniKit
-      // This would involve:
-      // 1. Creating a frame with the challenge result
-      // 2. Using MiniKit's share functionality
-      // 3. Posting to Farcaster with the frame metadata
-      
+      // Generate frame metadata
       const frameData = {
-        version: "next",
-        imageUrl: await this.generateResultImage(result, challenge),
+        version: "vNext",
+        imageUrl,
         button: {
           title: "Try this challenge!",
           action: {
@@ -33,10 +25,29 @@ export class SocialService {
           },
         },
       };
-
+      
+      // Share to Farcaster using our API route
+      const response = await fetch('/api/farcaster/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: shareText,
+          frameData,
+          challengeId: challenge.id,
+          resultId: result.challengeId,
+          userFid: result.userFid
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Farcaster share failed: ${errorText}`);
+      }
+      
       // Store the share event
       await this.recordShareEvent(result, challenge);
-      
     } catch (error) {
       console.error('Failed to share to Farcaster:', error);
       throw error;
@@ -45,79 +56,76 @@ export class SocialService {
 
   async getLeaderboard(challengeId?: string, limit: number = 10): Promise<LeaderboardEntry[]> {
     try {
-      // This would fetch from FilCDN or a decentralized leaderboard
-      // For now, return mock data
-      const mockLeaderboard: LeaderboardEntry[] = [
-        {
-          fid: "12345",
-          username: "VocalMaster",
-          score: 95,
-          accuracy: 98,
-          challengesCompleted: 25,
-          rank: 1,
-        },
-        {
-          fid: "67890",
-          username: "PitchPerfect",
-          score: 92,
-          accuracy: 94,
-          challengesCompleted: 18,
-          rank: 2,
-        },
-        {
-          fid: "11111",
-          username: "SingingStar",
-          score: 88,
-          accuracy: 91,
-          challengesCompleted: 22,
-          rank: 3,
-        },
-      ];
-
-      return mockLeaderboard.slice(0, limit);
+      // Build URL with query parameters
+      let url = '/api/leaderboard';
+      const params = new URLSearchParams();
+      
+      if (challengeId) {
+        params.append('challengeId', challengeId);
+      }
+      
+      if (limit) {
+        params.append('limit', limit.toString());
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      // Fetch leaderboard from API
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Leaderboard fetch failed: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data.entries as LeaderboardEntry[];
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
-      return [];
+      throw error;
     }
   }
 
   async getUserProfile(fid: string): Promise<UserVocalProfile | null> {
     try {
-      // This would fetch from FilCDN or user's decentralized profile
-      // For now, return mock data
-      const mockProfile: UserVocalProfile = {
-        fid,
-        username: `User${fid}`,
-        lowestNote: 'C3',
-        highestNote: 'C5',
-        averageAccuracy: 85,
-        completedChallenges: 15,
-        preferredDifficulty: 'intermediate',
-        weakAreas: ['high_notes', 'intervals'],
-        strongAreas: ['scales', 'rhythm'],
-        totalPracticeTime: 3600000, // 1 hour in ms
-        lastActive: Date.now() - 86400000, // 1 day ago
-        achievements: ['first_challenge', 'perfect_scale', 'week_streak'],
-      };
-
-      return mockProfile;
+      const response = await fetch(`/api/profile/${fid}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User profile not found - this is a valid scenario
+          return null;
+        }
+        
+        const errorText = await response.text();
+        throw new Error(`Profile fetch failed: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data.profile as UserVocalProfile;
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
-      return null;
+      throw error;
     }
   }
 
   async updateUserProfile(fid: string, updates: Partial<UserVocalProfile>): Promise<void> {
     try {
-      // This would update the user's profile on FilCDN
-      console.log('Updating user profile:', fid, updates);
+      const response = await fetch(`/api/profile/${fid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
       
-      // TODO: Implement actual profile update to FilCDN
-      // This would involve:
-      // 1. Fetching current profile
-      // 2. Merging updates
-      // 3. Storing updated profile on FilCDN
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Profile update failed: ${errorText}`);
+      }
       
+      // Success - no need to return anything
     } catch (error) {
       console.error('Failed to update user profile:', error);
       throw error;
@@ -126,22 +134,29 @@ export class SocialService {
 
   async createSocialChallenge(challenge: VocalChallenge, creatorFid: string): Promise<string> {
     try {
-      // Create a social challenge that others can participate in
       const socialChallengeData = {
         ...challenge,
         createdBy: creatorFid,
         participants: [creatorFid],
-        leaderboard: [],
         isActive: true,
         endTime: Date.now() + (24 * 60 * 60 * 1000), // 24 hours from now
       };
-
-      // Store on FilCDN and return challenge ID
-      console.log('Creating social challenge:', socialChallengeData);
       
-      // TODO: Store on FilCDN and return actual CID
-      return `social_${challenge.id}_${Date.now()}`;
+      const response = await fetch('/api/challenges/social', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(socialChallengeData),
+      });
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Challenge creation failed: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      return result.challengeId;
     } catch (error) {
       console.error('Failed to create social challenge:', error);
       throw error;
@@ -150,11 +165,20 @@ export class SocialService {
 
   async joinSocialChallenge(challengeId: string, userFid: string): Promise<void> {
     try {
-      // Add user to social challenge participants
-      console.log('Joining social challenge:', challengeId, userFid);
+      const response = await fetch(`/api/challenges/social/${challengeId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userFid }),
+      });
       
-      // TODO: Update challenge data on FilCDN
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to join challenge: ${errorText}`);
+      }
       
+      // Success - no need to return anything
     } catch (error) {
       console.error('Failed to join social challenge:', error);
       throw error;
@@ -178,9 +202,24 @@ export class SocialService {
   }
 
   private async generateResultImage(result: ChallengeResult, challenge: VocalChallenge): Promise<string> {
-    // This would generate a dynamic image showing the challenge result
-    // For now, return a placeholder
-    return `${this.baseUrl}/api/og/challenge-result?score=${result.score}&accuracy=${result.accuracy}&challenge=${encodeURIComponent(challenge.title)}`;
+    // Use a real OG image generation endpoint
+    try {
+      // First check if the OG image API is available
+      const testResponse = await fetch(`${this.baseUrl}/api/og/status`, {
+        method: 'HEAD'
+      });
+      
+      if (!testResponse.ok) {
+        throw new Error('OG image generation API is not available');
+      }
+      
+      // Construct the actual URL for the OG image with proper parameters
+      return `${this.baseUrl}/api/og/challenge-result?score=${result.score}&accuracy=${result.accuracy}&challenge=${encodeURIComponent(challenge.title)}&userFid=${result.userFid || ''}&timestamp=${Date.now()}`;
+    } catch (error) {
+      console.error('Failed to generate result image:', error);
+      // Fallback to a static image if the dynamic generation fails
+      return `${this.baseUrl}/images/default-challenge-card.png`;
+    }
   }
 
   private async recordShareEvent(result: ChallengeResult, challenge: VocalChallenge): Promise<void> {
@@ -194,13 +233,25 @@ export class SocialService {
         platform: 'farcaster',
       };
 
-      // Store share event on FilCDN for analytics
-      console.log('Recording share event:', shareEvent);
+      // Track the share event via analytics API
+      const response = await fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event: 'share',
+          properties: shareEvent
+        }),
+      });
       
-      // TODO: Store on FilCDN
-      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to record share event: ${errorText}`);
+      }
     } catch (error) {
       console.error('Failed to record share event:', error);
+      // Don't throw here - this is non-critical functionality
     }
   }
 

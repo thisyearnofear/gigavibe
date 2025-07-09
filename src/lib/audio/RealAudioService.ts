@@ -2,7 +2,6 @@
 
 /**
  * Real Audio Service for recording, processing, and storing vocal performances
- * Replaces mock audio functionality with actual Web Audio API integration
  */
 export class RealAudioService {
   private static instance: RealAudioService;

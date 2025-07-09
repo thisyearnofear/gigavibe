@@ -2,7 +2,6 @@
 
 /**
  * Real Audio Recording Service using Web Audio API
- * Replaces mock recording with actual microphone capture
  */
 export class RealAudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;

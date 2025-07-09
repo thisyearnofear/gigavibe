@@ -18,6 +18,7 @@ interface FilCDNContextType {
   error: string | null;
   needsPaymentSetup: boolean;
   clientAddress: string | null;
+  isOptional: boolean;
 }
 
 const FilCDNContext = createContext<FilCDNContextType | undefined>(undefined);
@@ -29,6 +30,7 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [needsPaymentSetup, setNeedsPaymentSetup] = useState(false);
   const [clientAddress, setClientAddress] = useState<string | null>(null);
+  const [isOptional, setIsOptional] = useState(true); // Default to optional
 
   useEffect(() => {
     initializeFilCDN();
@@ -45,9 +47,12 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
         "https://api.calibration.node.glif.io/rpc/v1";
 
       if (!privateKey) {
-        throw new Error(
-          "NEXT_PUBLIC_FILECOIN_PRIVATE_KEY environment variable is required"
+        // Instead of throwing an error, just log and mark FilCDN as not initialized
+        console.log(
+          "⚠️ FilCDN disabled: NEXT_PUBLIC_FILECOIN_PRIVATE_KEY not found"
         );
+        setIsInitialized(true); // Mark as initialized so the app can continue
+        return; // Exit initialization early
       }
 
       console.log("🔄 Initializing Synapse SDK...");
@@ -160,6 +165,7 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
     error,
     needsPaymentSetup,
     clientAddress,
+    isOptional,
   };
 
   return (

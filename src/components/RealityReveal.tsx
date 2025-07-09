@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, RotateCcw, TrendingUp, TrendingDown, Minus, Star } from 'lucide-react';
-import FarcasterIntegration from './FarcasterIntegration';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Share2,
+  RotateCcw,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Star,
+} from "lucide-react";
+import FarcasterIntegration from "./FarcasterIntegration";
 
 interface RealityRevealProps {
   selfRating: number;
@@ -13,6 +20,7 @@ interface RealityRevealProps {
   totalJudges: number;
   onShare: () => void;
   onTryAgain: () => void;
+  challengeId?: string;
 }
 
 export default function RealityReveal({
@@ -22,86 +30,109 @@ export default function RealityReveal({
   challengeTitle,
   totalJudges,
   onShare,
-  onTryAgain
+  onTryAgain,
+  challengeId = "",
 }: RealityRevealProps) {
-  const [phase, setPhase] = useState<'suspense' | 'self' | 'community' | 'comparison' | 'share'>('suspense');
+  const [phase, setPhase] = useState<
+    "suspense" | "self" | "community" | "comparison" | "share"
+  >("suspense");
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     const sequence = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setPhase('self');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setPhase('community');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setPhase('comparison');
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setPhase("self");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setPhase("community");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setPhase("comparison");
+
       // Show confetti if they did well or if the gap is hilariously large
       if (communityRating >= 4 || Math.abs(selfRating - communityRating) >= 2) {
         setShowConfetti(true);
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setPhase('share');
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setPhase("share");
     };
-    
+
     sequence();
   }, [selfRating, communityRating]);
 
   const getRatingGap = () => {
     const gap = selfRating - communityRating;
-    if (gap >= 2) return { type: 'overconfident', emoji: '😅', color: 'text-red-400' };
-    if (gap <= -2) return { type: 'underconfident', emoji: '😲', color: 'text-green-400' };
-    if (Math.abs(gap) <= 0.5) return { type: 'accurate', emoji: '🎯', color: 'text-purple-400' };
-    return { type: 'close', emoji: '🤔', color: 'text-yellow-400' };
+    if (gap >= 2)
+      return { type: "overconfident", emoji: "😅", color: "text-red-400" };
+    if (gap <= -2)
+      return { type: "underconfident", emoji: "😲", color: "text-green-400" };
+    if (Math.abs(gap) <= 0.5)
+      return { type: "accurate", emoji: "🎯", color: "text-purple-400" };
+    return { type: "close", emoji: "🤔", color: "text-yellow-400" };
   };
 
   const getWittyCommentary = () => {
     const gap = selfRating - communityRating;
     const gapType = getRatingGap().type;
-    
-    if (gapType === 'overconfident') {
-      if (gap >= 3) return "Someone's been practicing in the shower a bit too much";
-      if (gap >= 2) return "Confidence is key... maybe dial it back just a touch";
+
+    if (gapType === "overconfident") {
+      if (gap >= 3)
+        return "Someone's been practicing in the shower a bit too much";
+      if (gap >= 2)
+        return "Confidence is key... maybe dial it back just a touch";
       return "Close, but the community has spoken";
     }
-    
-    if (gapType === 'underconfident') {
+
+    if (gapType === "underconfident") {
       if (gap <= -2) return "You're way too hard on yourself!";
       return "The community believes in you more than you do";
     }
-    
-    if (gapType === 'accurate') {
+
+    if (gapType === "accurate") {
       return "Spot on! You know your voice well";
     }
-    
+
     return "Pretty close to reality";
   };
 
   const getConfidenceText = () => {
     switch (confidence) {
-      case 'modest': return 'thought it was pretty good';
-      case 'confident': return 'was sure they nailed it';
-      case 'unsure': return 'honestly wasn\'t sure';
-      case 'showoff': return 'thought they should go pro';
-      default: return 'rated themselves';
+      case "modest":
+        return "thought it was pretty good";
+      case "confident":
+        return "was sure they nailed it";
+      case "unsure":
+        return "honestly wasn't sure";
+      case "showoff":
+        return "thought they should go pro";
+      default:
+        return "rated themselves";
     }
   };
 
-  const StarDisplay = ({ rating, animated = false }: { rating: number; animated?: boolean }) => (
+  const StarDisplay = ({
+    rating,
+    animated = false,
+  }: {
+    rating: number;
+    animated?: boolean;
+  }) => (
     <div className="flex justify-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
         <motion.div
           key={star}
           initial={animated ? { scale: 0, rotate: -180 } : false}
           animate={animated ? { scale: 1, rotate: 0 } : false}
-          transition={animated ? { delay: star * 0.1, type: "spring", stiffness: 500 } : undefined}
+          transition={
+            animated
+              ? { delay: star * 0.1, type: "spring", stiffness: 500 }
+              : undefined
+          }
         >
           <Star
             className={`w-8 h-8 ${
               star <= rating
-                ? 'text-yellow-400 fill-yellow-400'
-                : 'text-gray-600'
+                ? "text-yellow-400 fill-yellow-400"
+                : "text-gray-600"
             }`}
           />
         </motion.div>
@@ -119,17 +150,17 @@ export default function RealityReveal({
             x: Math.random() * window.innerWidth,
             y: -10,
             rotate: 0,
-            scale: Math.random() * 0.5 + 0.5
+            scale: Math.random() * 0.5 + 0.5,
           }}
           animate={{
             y: window.innerHeight + 10,
             rotate: 360,
-            opacity: [1, 1, 0]
+            opacity: [1, 1, 0],
           }}
           transition={{
             duration: Math.random() * 2 + 2,
             ease: "easeOut",
-            delay: Math.random() * 2
+            delay: Math.random() * 2,
           }}
         />
       ))}
@@ -139,12 +170,11 @@ export default function RealityReveal({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative overflow-hidden">
       {showConfetti && <Confetti />}
-      
+
       <div className="flex items-center justify-center min-h-screen p-6 text-white relative z-10">
         <div className="w-full max-w-md text-center">
-          
           <AnimatePresence mode="wait">
-            {phase === 'suspense' && (
+            {phase === "suspense" && (
               <motion.div
                 key="suspense"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -175,7 +205,7 @@ export default function RealityReveal({
               </motion.div>
             )}
 
-            {phase === 'self' && (
+            {phase === "self" && (
               <motion.div
                 key="self"
                 initial={{ opacity: 0, x: -50 }}
@@ -184,16 +214,20 @@ export default function RealityReveal({
                 transition={{ duration: 0.6 }}
               >
                 <div className="text-4xl mb-6">🤔</div>
-                <h2 className="text-2xl font-bold mb-6">You {getConfidenceText()}</h2>
+                <h2 className="text-2xl font-bold mb-6">
+                  You {getConfidenceText()}
+                </h2>
                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-4">
-                  <div className="text-6xl font-bold text-purple-400 mb-4">{selfRating}</div>
+                  <div className="text-6xl font-bold text-purple-400 mb-4">
+                    {selfRating}
+                  </div>
                   <StarDisplay rating={selfRating} animated />
                   <p className="text-gray-300 mt-4">Your self-rating</p>
                 </div>
               </motion.div>
             )}
 
-            {phase === 'community' && (
+            {phase === "community" && (
               <motion.div
                 key="community"
                 initial={{ opacity: 0, x: 50 }}
@@ -202,7 +236,9 @@ export default function RealityReveal({
                 transition={{ duration: 0.6 }}
               >
                 <div className="text-4xl mb-6">👥</div>
-                <h2 className="text-2xl font-bold mb-6">The community said...</h2>
+                <h2 className="text-2xl font-bold mb-6">
+                  The community said...
+                </h2>
                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-4">
                   <motion.div
                     className="text-6xl font-bold text-indigo-400 mb-4"
@@ -213,12 +249,14 @@ export default function RealityReveal({
                     {communityRating.toFixed(1)}
                   </motion.div>
                   <StarDisplay rating={Math.round(communityRating)} animated />
-                  <p className="text-gray-300 mt-4">Average from {totalJudges} judges</p>
+                  <p className="text-gray-300 mt-4">
+                    Average from {totalJudges} judges
+                  </p>
                 </div>
               </motion.div>
             )}
 
-            {phase === 'comparison' && (
+            {phase === "comparison" && (
               <motion.div
                 key="comparison"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -234,30 +272,38 @@ export default function RealityReveal({
                 >
                   {getRatingGap().emoji}
                 </motion.div>
-                
+
                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 mb-6">
                   <div className="flex items-center justify-between mb-6">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-purple-400 mb-2">{selfRating}</div>
+                      <div className="text-3xl font-bold text-purple-400 mb-2">
+                        {selfRating}
+                      </div>
                       <div className="text-sm text-gray-400">You</div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       {selfRating > communityRating ? (
-                        <TrendingDown className={`w-8 h-8 ${getRatingGap().color}`} />
+                        <TrendingDown
+                          className={`w-8 h-8 ${getRatingGap().color}`}
+                        />
                       ) : selfRating < communityRating ? (
-                        <TrendingUp className={`w-8 h-8 ${getRatingGap().color}`} />
+                        <TrendingUp
+                          className={`w-8 h-8 ${getRatingGap().color}`}
+                        />
                       ) : (
                         <Minus className={`w-8 h-8 ${getRatingGap().color}`} />
                       )}
                     </div>
-                    
+
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-indigo-400 mb-2">{communityRating.toFixed(1)}</div>
+                      <div className="text-3xl font-bold text-indigo-400 mb-2">
+                        {communityRating.toFixed(1)}
+                      </div>
                       <div className="text-sm text-gray-400">Community</div>
                     </div>
                   </div>
-                  
+
                   <motion.p
                     className={`text-lg font-semibold ${getRatingGap().color}`}
                     initial={{ opacity: 0, y: 20 }}
@@ -270,7 +316,7 @@ export default function RealityReveal({
               </motion.div>
             )}
 
-            {phase === 'share' && (
+            {phase === "share" && (
               <motion.div
                 key="share"
                 initial={{ opacity: 0, y: 50 }}
@@ -278,23 +324,37 @@ export default function RealityReveal({
                 transition={{ duration: 0.6 }}
               >
                 <div className="text-4xl mb-6">🎉</div>
-                <h2 className="text-2xl font-bold mb-6">Ready to share this moment?</h2>
-                
+                <h2 className="text-2xl font-bold mb-6">
+                  Ready to share this moment?
+                </h2>
+
                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 mb-8">
                   <p className="text-lg mb-4">
-                    "I thought I was a <span className="font-bold text-purple-400">{selfRating}⭐</span> singer...
+                    "I thought I was a{" "}
+                    <span className="font-bold text-purple-400">
+                      {selfRating}⭐
+                    </span>{" "}
+                    singer...
                   </p>
                   <p className="text-lg">
-                    The community said <span className="font-bold text-indigo-400">{communityRating.toFixed(1)}⭐</span> {getRatingGap().emoji}"
+                    The community said{" "}
+                    <span className="font-bold text-indigo-400">
+                      {communityRating.toFixed(1)}⭐
+                    </span>{" "}
+                    {getRatingGap().emoji}"
                   </p>
-                  <p className="text-sm text-gray-400 mt-4">#{challengeTitle.replace(/\s+/g, '')} #VocalRealityCheck</p>
+                  <p className="text-sm text-gray-400 mt-4">
+                    #{challengeTitle.replace(/\s+/g, "")} #VocalRealityCheck
+                  </p>
                 </div>
 
                 {/* Farcaster Integration */}
                 <FarcasterIntegration
-                  challengeId="mock-challenge-id"
+                  challengeId={challengeId || `challenge_${Date.now()}`}
                   challengeTitle={challengeTitle}
-                  userScore={Math.round((selfRating + communityRating) / 2 * 20)}
+                  userScore={Math.round(
+                    ((selfRating + communityRating) / 2) * 20
+                  )}
                   selfRating={selfRating}
                   communityRating={communityRating}
                 />
@@ -309,7 +369,7 @@ export default function RealityReveal({
                     <Share2 className="w-5 h-5" />
                     Share the Reality
                   </motion.button>
-                  
+
                   <motion.button
                     onClick={onTryAgain}
                     className="px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl font-semibold"

@@ -35,6 +35,7 @@ export class CommunityOwnershipService {
   private static instance: CommunityOwnershipService;
   private contributions: Map<string, CommunityContribution[]> = new Map();
   private ownerships: Map<string, CommunityOwnership> = new Map();
+  private apiEndpoint = process.env.NEXT_PUBLIC_API_URL || 'https://api.gigavibe.xyz';
 
   // Allocation percentages
   private readonly ALLOCATION_RULES = {
@@ -69,21 +70,36 @@ export class CommunityOwnershipService {
     contribution: CommunityContribution
   ): Promise<void> {
     try {
-      // Get existing contributions
-      const existing = this.contributions.get(performanceId) || [];
+      // Send contribution to API
+      const response = await fetch(`${this.apiEndpoint}/api/community/contributions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          performanceId,
+          contribution
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to record contribution: ${response.status}`);
+      }
+
+      // Get updated contributions from API
+      const result = await response.json();
       
-      // Check for duplicate contributions from same user
+      // Update local cache
+      const existing = this.contributions.get(performanceId) || [];
       const existingContribution = existing.find(
-        c => c.userAddress === contribution.userAddress && 
+        c => c.userAddress === contribution.userAddress &&
              c.contributionType === contribution.contributionType
       );
 
       if (existingContribution) {
-        // Update existing contribution
         existingContribution.metadata = contribution.metadata;
         existingContribution.timestamp = contribution.timestamp;
       } else {
-        // Add new contribution
         existing.push(contribution);
       }
 
@@ -218,22 +234,42 @@ export class CommunityOwnershipService {
     try {
       console.log(`🎯 Triggering coin creation for performance ${performanceId}`);
       
-      // In production, this would:
-      // 1. Generate the community card
-      // 2. Create coin metadata with all contributors
-      // 3. Mint the coin with proper allocations
-      // 4. Distribute ownership tokens
-      
-      // For now, just log the event
       const ownership = this.ownerships.get(performanceId);
-      if (ownership) {
-        console.log('Community Ownership Summary:', {
-          totalContributions: ownership.totalContributions,
-          voters: ownership.allocations.voters.length,
-          covers: ownership.allocations.coverArtists.length,
-          sharers: ownership.allocations.sharers.length
-        });
+      if (!ownership) {
+        throw new Error(`No ownership data found for performance ${performanceId}`);
       }
+      
+      // Send request to API to create the coin
+      const response = await fetch(`${this.apiEndpoint}/api/community/create-coin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          performanceId,
+          ownership
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create coin: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Update local cache with coin address
+      if (result.coinAddress) {
+        const updatedOwnership = { ...ownership, coinAddress: result.coinAddress };
+        this.ownerships.set(performanceId, updatedOwnership);
+      }
+      
+      console.log('Community Ownership Summary:', {
+        totalContributions: ownership.totalContributions,
+        voters: ownership.allocations.voters.length,
+        covers: ownership.allocations.coverArtists.length,
+        sharers: ownership.allocations.sharers.length,
+        coinAddress: result.coinAddress || 'pending'
+      });
     } catch (error) {
       console.error('Failed to trigger coin creation:', error);
     }
@@ -242,31 +278,94 @@ export class CommunityOwnershipService {
   /**
    * Get community ownership for a performance
    */
-  getCommunityOwnership(performanceId: string): CommunityOwnership | null {
-    return this.ownerships.get(performanceId) || null;
+  async getCommunityOwnership(performanceId: string): Promise<CommunityOwnership | null> {
+    try {
+      // Try to get from cache first
+      const cachedOwnership = this.ownerships.get(performanceId);
+      if (cachedOwnership) {
+        return cachedOwnership;
+      }
+      
+      // If not in cache, fetch from API
+      const response = await fetch(`${this.apiEndpoint}/api/community/ownership/${performanceId}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to get ownership: ${response.status}`);
+      }
+      
+      const ownership = await response.json();
+      
+      // Update cache
+      this.ownerships.set(performanceId, ownership);
+      
+      return ownership;
+    } catch (error) {
+      console.error(`Error fetching community ownership for ${performanceId}:`, error);
+      return null;
+    }
   }
 
   /**
    * Get all contributions for a performance
    */
-  getContributions(performanceId: string): CommunityContribution[] {
-    return this.contributions.get(performanceId) || [];
+  async getContributions(performanceId: string): Promise<CommunityContribution[]> {
+    try {
+      // Try to get from cache first
+      const cachedContributions = this.contributions.get(performanceId);
+      if (cachedContributions) {
+        return cachedContributions;
+      }
+      
+      // If not in cache, fetch from API
+      const response = await fetch(`${this.apiEndpoint}/api/community/contributions/${performanceId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to get contributions: ${response.status}`);
+      }
+      
+      const contributions = await response.json();
+      
+      // Update cache
+      this.contributions.set(performanceId, contributions);
+      
+      return contributions;
+    } catch (error) {
+      console.error(`Error fetching contributions for ${performanceId}:`, error);
+      return [];
+    }
   }
 
   /**
    * Get user's contributions across all performances
    */
-  getUserContributions(userAddress: Address): Array<{ performanceId: string; contribution: CommunityContribution }> {
-    const userContributions: Array<{ performanceId: string; contribution: CommunityContribution }> = [];
-    
-    for (const [performanceId, contributions] of this.contributions.entries()) {
-      const userContribs = contributions.filter(c => c.userAddress === userAddress);
-      userContribs.forEach(contribution => {
-        userContributions.push({ performanceId, contribution });
-      });
+  async getUserContributions(userAddress: Address): Promise<Array<{ performanceId: string; contribution: CommunityContribution }>> {
+    try {
+      // Fetch from API
+      const response = await fetch(`${this.apiEndpoint}/api/community/user-contributions/${userAddress}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to get user contributions: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching contributions for user ${userAddress}:`, error);
+      
+      // Fall back to local cache as backup
+      const userContributions: Array<{ performanceId: string; contribution: CommunityContribution }> = [];
+      
+      for (const [performanceId, contributions] of this.contributions.entries()) {
+        const userContribs = contributions.filter(c => c.userAddress === userAddress);
+        userContribs.forEach(contribution => {
+          userContributions.push({ performanceId, contribution });
+        });
+      }
+      
+      return userContributions;
     }
-    
-    return userContributions;
   }
 
   /**
@@ -281,45 +380,69 @@ export class CommunityOwnershipService {
       estimatedValue: number;
     }>;
   }> {
-    const userContributions = this.getUserContributions(userAddress);
-    const ownedCoins = [];
-    let totalValue = 0;
-
-    for (const { performanceId, contribution } of userContributions) {
-      const ownership = this.getCommunityOwnership(performanceId);
-      if (ownership && ownership.coinAddress) {
-        // Find user's allocation
-        let userPercentage = 0;
-        let contributionType = contribution.contributionType;
-
-        if (contribution.contributionType === 'original_performer') {
-          userPercentage = ownership.allocations.originalPerformer.percentage;
-        } else if (contribution.contributionType === 'voter') {
-          const voterAlloc = ownership.allocations.voters.find(v => v.address === userAddress);
-          userPercentage = voterAlloc?.percentage || 0;
-        } else if (contribution.contributionType === 'cover_artist') {
-          const coverAlloc = ownership.allocations.coverArtists.find(c => c.address === userAddress);
-          userPercentage = coverAlloc?.percentage || 0;
-        } else if (contribution.contributionType === 'sharer') {
-          const sharerAlloc = ownership.allocations.sharers.find(s => s.address === userAddress);
-          userPercentage = sharerAlloc?.percentage || 0;
-        }
-
-        // Mock coin value calculation (in production, get from market)
-        const estimatedCoinValue = 0.1; // 0.1 ETH
-        const estimatedValue = estimatedCoinValue * userPercentage;
-
-        ownedCoins.push({
-          performanceId,
-          percentage: userPercentage,
-          contributionType,
-          estimatedValue
-        });
-
-        totalValue += estimatedValue;
+    try {
+      // Fetch portfolio value from API
+      const response = await fetch(`${this.apiEndpoint}/api/community/portfolio/${userAddress}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to get portfolio: ${response.status}`);
       }
-    }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching portfolio for user ${userAddress}:`, error);
+      
+      // Fall back to local calculation as backup
+      const userContributions = await this.getUserContributions(userAddress);
+      const ownedCoins = [];
+      let totalValue = 0;
 
-    return { totalValue, ownedCoins };
+      for (const { performanceId, contribution } of userContributions) {
+        const ownership = await this.getCommunityOwnership(performanceId);
+        if (ownership && ownership.coinAddress) {
+          // Find user's allocation
+          let userPercentage = 0;
+          const contributionType = contribution.contributionType;
+
+          if (contribution.contributionType === 'original_performer') {
+            userPercentage = ownership.allocations.originalPerformer.percentage;
+          } else if (contribution.contributionType === 'voter') {
+            const voterAlloc = ownership.allocations.voters.find(v => v.address === userAddress);
+            userPercentage = voterAlloc?.percentage || 0;
+          } else if (contribution.contributionType === 'cover_artist') {
+            const coverAlloc = ownership.allocations.coverArtists.find(c => c.address === userAddress);
+            userPercentage = coverAlloc?.percentage || 0;
+          } else if (contribution.contributionType === 'sharer') {
+            const sharerAlloc = ownership.allocations.sharers.find(s => s.address === userAddress);
+            userPercentage = sharerAlloc?.percentage || 0;
+          }
+
+          // Get real coin value from market API
+          let estimatedCoinValue = 0.1; // Default fallback value
+          try {
+            const marketResponse = await fetch(`${this.apiEndpoint}/api/market/coin-value/${ownership.coinAddress}`);
+            if (marketResponse.ok) {
+              const marketData = await marketResponse.json();
+              estimatedCoinValue = marketData.value;
+            }
+          } catch (marketError) {
+            console.error(`Error fetching market value for coin ${ownership.coinAddress}:`, marketError);
+          }
+          
+          const estimatedValue = estimatedCoinValue * userPercentage;
+
+          ownedCoins.push({
+            performanceId,
+            percentage: userPercentage,
+            contributionType,
+            estimatedValue
+          });
+
+          totalValue += estimatedValue;
+        }
+      }
+
+      return { totalValue, ownedCoins };
+    }
   }
 }

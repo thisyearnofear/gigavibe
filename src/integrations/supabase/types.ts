@@ -11,198 +11,479 @@ export type Database = {
     Tables: {
       achievements: {
         Row: {
-          criteria: Json
-          description: string
-          icon: string
           id: string
-          name: string
+          title: string
+          description: string
+          icon: string | null
+          criteria: Json | null
+          created_at: string
         }
         Insert: {
-          criteria: Json
-          description: string
-          icon: string
           id?: string
-          name: string
+          title: string
+          description: string
+          icon?: string | null
+          criteria?: Json | null
+          created_at?: string
         }
         Update: {
-          criteria?: Json
+          id?: string
+          title?: string
           description?: string
-          icon?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      ai_model_configs: {
-        Row: {
-          cost_per_1k_tokens: number | null
-          id: string
-          is_enabled: boolean | null
-          max_tokens: number | null
-          model: Database["public"]["Enums"]["ai_model_type"]
-          rate_limit_per_minute: number | null
-          temperature: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          cost_per_1k_tokens?: number | null
-          id?: string
-          is_enabled?: boolean | null
-          max_tokens?: number | null
-          model: Database["public"]["Enums"]["ai_model_type"]
-          rate_limit_per_minute?: number | null
-          temperature?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          cost_per_1k_tokens?: number | null
-          id?: string
-          is_enabled?: boolean | null
-          max_tokens?: number | null
-          model?: Database["public"]["Enums"]["ai_model_type"]
-          rate_limit_per_minute?: number | null
-          temperature?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      ai_usage: {
-        Row: {
-          completion_tokens: number | null
-          error_message: string | null
-          estimated_cost: number | null
-          id: string
-          model: Database["public"]["Enums"]["ai_model_type"]
-          prompt_tokens: number | null
-          request_time: string | null
-          response_time_ms: number | null
-          status: string | null
-          total_tokens: number | null
-          user_id: string | null
-        }
-        Insert: {
-          completion_tokens?: number | null
-          error_message?: string | null
-          estimated_cost?: number | null
-          id?: string
-          model: Database["public"]["Enums"]["ai_model_type"]
-          prompt_tokens?: number | null
-          request_time?: string | null
-          response_time_ms?: number | null
-          status?: string | null
-          total_tokens?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          completion_tokens?: number | null
-          error_message?: string | null
-          estimated_cost?: number | null
-          id?: string
-          model?: Database["public"]["Enums"]["ai_model_type"]
-          prompt_tokens?: number | null
-          request_time?: string | null
-          response_time_ms?: number | null
-          status?: string | null
-          total_tokens?: number | null
-          user_id?: string | null
+          icon?: string | null
+          criteria?: Json | null
+          created_at?: string
         }
         Relationships: []
       }
       exercises: {
         Row: {
-          created_at: string
-          created_by_ai: boolean | null
-          description: string | null
-          difficulty: Database["public"]["Enums"]["exercise_difficulty"]
           id: string
-          name: string
-          notes: Json
-          type: Database["public"]["Enums"]["exercise_type"]
+          title: string
+          description: string | null
+          category: string | null
+          difficulty: number | null
+          notes: Json | null
+          created_at: string
         }
         Insert: {
-          created_at?: string
-          created_by_ai?: boolean | null
-          description?: string | null
-          difficulty: Database["public"]["Enums"]["exercise_difficulty"]
           id?: string
-          name: string
-          notes: Json
-          type: Database["public"]["Enums"]["exercise_type"]
+          title: string
+          description?: string | null
+          category?: string | null
+          difficulty?: number | null
+          notes?: Json | null
+          created_at?: string
         }
         Update: {
-          created_at?: string
-          created_by_ai?: boolean | null
-          description?: string | null
-          difficulty?: Database["public"]["Enums"]["exercise_difficulty"]
           id?: string
-          name?: string
-          notes?: Json
-          type?: Database["public"]["Enums"]["exercise_type"]
+          title?: string
+          description?: string | null
+          category?: string | null
+          difficulty?: number | null
+          notes?: Json | null
+          created_at?: string
         }
         Relationships: []
       }
       user_achievements: {
         Row: {
-          achievement_id: string
           id: string
-          unlocked_at: string
           user_id: string
+          achievement_id: string
+          unlocked_at: string
         }
         Insert: {
-          achievement_id: string
           id?: string
-          unlocked_at?: string
           user_id: string
+          achievement_id: string
+          unlocked_at?: string
         }
         Update: {
-          achievement_id?: string
           id?: string
-          unlocked_at?: string
           user_id?: string
+          achievement_id?: string
+          unlocked_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_achievements_achievement_id_fkey"
             columns: ["achievement_id"]
             isOneToOne: false
             referencedRelation: "achievements"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       user_exercise_sessions: {
         Row: {
-          completed_at: string
-          exercise_id: string
           id: string
-          performance_data: Json | null
-          score: number
           user_id: string
+          exercise_id: string
+          score: number | null
+          duration: number | null
+          notes: string | null
+          completed_at: string
         }
         Insert: {
-          completed_at?: string
-          exercise_id: string
           id?: string
-          performance_data?: Json | null
-          score: number
           user_id: string
+          exercise_id: string
+          score?: number | null
+          duration?: number | null
+          notes?: string | null
+          completed_at?: string
         }
         Update: {
-          completed_at?: string
-          exercise_id?: string
           id?: string
-          performance_data?: Json | null
-          score?: number
           user_id?: string
+          exercise_id?: string
+          score?: number | null
+          duration?: number | null
+          notes?: string | null
+          completed_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_exercise_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_exercise_sessions_exercise_id_fkey"
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercises"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      users: {
+        Row: {
+          id: string
+          wallet_address: string
+          farcaster_fid: number | null
+          display_name: string | null
+          pfp_url: string | null
+          bio: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          wallet_address: string
+          farcaster_fid?: number | null
+          display_name?: string | null
+          pfp_url?: string | null
+          bio?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          wallet_address?: string
+          farcaster_fid?: number | null
+          display_name?: string | null
+          pfp_url?: string | null
+          bio?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      performances: {
+        Row: {
+          id: string
+          farcaster_cast_id: string
+          user_id: string | null
+          title: string | null
+          content: string | null
+          audio_url: string | null
+          audio_duration: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          farcaster_cast_id: string
+          user_id?: string | null
+          title?: string | null
+          content?: string | null
+          audio_url?: string | null
+          audio_duration?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          farcaster_cast_id?: string
+          user_id?: string | null
+          title?: string | null
+          content?: string | null
+          audio_url?: string | null
+          audio_duration?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      performance_metrics: {
+        Row: {
+          id: string
+          performance_id: string
+          likes_count: number | null
+          replies_count: number | null
+          recasts_count: number | null
+          views_count: number | null
+          shares_count: number | null
+          last_updated: string
+        }
+        Insert: {
+          id?: string
+          performance_id: string
+          likes_count?: number | null
+          replies_count?: number | null
+          recasts_count?: number | null
+          views_count?: number | null
+          shares_count?: number | null
+          last_updated?: string
+        }
+        Update: {
+          id?: string
+          performance_id?: string
+          likes_count?: number | null
+          replies_count?: number | null
+          recasts_count?: number | null
+          views_count?: number | null
+          shares_count?: number | null
+          last_updated?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_metrics_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performances"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      performance_coins: {
+        Row: {
+          id: string
+          performance_id: string
+          coin_address: string
+          total_supply: number | null
+          initial_price: number | null
+          current_price: number | null
+          creator_allocation: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          performance_id: string
+          coin_address: string
+          total_supply?: number | null
+          initial_price?: number | null
+          current_price?: number | null
+          creator_allocation?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          performance_id?: string
+          coin_address?: string
+          total_supply?: number | null
+          initial_price?: number | null
+          current_price?: number | null
+          creator_allocation?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_coins_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performances"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      viral_queue: {
+        Row: {
+          id: string
+          performance_id: string
+          detection_score: number
+          status: string
+          detected_at: string
+          processed_at: string | null
+          result_message: string | null
+        }
+        Insert: {
+          id?: string
+          performance_id: string
+          detection_score: number
+          status: string
+          detected_at?: string
+          processed_at?: string | null
+          result_message?: string | null
+        }
+        Update: {
+          id?: string
+          performance_id?: string
+          detection_score?: number
+          status?: string
+          detected_at?: string
+          processed_at?: string | null
+          result_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viral_queue_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performances"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      viral_thresholds: {
+        Row: {
+          id: string
+          threshold_name: string
+          threshold_value: number
+          description: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          threshold_name: string
+          threshold_value: number
+          description?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          threshold_name?: string
+          threshold_value?: number
+          description?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          id: string
+          event_type: string
+          user_id: string | null
+          performance_id: string | null
+          event_data: Json | null
+          client_timestamp: string | null
+          server_timestamp: string
+        }
+        Insert: {
+          id?: string
+          event_type: string
+          user_id?: string | null
+          performance_id?: string | null
+          event_data?: Json | null
+          client_timestamp?: string | null
+          server_timestamp?: string
+        }
+        Update: {
+          id?: string
+          event_type?: string
+          user_id?: string | null
+          performance_id?: string | null
+          event_data?: Json | null
+          client_timestamp?: string | null
+          server_timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "analytics_events_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "performances"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          id: string
+          user_id: string
+          viral_notifications: boolean | null
+          coin_price_notifications: boolean | null
+          engagement_notifications: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          viral_notifications?: boolean | null
+          coin_price_notifications?: boolean | null
+          engagement_notifications?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          viral_notifications?: boolean | null
+          coin_price_notifications?: boolean | null
+          engagement_notifications?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          notification_type: string
+          content: string
+          read: boolean | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          notification_type: string
+          content: string
+          read?: boolean | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          notification_type?: string
+          content?: string
+          read?: boolean | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
         ]
       }
     }
@@ -213,9 +494,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      ai_model_type: "openai" | "anthropic" | "gemini"
-      exercise_difficulty: "beginner" | "intermediate" | "advanced"
-      exercise_type: "scale" | "arpeggio" | "interval" | "vibrato"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -226,114 +505,13 @@ export type Database = {
 type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+  TableName extends keyof DefaultSchema["Tables"] = keyof DefaultSchema["Tables"]
+> = DefaultSchema["Tables"][TableName]["Row"]
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  TableName extends keyof DefaultSchema["Tables"] = keyof DefaultSchema["Tables"]
+> = DefaultSchema["Tables"][TableName]["Insert"]
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      ai_model_type: ["openai", "anthropic", "gemini"],
-      exercise_difficulty: ["beginner", "intermediate", "advanced"],
-      exercise_type: ["scale", "arpeggio", "interval", "vibrato"],
-    },
-  },
-} as const
+  TableName extends keyof DefaultSchema["Tables"] = keyof DefaultSchema["Tables"]
+> = DefaultSchema["Tables"][TableName]["Update"]

@@ -62,6 +62,7 @@ export class ViralDetectionService {
 
   /**
    * Check a specific performance for viral eligibility
+   * @throws Error if eligibility check fails
    */
   async checkPerformanceEligibility(performance: RealityCheckResult): Promise<CoinEligibility | null> {
     try {
@@ -125,12 +126,16 @@ export class ViralDetectionService {
       return null;
     } catch (error) {
       console.error('Error checking performance eligibility:', error);
-      return null;
+      throw new Error(`Eligibility check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
    * Process viral performance and create coin
+   */
+  /**
+   * Process viral performance and create coin
+   * @throws Error if coin creation fails
    */
   async processViralPerformance(eligibility: CoinEligibility, walletClient?: any): Promise<boolean> {
     try {
@@ -147,47 +152,48 @@ export class ViralDetectionService {
         walletClient
       );
 
-      if (result) {
-        console.log(`✅ Coin created for viral performance: ${result.address}`);
-        
-        // Notify about coin creation
-        await this.notifyViralCoinCreation(eligibility, result.address);
-        
-        // Track viral event
-        await this.trackViralEvent(eligibility);
-        
-        return true;
-      } else {
-        console.log('❌ Failed to create coin for viral performance');
-        return false;
-      }
+      console.log(`✅ Coin created for viral performance: ${result.address}`);
+      
+      // Notify about coin creation
+      await this.notifyViralCoinCreation(eligibility, result.address);
+      
+      // Track viral event
+      await this.trackViralEvent(eligibility);
+      
+      return true;
     } catch (error) {
       console.error('Error processing viral performance:', error);
-      return false;
+      throw new Error(`Viral coin creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
    * Check all recent performances for viral eligibility
    */
+  /**
+   * Check all recent performances for viral eligibility
+   * @throws Error if performance retrieval fails
+   */
   private async checkAllPerformances(): Promise<void> {
     try {
-      // In production, this would query recent performances from database
       const recentPerformances = await this.getRecentPerformances();
       
       for (const performance of recentPerformances) {
-        const eligibility = await this.checkPerformanceEligibility(performance);
-        
-        if (eligibility) {
-          console.log(`🔥 Viral performance detected: ${eligibility.reason}`);
+        try {
+          const eligibility = await this.checkPerformanceEligibility(performance);
           
-          // In production, this would queue for coin creation
-          // For now, just log the detection
-          await this.queueForCoinCreation(eligibility);
+          if (eligibility) {
+            console.log(`🔥 Viral performance detected: ${eligibility.reason}`);
+            await this.queueForCoinCreation(eligibility);
+          }
+        } catch (error) {
+          // Log individual performance check errors but continue checking others
+          console.error(`Error checking performance ${performance.id}:`, error);
         }
       }
     } catch (error) {
       console.error('Error checking all performances:', error);
+      throw new Error(`Performance monitoring failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -203,107 +209,261 @@ export class ViralDetectionService {
   /**
    * Calculate engagement rate (interactions / views)
    */
+  /**
+   * Calculate engagement rate (interactions / views)
+   * @throws Error if engagement data retrieval fails
+   */
   private async calculateEngagementRate(performance: RealityCheckResult): Promise<number> {
-    // In production, this would calculate based on actual view/interaction data
-    // Mock calculation for now
-    const estimatedViews = performance.shareCount * 10; // Rough estimate
-    const interactions = performance.shareCount + (performance.communityRating * 20);
-    return interactions / Math.max(estimatedViews, 1);
+    try {
+      const response = await fetch(`/api/analytics/engagement/${performance.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.engagementRate || 0;
+    } catch (error) {
+      console.error('Failed to calculate engagement rate:', error);
+      throw new Error(`Engagement rate calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Check if performance already has a coin
+   * @throws Error if coin check fails
    */
   private async hasExistingCoin(performanceId: string): Promise<boolean> {
-    // In production, this would check database for existing coins
-    // For now, return false (no existing coins)
-    return false;
+    try {
+      const response = await fetch(`/api/zora/has-coin/${performanceId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.hasCoin || false;
+    } catch (error) {
+      console.error('Failed to check for existing coin:', error);
+      throw new Error(`Coin existence check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Get recent performances for monitoring
+   * @throws Error if performance retrieval fails
    */
   private async getRecentPerformances(): Promise<RealityCheckResult[]> {
-    // In production, this would query database for performances from last 24 hours
-    // For now, return empty array (no monitoring in development)
-    return [];
+    try {
+      const response = await fetch('/api/performances/recent?hours=24');
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.performances || [];
+    } catch (error) {
+      console.error('Failed to get recent performances:', error);
+      throw new Error(`Recent performance retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Queue performance for coin creation
+   * @throws Error if queuing fails
    */
   private async queueForCoinCreation(eligibility: CoinEligibility): Promise<void> {
-    // In production, this would add to a job queue for processing
-    console.log(`📋 Queued for coin creation: ${eligibility.performance.challengeTitle}`);
-    
-    // Store in local storage for demo purposes
-    const queue = JSON.parse(localStorage.getItem('viralQueue') || '[]');
-    queue.push({
-      ...eligibility,
-      queuedAt: new Date().toISOString()
-    });
-    localStorage.setItem('viralQueue', JSON.stringify(queue));
+    try {
+      console.log(`📋 Queuing for coin creation: ${eligibility.performance.challengeTitle}`);
+      
+      const response = await fetch('/api/viral/queue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eligibility,
+          queuedAt: new Date().toISOString()
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log(`✅ Successfully queued for coin creation: ${eligibility.performance.challengeTitle}`);
+    } catch (error) {
+      console.error('Failed to queue for coin creation:', error);
+      throw new Error(`Queuing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Notify about viral coin creation
+   * @throws Error if notification fails
    */
   private async notifyViralCoinCreation(eligibility: CoinEligibility, coinAddress: string): Promise<void> {
-    // In production, this would send notifications to users, social media, etc.
-    console.log(`🎉 VIRAL COIN CREATED: ${eligibility.performance.challengeTitle} → ${coinAddress}`);
-    
-    // Could trigger:
-    // - Push notifications
-    // - Social media posts
-    // - Discord/Telegram announcements
-    // - Email notifications to followers
+    try {
+      console.log(`🎉 VIRAL COIN CREATED: ${eligibility.performance.challengeTitle} → ${coinAddress}`);
+      
+      const response = await fetch('/api/notifications/viral-coin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          performanceId: eligibility.performance.id,
+          coinAddress,
+          viralType: eligibility.type,
+          reason: eligibility.reason,
+          challengeTitle: eligibility.performance.challengeTitle
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log('✅ Viral coin notifications sent successfully');
+    } catch (error) {
+      console.error('Failed to send viral coin notifications:', error);
+      throw new Error(`Notification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Track viral event for analytics
+   * @throws Error if tracking fails
    */
   private async trackViralEvent(eligibility: CoinEligibility): Promise<void> {
-    // In production, this would send to analytics service
-    const event = {
-      type: 'viral_coin_created',
-      performanceId: eligibility.performance.id,
-      viralType: eligibility.type,
-      reason: eligibility.reason,
-      shareCount: eligibility.performance.shareCount,
-      communityRating: eligibility.performance.communityRating,
-      gap: eligibility.performance.gap,
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log('📊 Viral event tracked:', event);
+    try {
+      const event = {
+        type: 'viral_coin_created',
+        performanceId: eligibility.performance.id,
+        viralType: eligibility.type,
+        reason: eligibility.reason,
+        shareCount: eligibility.performance.shareCount,
+        communityRating: eligibility.performance.communityRating,
+        gap: eligibility.performance.gap,
+        timestamp: new Date().toISOString()
+      };
+      
+      const response = await fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(event),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log('📊 Viral event tracked successfully');
+    } catch (error) {
+      console.error('Failed to track viral event:', error);
+      throw new Error(`Event tracking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Get viral queue for admin dashboard
+   * @throws Error if queue retrieval fails
    */
-  getViralQueue(): any[] {
-    return JSON.parse(localStorage.getItem('viralQueue') || '[]');
+  async getViralQueue(): Promise<any[]> {
+    try {
+      const response = await fetch('/api/viral/queue');
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.queue || [];
+    } catch (error) {
+      console.error('Failed to get viral queue:', error);
+      throw new Error(`Queue retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Clear viral queue
+   * @throws Error if queue clearing fails
    */
-  clearViralQueue(): void {
-    localStorage.removeItem('viralQueue');
+  async clearViralQueue(): Promise<void> {
+    try {
+      const response = await fetch('/api/viral/queue/clear', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log('🧹 Viral queue cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear viral queue:', error);
+      throw new Error(`Queue clearing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
    * Update viral thresholds (for admin configuration)
+   * @throws Error if threshold update fails
    */
-  updateThresholds(newThresholds: Partial<typeof this.VIRAL_THRESHOLDS>): void {
-    Object.assign(this.VIRAL_THRESHOLDS, newThresholds);
-    console.log('🔧 Viral thresholds updated:', this.VIRAL_THRESHOLDS);
+  async updateThresholds(newThresholds: Partial<typeof this.VIRAL_THRESHOLDS>): Promise<void> {
+    try {
+      // First update local copy for immediate use
+      Object.assign(this.VIRAL_THRESHOLDS, newThresholds);
+      
+      // Then persist to server
+      const response = await fetch('/api/viral/thresholds', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newThresholds),
+      });
+      
+      if (!response.ok) {
+        // Revert local changes if server update fails
+        const currentThresholds = await this.getThresholds();
+        Object.assign(this.VIRAL_THRESHOLDS, currentThresholds);
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log('🔧 Viral thresholds updated:', this.VIRAL_THRESHOLDS);
+    } catch (error) {
+      console.error('Failed to update thresholds:', error);
+      throw new Error(`Threshold update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
-   * Get current thresholds
+   * Get current thresholds from server
+   * @throws Error if threshold retrieval fails
    */
-  getThresholds(): typeof this.VIRAL_THRESHOLDS {
-    return { ...this.VIRAL_THRESHOLDS };
+  async getThresholds(): Promise<typeof this.VIRAL_THRESHOLDS> {
+    try {
+      const response = await fetch('/api/viral/thresholds');
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Update local copy to ensure sync with server
+      Object.assign(this.VIRAL_THRESHOLDS, data.thresholds);
+      
+      return { ...this.VIRAL_THRESHOLDS };
+    } catch (error) {
+      console.error('Failed to get thresholds:', error);
+      // Fall back to local copy if server retrieval fails
+      console.log('Using local thresholds as fallback');
+      return { ...this.VIRAL_THRESHOLDS };
+    }
   }
 }

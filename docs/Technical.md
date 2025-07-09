@@ -71,7 +71,7 @@ GIGAVIBE leverages the Farcaster protocol as a decentralized social database, el
 
 ## 📊 Benefits of Farcaster-Native Approach
 
-- **Zero Infrastructure**: No backend servers, databases, API rate limits, or hosting costs.
+- **Hybrid Infrastructure**: Farcaster for social data and interactions, Supabase for supplemental data storage.
 - **Built-in Social Features**: Real user profiles, follow relationships, native sharing, and notifications.
 - **Viral Mechanics**: Farcaster algorithm for content surfacing, recasts for sharing, trending feeds, and cross-app composability.
 - **Real Identity**: Verified users, established reputation systems, social proof, and minimal bot issues.
@@ -87,6 +87,7 @@ GIGAVIBE leverages the Farcaster protocol as a decentralized social database, el
 ## 🔧 Technical Implementation Details
 
 - **FarcasterDataService**: Manages performance creation, retrieval, voting, and search functionalities.
+
   ```typescript
   class FarcasterDataService {
     // Upload performance to Farcaster
@@ -108,7 +109,103 @@ GIGAVIBE leverages the Farcaster protocol as a decentralized social database, el
     async searchPerformances(query: string): Promise<Performance[]>;
   }
   ```
+
 - **Data Flow**: Audio recording to IPFS upload, metadata creation, Farcaster posting, community engagement, viral detection, and coin creation announcements.
+
+## 📦 Supabase Database Architecture
+
+GIGAVIBE uses a Supabase PostgreSQL database to complement Farcaster's social data, providing persistent storage for data not natively handled by Farcaster or Zora protocols.
+
+### Schema Design
+
+```sql
+-- Core tables for user data and performances
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  wallet_address TEXT UNIQUE NOT NULL,
+  farcaster_fid INTEGER UNIQUE,
+  display_name TEXT,
+  pfp_url TEXT
+);
+
+CREATE TABLE performances (
+  id UUID PRIMARY KEY,
+  farcaster_cast_id TEXT UNIQUE NOT NULL,
+  user_id UUID REFERENCES users(id),
+  title TEXT,
+  audio_url TEXT,
+  audio_duration REAL
+);
+
+-- Supporting tables for analytics, viral detection, and notifications
+CREATE TABLE performance_metrics (
+  id UUID PRIMARY KEY,
+  performance_id UUID REFERENCES performances(id),
+  likes_count INTEGER DEFAULT 0,
+  replies_count INTEGER DEFAULT 0,
+  recasts_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE viral_queue (
+  id UUID PRIMARY KEY,
+  performance_id UUID REFERENCES performances(id),
+  detection_score REAL NOT NULL,
+  status TEXT CHECK (status IN ('pending', 'processing', 'completed', 'failed'))
+);
+
+CREATE TABLE analytics_events (
+  id UUID PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  user_id UUID REFERENCES users(id),
+  performance_id UUID REFERENCES performances(id),
+  event_data JSONB
+);
+```
+
+### DatabaseService Implementation
+
+```typescript
+class DatabaseService {
+  // User methods
+  async getUserByWallet(walletAddress: string): Promise<User | null>;
+  async createOrUpdateUser(user: Partial<User>): Promise<User | null>;
+
+  // Performance methods
+  async getPerformanceById(id: string): Promise<Performance | null>;
+  async getRecentPerformances(limit: number): Promise<Performance[]>;
+
+  // Analytics methods
+  async trackEvent(event: Partial<AnalyticsEvent>): Promise<void>;
+
+  // Viral detection methods
+  async getViralThresholds(): Promise<ViralThreshold[]>;
+  async addToViralQueue(
+    queueItem: Partial<ViralQueueItem>
+  ): Promise<ViralQueueItem | null>;
+
+  // Notification methods
+  async createNotification(
+    notification: Partial<Notification>
+  ): Promise<Notification | null>;
+}
+```
+
+### Row-Level Security
+
+The database implements Row-Level Security (RLS) policies to ensure data access control:
+
+```sql
+-- Basic RLS policies
+CREATE POLICY "Users can view all profiles" ON users FOR SELECT USING (true);
+CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (wallet_address = auth.jwt() ->> 'sub');
+
+-- Only admins can view/modify viral queue
+CREATE POLICY "Admins can manage viral queue" ON viral_queue USING (auth.jwt() ->> 'role' = 'service_role');
+
+-- Analytics policies
+CREATE POLICY "Anyone can insert analytics" ON analytics_events FOR INSERT WITH CHECK (true);
+CREATE POLICY "Only admins can view analytics" ON analytics_events FOR SELECT USING (auth.jwt() ->> 'role' = 'service_role');
+```
 
 ## 🌐 Dual Access Strategy: MiniKit vs SIWN
 

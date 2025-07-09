@@ -231,62 +231,69 @@ export class SunoService {
   }
 
   /**
-   * Wait for vocal separation completion (mock implementation)
+   * Wait for vocal separation completion
    */
-  private static async waitForVocalSeparation(taskId: string): Promise<{
+  private static async waitForVocalSeparation(taskId: string, maxAttempts = 30): Promise<{
     instrumental_url: string;
     vocal_url: string;
     origin_url: string;
   }> {
-    // In a real implementation, you'd poll for vocal separation completion
-    // For now, we'll simulate the response
-    await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await axios.get(
+          `${this.BASE_URL}/vocal-removal/record-info`,
+          {
+            params: { taskId },
+            headers: this.getHeaders()
+          }
+        );
+        
+        const result = response.data;
+        
+        if (result.code !== 200) {
+          throw new Error(`API error: ${result.msg}`);
+        }
+        
+        // Check if vocal separation is complete
+        if (result.data.status === 'SUCCESS' && result.data.vocal_removal_info) {
+          return {
+            instrumental_url: result.data.vocal_removal_info.instrumental_url,
+            vocal_url: result.data.vocal_removal_info.vocal_url,
+            origin_url: result.data.vocal_removal_info.origin_url
+          };
+        }
+        
+        if (result.data.status.includes('FAILED') || result.data.status.includes('ERROR')) {
+          throw new Error(`Vocal separation failed with status: ${result.data.status}`);
+        }
+        
+        // Wait before polling again
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } catch (error) {
+        // Only throw on last attempt, otherwise keep trying
+        if (attempt === maxAttempts - 1) {
+          console.error('Vocal separation polling failed:', error);
+          throw error;
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
     
-    return {
-      instrumental_url: `https://mock-cdn.com/${taskId}_instrumental.mp3`,
-      vocal_url: `https://mock-cdn.com/${taskId}_vocal.mp3`,
-      origin_url: `https://mock-cdn.com/${taskId}_original.mp3`
-    };
+    throw new Error('Vocal separation timeout');
   }
 
   /**
-   * Get pre-generated viral challenges for quick testing
+   * Get featured challenges from the API
    */
-  static getMockChallenges(): ViralChallenge[] {
-    return [
-      {
-        id: 'mock-1',
-        title: 'Catchy Pop Hook',
-        originalAudio: '/mock-audio/pop-original.mp3',
-        instrumentalAudio: '/mock-audio/pop-instrumental.mp3',
-        vocalsOnlyAudio: '/mock-audio/pop-vocals.mp3',
-        duration: 30,
-        prompt: 'A catchy pop chorus with memorable melody',
-        tags: 'pop, catchy, upbeat',
-        difficulty: 'Easy'
-      },
-      {
-        id: 'mock-2',
-        title: 'Soulful R&B Verse',
-        originalAudio: '/mock-audio/rnb-original.mp3',
-        instrumentalAudio: '/mock-audio/rnb-instrumental.mp3',
-        vocalsOnlyAudio: '/mock-audio/rnb-vocals.mp3',
-        duration: 45,
-        prompt: 'A smooth R&B verse with emotional delivery',
-        tags: 'rnb, smooth, emotional',
-        difficulty: 'Medium'
-      },
-      {
-        id: 'mock-3',
-        title: 'Rock Anthem Chorus',
-        originalAudio: '/mock-audio/rock-original.mp3',
-        instrumentalAudio: '/mock-audio/rock-instrumental.mp3',
-        vocalsOnlyAudio: '/mock-audio/rock-vocals.mp3',
-        duration: 60,
-        prompt: 'A powerful rock anthem with soaring vocals',
-        tags: 'rock, powerful, anthem',
-        difficulty: 'Hard'
-      }
-    ];
+  static async getFeaturedChallenges(): Promise<ViralChallenge[]> {
+    try {
+      const response = await axios.get('/api/challenges/featured');
+      return response.data.challenges;
+    } catch (error) {
+      console.error('Failed to fetch featured challenges:', error);
+      throw error;
+    }
   }
 }

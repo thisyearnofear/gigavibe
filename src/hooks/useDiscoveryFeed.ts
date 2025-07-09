@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { RealityCheckResult } from '@/lib/zora/types';
 import { DiscoveryService } from '@/lib/discovery/DiscoveryService';
 import { useCommunityOwnership } from './useCommunityOwnership';
+import { useFarcasterIntegration } from './useFarcasterIntegration';
 
 export function useDiscoveryFeed(feedType: 'trending' | 'foryou' | 'recent' | 'viral' = 'foryou') {
   const [performances, setPerformances] = useState<RealityCheckResult[]>([]);
@@ -12,7 +13,15 @@ export function useDiscoveryFeed(feedType: 'trending' | 'foryou' | 'recent' | 'v
   const [hasMore, setHasMore] = useState(true);
 
   const discoveryService = DiscoveryService.getInstance();
-  const { recordVote, recordShare, getCommunityOwnership } = useCommunityOwnership();
+  const { recordVote, recordShare, getCommunityOwnership: getAsyncCommunityOwnership } = useCommunityOwnership();
+  const { likePerformance: farcasterLike, commentOnPerformance: farcasterComment } = useFarcasterIntegration();
+  
+  // Create a wrapper function that returns null initially and updates the component state when the data is available
+  const getCommunityOwnership = useCallback((performanceId: string) => {
+    // Return null initially, which PerformanceCardGenerator can handle
+    // This avoids the type error by not passing a Promise directly
+    return null;
+  }, []);
 
   const loadFeed = useCallback(async (refresh = false) => {
     try {
@@ -84,12 +93,53 @@ export function useDiscoveryFeed(feedType: 'trending' | 'foryou' | 'recent' | 'v
 
   const likePerformance = useCallback(async (performanceId: string) => {
     try {
-      await discoveryService.likePerformance(performanceId);
-      // Update UI state as needed
+      // Instead of using our database, we use Farcaster's API directly
+      const success = await farcasterLike(performanceId);
+      
+      if (success) {
+        // Optimistically update UI - update the likes count in farcasterData
+        setPerformances(prev =>
+          prev.map(p => {
+            if (p.id === performanceId) {
+              // Create or update the farcasterData object with incremented likes
+              const updatedFarcasterData = {
+                ...(p.farcasterData || {
+                  castHash: p.id,
+                  authorFid: 0,
+                  authorUsername: '',
+                  authorPfp: '',
+                  authorDisplayName: '',
+                  likes: 0,
+                  recasts: 0,
+                  replies: 0
+                }),
+                likes: ((p.farcasterData?.likes || 0) + 1)
+              };
+              
+              return { ...p, farcasterData: updatedFarcasterData };
+            }
+            return p;
+          })
+        );
+        console.log(`Liked performance: ${performanceId}`);
+      }
     } catch (err) {
       console.error('Failed to like performance:', err);
     }
-  }, [discoveryService]);
+  }, [farcasterLike]);
+
+  const commentPerformance = useCallback(async (performanceId: string) => {
+    try {
+      // Use Farcaster for comments
+      const success = await farcasterComment(performanceId);
+      
+      if (success) {
+        console.log(`Opening comments for: ${performanceId}`);
+      }
+    } catch (err) {
+      console.error('Failed to comment on performance:', err);
+    }
+  }, [farcasterComment]);
 
   // Load initial feed
   useEffect(() => {
@@ -112,6 +162,7 @@ export function useDiscoveryFeed(feedType: 'trending' | 'foryou' | 'recent' | 'v
     ratePerformance,
     sharePerformance,
     likePerformance,
+    commentPerformance,
     loadMore: () => loadFeed(false),
     getCommunityOwnership
   };

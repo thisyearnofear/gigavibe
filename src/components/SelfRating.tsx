@@ -1,34 +1,45 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 interface SelfRatingProps {
   onRatingSubmit: (rating: number, confidence: string) => void;
   challengeTitle: string;
+  isLoading?: boolean;
 }
 
-export default function SelfRating({ onRatingSubmit, challengeTitle }: SelfRatingProps) {
+export default function SelfRating({
+  onRatingSubmit,
+  challengeTitle,
+  isLoading = false,
+}: SelfRatingProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [confidence, setConfidence] = useState('');
+  const [confidence, setConfidence] = useState("");
 
   const confidenceOptions = [
-    { id: 'modest', label: 'Pretty good, I think', emoji: '😊' },
-    { id: 'confident', label: 'Nailed it completely', emoji: '😎' },
-    { id: 'unsure', label: 'Honestly not sure', emoji: '🤷‍♀️' },
-    { id: 'showoff', label: 'I should go pro', emoji: '🎤' }
+    { id: "modest", label: "Pretty good, I think", emoji: "😊" },
+    { id: "confident", label: "Nailed it completely", emoji: "😎" },
+    { id: "unsure", label: "Honestly not sure", emoji: "🤷‍♀️" },
+    { id: "showoff", label: "I should go pro", emoji: "🎤" },
   ];
 
   const getRatingText = (stars: number) => {
     switch (stars) {
-      case 1: return "Needs work";
-      case 2: return "Getting there";
-      case 3: return "Not bad";
-      case 4: return "Pretty good";
-      case 5: return "Absolutely nailed it";
-      default: return "How did you do?";
+      case 1:
+        return "Needs work";
+      case 2:
+        return "Getting there";
+      case 3:
+        return "Not bad";
+      case 4:
+        return "Pretty good";
+      case 5:
+        return "Absolutely nailed it";
+      default:
+        return "How did you do?";
     }
   };
 
@@ -52,9 +63,7 @@ export default function SelfRating({ onRatingSubmit, challengeTitle }: SelfRatin
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          <h1 className="text-3xl font-bold mb-4">
-            How did you do?
-          </h1>
+          <h1 className="text-3xl font-bold mb-4">How did you do?</h1>
           <p className="text-lg text-gray-300 mb-2">
             Rate your {challengeTitle} performance
           </p>
@@ -84,14 +93,14 @@ export default function SelfRating({ onRatingSubmit, challengeTitle }: SelfRatin
                 <Star
                   className={`w-8 h-8 transition-colors duration-200 ${
                     star <= (hoveredRating || rating)
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-gray-600'
+                      ? "text-yellow-400 fill-yellow-400"
+                      : "text-gray-600"
                   }`}
                 />
               </motion.button>
             ))}
           </div>
-          
+
           <motion.p
             className="text-xl font-semibold"
             key={hoveredRating || rating}
@@ -111,7 +120,9 @@ export default function SelfRating({ onRatingSubmit, challengeTitle }: SelfRatin
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <h3 className="text-lg font-semibold mb-4">How confident are you?</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              How confident are you?
+            </h3>
             <div className="space-y-3">
               {confidenceOptions.map((option) => (
                 <motion.button
@@ -119,8 +130,8 @@ export default function SelfRating({ onRatingSubmit, challengeTitle }: SelfRatin
                   onClick={() => setConfidence(option.id)}
                   className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 ${
                     confidence === option.id
-                      ? 'border-purple-500 bg-purple-500/20'
-                      : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
+                      ? "border-purple-500 bg-purple-500/20"
+                      : "border-gray-600 bg-gray-800/50 hover:border-gray-500"
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -139,14 +150,17 @@ export default function SelfRating({ onRatingSubmit, challengeTitle }: SelfRatin
         {rating > 0 && confidence && (
           <motion.button
             onClick={handleSubmit}
-            className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold text-lg"
+            className={`w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold text-lg ${
+              isLoading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: isLoading ? 1 : 0.98 }}
+            disabled={isLoading}
           >
-            Submit My Rating
+            {isLoading ? "Processing..." : "Submit My Rating"}
           </motion.button>
         )}
       </motion.div>

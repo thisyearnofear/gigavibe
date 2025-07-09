@@ -1,18 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from 'framer-motion';
-import { usePitchDetection } from '@/hooks/usePitchDetection';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei';
-import { Mic, Share2, Heart, X, ChevronUp } from 'lucide-react';
-import StructuredChallenge from './StructuredChallenge';
-import ViralChallenge from './ViralChallenge';
+import { useState, useEffect, useRef } from "react";
+import {
+  motion,
+  AnimatePresence,
+  PanInfo,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import { usePitchDetection } from "@/hooks/usePitchDetection";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Sphere, MeshDistortMaterial } from "@react-three/drei";
+import { Mic, Share2, Heart, X, ChevronUp } from "lucide-react";
+import StructuredChallenge from "./StructuredChallenge";
+import ViralChallenge from "./ViralChallenge";
 
 // Smooth 3D Audio Visualizer
-function AudioVisualizer({ frequency, volume, isListening }: { frequency: number; volume: number; isListening: boolean }) {
+function AudioVisualizer({
+  frequency,
+  volume,
+  isListening,
+}: {
+  frequency: number;
+  volume: number;
+  isListening: boolean;
+}) {
   const meshRef = useRef<any>(null);
-  
+
   useEffect(() => {
     if (meshRef.current && isListening) {
       const intensity = Math.min(1, volume / 40);
@@ -35,19 +49,24 @@ function AudioVisualizer({ frequency, volume, isListening }: { frequency: number
           metalness={0.2}
         />
       </Sphere>
-      <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
+      <OrbitControls
+        enableZoom={false}
+        enablePan={false}
+        autoRotate
+        autoRotateSpeed={0.5}
+      />
     </Canvas>
   );
 }
 
 // Tinder-style Swipeable Card
-function SwipeableCard({ 
-  children, 
-  onSwipeLeft, 
-  onSwipeRight, 
+function SwipeableCard({
+  children,
+  onSwipeLeft,
+  onSwipeRight,
   onSwipeUp,
-  className = "" 
-}: { 
+  className = "",
+}: {
   children: React.ReactNode;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
@@ -61,7 +80,7 @@ function SwipeableCard({
 
   const handleDragEnd = (event: any, info: PanInfo) => {
     const threshold = 100;
-    
+
     if (info.offset.x > threshold && onSwipeRight) {
       onSwipeRight();
     } else if (info.offset.x < -threshold && onSwipeLeft) {
@@ -91,7 +110,13 @@ function SwipeableCard({
 }
 
 // Smooth Progress Ring
-function ProgressRing({ progress, size = 120 }: { progress: number; size?: number }) {
+function ProgressRing({
+  progress,
+  size = 120,
+}: {
+  progress: number;
+  size?: number;
+}) {
   const circumference = 2 * Math.PI * (size / 2 - 8);
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -128,7 +153,7 @@ function ProgressRing({ progress, size = 120 }: { progress: number; size?: numbe
         </defs>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <motion.span 
+        <motion.span
           className="text-2xl font-semibold text-white"
           key={progress}
           initial={{ scale: 0.8, opacity: 0 }}
@@ -143,29 +168,30 @@ function ProgressRing({ progress, size = 120 }: { progress: number; size?: numbe
 }
 
 // Smooth Button Component
-function SmoothButton({ 
-  children, 
-  onClick, 
+function SmoothButton({
+  children,
+  onClick,
   variant = "primary",
   size = "lg",
-  className = "" 
-}: { 
-  children: React.ReactNode; 
-  onClick: () => void; 
+  className = "",
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
   variant?: "primary" | "secondary" | "ghost";
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
   const variants = {
-    primary: "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg",
+    primary:
+      "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg",
     secondary: "bg-white/10 backdrop-blur-md border border-white/20 text-white",
-    ghost: "bg-transparent text-white hover:bg-white/10"
+    ghost: "bg-transparent text-white hover:bg-white/10",
   };
 
   const sizes = {
     sm: "px-4 py-2 text-sm",
-    md: "px-6 py-3 text-base", 
-    lg: "px-8 py-4 text-lg"
+    md: "px-6 py-3 text-base",
+    lg: "px-8 py-4 text-lg",
   };
 
   return (
@@ -178,9 +204,12 @@ function SmoothButton({
         transition-all duration-200
         ${className}
       `}
-      whileHover={{ 
+      whileHover={{
         scale: 1.02,
-        boxShadow: variant === "primary" ? "0 20px 40px rgba(99, 102, 241, 0.3)" : undefined
+        boxShadow:
+          variant === "primary"
+            ? "0 20px 40px rgba(99, 102, 241, 0.3)"
+            : undefined,
       }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -190,14 +219,37 @@ function SmoothButton({
   );
 }
 
-export default function SmoothVocalChallenge({ onChallengeComplete }: { onChallengeComplete?: (challengeTitle: string, audioUrl: string) => void }) {
-  const { pitchData, isListening, startListening, stopListening, error, hasPermission } = usePitchDetection();
+interface SmoothVocalChallengeProps {
+  onChallengeComplete?: (
+    challengeTitle: string,
+    audioUrl: string,
+    challengeId?: string
+  ) => void;
+  isLoading?: boolean;
+}
+
+export default function SmoothVocalChallenge({
+  onChallengeComplete,
+  isLoading = false,
+}: SmoothVocalChallengeProps) {
+  const {
+    pitchData,
+    isListening,
+    startListening,
+    stopListening,
+    error,
+    hasPermission,
+  } = usePitchDetection();
   const [accuracy, setAccuracy] = useState(0);
-  const [phase, setPhase] = useState<'intro' | 'challenge' | 'results'>('intro');
+  const [phase, setPhase] = useState<"intro" | "challenge" | "results">(
+    "intro"
+  );
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
-  const [selectedChallengeTitle, setSelectedChallengeTitle] = useState<string>('');
-  
+  const [selectedChallengeTitle, setSelectedChallengeTitle] =
+    useState<string>("");
+  const [challengeId, setChallengeId] = useState<string>("");
+
   useEffect(() => {
     if (isListening && pitchData.frequency > 0) {
       const newAccuracy = Math.max(0, 100 - Math.abs(pitchData.cents));
@@ -212,7 +264,7 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
       difficulty: "Fun Mode",
       duration: "30s",
       color: "from-purple-500 to-pink-600",
-      type: "viral"
+      type: "viral",
     },
     {
       title: "Vocal Range Test",
@@ -220,29 +272,29 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
       difficulty: "Training",
       duration: "2 min",
       color: "from-blue-500 to-indigo-600",
-      type: "structured"
+      type: "structured",
     },
     {
       title: "Show Off Mode",
       description: "Time to prove you've got the goods",
-      difficulty: "Advanced", 
+      difficulty: "Advanced",
       duration: "5 min",
       color: "from-pink-500 to-red-600",
-      type: "structured"
-    }
+      type: "structured",
+    },
   ];
 
   // Permission screen - Clean and sophisticated
   if (!hasPermission && !isListening) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative overflow-hidden">
-        <motion.div 
+        <motion.div
           className="flex flex-col items-center justify-center min-h-screen p-8 text-white"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
         >
-          <motion.div 
+          <motion.div
             className="w-32 h-32 mb-12 relative"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -252,8 +304,8 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
               <Mic className="w-16 h-16 text-white" />
             </div>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="text-center space-y-6 max-w-md"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -263,10 +315,11 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
               Ready to find out how you really sound?
             </h1>
             <p className="text-xl text-gray-300 leading-relaxed">
-              We need microphone access to analyze your voice. Don't worry, we've heard worse.
+              We need microphone access to analyze your voice. Don't worry,
+              we've heard worse.
             </p>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -286,16 +339,16 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative overflow-hidden">
       {/* Subtle animated background */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-purple-600/10 to-pink-600/10"
         animate={{
-          opacity: isListening ? [0.1, 0.2, 0.1] : 0.1
+          opacity: isListening ? [0.1, 0.2, 0.1] : 0.1,
         }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Clean Header */}
-      <motion.div 
+      <motion.div
         className="relative z-10 flex items-center justify-between p-6 backdrop-blur-md bg-white/5"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -305,22 +358,26 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
             <motion.div
               animate={{ rotate: isListening ? 360 : 0 }}
-              transition={{ duration: 2, repeat: isListening ? Infinity : 0, ease: "linear" }}
+              transition={{
+                duration: 2,
+                repeat: isListening ? Infinity : 0,
+                ease: "linear",
+              }}
             >
               <Mic className="w-5 h-5 text-white" />
             </motion.div>
           </div>
           <span className="font-semibold text-xl text-white">GIGAVIBE</span>
         </div>
-        
+
         <SmoothButton onClick={() => {}} variant="ghost" size="sm">
           <Share2 className="w-5 h-5" />
         </SmoothButton>
       </motion.div>
 
-      {phase === 'intro' && (
+      {phase === "intro" && (
         <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] p-6">
-          <motion.h2 
+          <motion.h2
             className="text-3xl font-bold text-white text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -328,7 +385,7 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
           >
             Choose Your Challenge
           </motion.h2>
-          
+
           {/* Tinder-style card stack */}
           <div className="relative w-full max-w-sm h-96">
             <AnimatePresence>
@@ -337,28 +394,32 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
                   key={index}
                   className="absolute inset-0"
                   initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                  animate={{ 
+                  animate={{
                     scale: index === currentChallenge ? 1 : 0.95,
                     opacity: index === currentChallenge ? 1 : 0.7,
                     y: index === currentChallenge ? 0 : 20,
-                    zIndex: challenges.length - index
+                    zIndex: challenges.length - index,
                   }}
                   transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 >
                   <SwipeableCard
                     onSwipeRight={() => {
                       setSelectedChallengeTitle(challenge.title);
-                      setPhase('challenge');
+                      setPhase("challenge");
                     }}
                     onSwipeLeft={() => {
-                      setCurrentChallenge((prev) => (prev + 1) % challenges.length);
+                      setCurrentChallenge(
+                        (prev) => (prev + 1) % challenges.length
+                      );
                     }}
                     onSwipeUp={() => {
                       setSelectedChallengeTitle(challenge.title);
-                      setPhase('challenge');
+                      setPhase("challenge");
                     }}
                   >
-                    <div className={`w-full h-full bg-gradient-to-br ${challenge.color} rounded-3xl p-8 flex flex-col justify-between text-white shadow-2xl backdrop-blur-md`}>
+                    <div
+                      className={`w-full h-full bg-gradient-to-br ${challenge.color} rounded-3xl p-8 flex flex-col justify-between text-white shadow-2xl backdrop-blur-md`}
+                    >
                       <div>
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
@@ -368,10 +429,14 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
                             {challenge.duration}
                           </span>
                         </div>
-                        <h3 className="text-2xl font-bold mb-4">{challenge.title}</h3>
-                        <p className="text-lg opacity-90 leading-relaxed">{challenge.description}</p>
+                        <h3 className="text-2xl font-bold mb-4">
+                          {challenge.title}
+                        </h3>
+                        <p className="text-lg opacity-90 leading-relaxed">
+                          {challenge.description}
+                        </p>
                       </div>
-                      
+
                       <div className="flex items-center justify-center gap-8 mt-8">
                         <motion.div
                           className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center"
@@ -396,7 +461,7 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
           </div>
 
           {/* Swipe hints */}
-          <motion.div 
+          <motion.div
             className="flex items-center gap-4 mt-8 text-white/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -414,36 +479,37 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
         </div>
       )}
 
-      {phase === 'challenge' && (
+      {phase === "challenge" && (
         <>
-          {challenges[currentChallenge]?.type === 'viral' ? (
+          {challenges[currentChallenge]?.type === "viral" ? (
             <ViralChallenge
               onComplete={(accuracy, recording, challengeId) => {
                 setAccuracy(accuracy);
                 setRecordingUrl(recording);
-                setPhase('results');
+                setPhase("results");
               }}
             />
           ) : (
             <StructuredChallenge
-              onComplete={(accuracy, recording) => {
+              onComplete={(accuracy, recording, id) => {
                 setAccuracy(accuracy);
                 setRecordingUrl(recording);
-                setPhase('results');
+                if (id) setChallengeId(id);
+                setPhase("results");
               }}
             />
           )}
         </>
       )}
 
-      {phase === 'results' && (
-        <motion.div 
+      {phase === "results" && (
+        <motion.div
           className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] p-6 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
         >
-          <motion.div 
+          <motion.div
             className="text-6xl mb-8"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -451,29 +517,31 @@ export default function SmoothVocalChallenge({ onChallengeComplete }: { onChalle
           >
             ✨
           </motion.div>
-          
+
           <h2 className="text-3xl font-bold text-white mb-8">
             Challenge Complete
           </h2>
-          
+
           <ProgressRing progress={accuracy} size={200} />
-          
+
           <div className="flex gap-4 mt-12">
-            <SmoothButton 
+            <SmoothButton
               onClick={() => {
                 if (onChallengeComplete && recordingUrl) {
-                  onChallengeComplete(selectedChallengeTitle, recordingUrl);
+                  onChallengeComplete(
+                    selectedChallengeTitle,
+                    recordingUrl,
+                    challengeId || "default-id"
+                  );
                 }
-              }} 
+              }}
               variant="primary"
+              className={isLoading ? "opacity-70 pointer-events-none" : ""}
             >
-              Continue to Rating
+              {isLoading ? "Processing..." : "Continue to Rating"}
             </SmoothButton>
-            
-            <SmoothButton
-              onClick={() => setPhase('intro')}
-              variant="secondary"
-            >
+
+            <SmoothButton onClick={() => setPhase("intro")} variant="secondary">
               Try Another
             </SmoothButton>
           </div>

@@ -1,0 +1,24 @@
+{
+  "name": "GIGAVIBE",
+  "short_name": "GIGAVIBE",
+  "description": "AI-Powered Vocal Training App with Web3 Social Features",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#4b0082",
+  "theme_color": "#4b0082",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/images/gigavibe.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/gigavibearch.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

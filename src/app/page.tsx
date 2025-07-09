@@ -13,6 +13,7 @@ export default function HomePage() {
     error: filcdnError,
     needsPaymentSetup,
     clientAddress,
+    isOptional,
   } = useFilCDN();
 
   // Initialize MiniKit when ready
@@ -22,7 +23,7 @@ export default function HomePage() {
     }
   }, [setFrameReady, isFrameReady, isInitialized]);
 
-  if (filcdnError || needsPaymentSetup) {
+  if ((filcdnError || needsPaymentSetup) && !isOptional) {
     return (
       <FilCDNSetup
         error={filcdnError || ""}
@@ -37,9 +38,7 @@ export default function HomePage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <span className="text-white font-medium">
-            Loading GIGAVIBE...
-          </span>
+          <span className="text-white font-medium">Loading GIGAVIBE...</span>
         </div>
       </div>
     );

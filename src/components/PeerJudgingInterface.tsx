@@ -1,8 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from 'framer-motion';
-import { Play, Pause, Heart, X, Star, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import {
+  motion,
+  AnimatePresence,
+  PanInfo,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import {
+  Play,
+  Pause,
+  Heart,
+  X,
+  Star,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 
 interface VocalAttempt {
   id: string;
@@ -26,17 +41,28 @@ interface JudgingCardProps {
   isActive: boolean;
 }
 
-function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, isActive }: JudgingCardProps) {
+function JudgingCard({
+  attempt,
+  onSwipeLeft,
+  onSwipeRight,
+  onSwipeUp,
+  onSwipeDown,
+  isActive,
+}: JudgingCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  
+
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotate = useTransform(x, [-300, 300], [-30, 30]);
-  const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 0.5, 1, 0.5, 0]);
-  
+  const opacity = useTransform(
+    x,
+    [-300, -150, 0, 150, 300],
+    [0, 0.5, 1, 0.5, 0]
+  );
+
   // Feedback overlays based on swipe direction
   const leftOverlay = useTransform(x, [-300, -50, 0], [1, 0.8, 0]);
   const rightOverlay = useTransform(x, [0, 50, 300], [0, 0.8, 1]);
@@ -46,12 +72,15 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
   const handleDragEnd = (event: any, info: PanInfo) => {
     const threshold = 100;
     const velocity = Math.abs(info.velocity.x) + Math.abs(info.velocity.y);
-    
+
     if (Math.abs(info.offset.x) > Math.abs(info.offset.y)) {
       // Horizontal swipe
       if (info.offset.x > threshold || (info.offset.x > 50 && velocity > 500)) {
         onSwipeRight();
-      } else if (info.offset.x < -threshold || (info.offset.x < -50 && velocity > 500)) {
+      } else if (
+        info.offset.x < -threshold ||
+        (info.offset.x < -50 && velocity > 500)
+      ) {
         onSwipeLeft();
       } else {
         // Snap back
@@ -60,9 +89,15 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
       }
     } else {
       // Vertical swipe
-      if (info.offset.y < -threshold || (info.offset.y < -50 && velocity > 500)) {
+      if (
+        info.offset.y < -threshold ||
+        (info.offset.y < -50 && velocity > 500)
+      ) {
         onSwipeUp();
-      } else if (info.offset.y > threshold || (info.offset.y > 50 && velocity > 500)) {
+      } else if (
+        info.offset.y > threshold ||
+        (info.offset.y > 50 && velocity > 500)
+      ) {
         onSwipeDown();
       } else {
         // Snap back
@@ -86,7 +121,7 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -100,9 +135,8 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
       whileTap={{ scale: 0.95 }}
     >
       <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
-        
         {/* Swipe Feedback Overlays */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 bg-red-500/80 flex items-center justify-center z-10"
           style={{ opacity: leftOverlay }}
         >
@@ -111,8 +145,8 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
             <span className="text-xl font-bold">Needs Work</span>
           </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           className="absolute inset-0 bg-green-500/80 flex items-center justify-center z-10"
           style={{ opacity: rightOverlay }}
         >
@@ -121,8 +155,8 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
             <span className="text-xl font-bold">Pretty Good!</span>
           </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           className="absolute inset-0 bg-purple-500/80 flex items-center justify-center z-10"
           style={{ opacity: upOverlay }}
         >
@@ -131,8 +165,8 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
             <span className="text-xl font-bold">Absolutely Nailed It!</span>
           </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           className="absolute inset-0 bg-orange-500/80 flex items-center justify-center z-10"
           style={{ opacity: downOverlay }}
         >
@@ -144,18 +178,22 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
 
         {/* Main Content */}
         <div className="relative z-0 h-full flex flex-col">
-          
           {/* Header */}
           <div className="p-6 pb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xl font-bold text-white">{attempt.challengeTitle}</h3>
+                <h3 className="text-xl font-bold text-white">
+                  {attempt.challengeTitle}
+                </h3>
                 <p className="text-gray-400 text-sm">
-                  {attempt.judgeCount} people have judged • {formatTime(attempt.duration)}
+                  {attempt.judgeCount} people have judged •{" "}
+                  {formatTime(attempt.duration)}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-white">{attempt.selfRating}⭐</div>
+                <div className="text-2xl font-bold text-white">
+                  {attempt.selfRating}⭐
+                </div>
                 <div className="text-xs text-gray-400">Their rating</div>
               </div>
             </div>
@@ -175,7 +213,7 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
                     <Play className="w-6 h-6 text-white ml-1" />
                   )}
                 </button>
-                
+
                 <div className="flex-1 mx-4">
                   <div className="flex items-center gap-1 h-8">
                     {attempt.waveform.map((height, i) => (
@@ -184,14 +222,19 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
                         className="bg-indigo-400 rounded-full flex-1 min-w-[2px]"
                         style={{ height: `${Math.max(4, height * 32)}px` }}
                         animate={{
-                          backgroundColor: isPlaying && i < (currentTime / attempt.duration) * attempt.waveform.length 
-                            ? "#6366f1" : "#94a3b8"
+                          backgroundColor:
+                            isPlaying &&
+                            i <
+                              (currentTime / attempt.duration) *
+                                attempt.waveform.length
+                              ? "#6366f1"
+                              : "#94a3b8",
                         }}
                       />
                     ))}
                   </div>
                 </div>
-                
+
                 <button
                   onClick={() => setIsMuted(!isMuted)}
                   className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 transition-colors"
@@ -203,7 +246,7 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
                   )}
                 </button>
               </div>
-              
+
               <div className="flex justify-between text-xs text-gray-400">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(attempt.duration)}</span>
@@ -220,7 +263,7 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
               <p className="text-gray-300 text-sm mb-4">
                 Swipe to judge • Be honest but kind
               </p>
-              
+
               {/* Swipe Hints */}
               <div className="grid grid-cols-2 gap-3 text-xs text-gray-400">
                 <div className="flex items-center gap-2">
@@ -260,61 +303,136 @@ function JudgingCard({ attempt, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDow
 export default function PeerJudgingInterface() {
   const [attempts, setAttempts] = useState<VocalAttempt[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [judgingStats, setJudgingStats] = useState({ judged: 0, remaining: 12 });
+  const [judgingStats, setJudgingStats] = useState({
+    judged: 0,
+    remaining: 12,
+  });
 
-  // Mock data - replace with real data
+  // Fetch real data from API
   useEffect(() => {
-    const mockAttempts: VocalAttempt[] = [
-      {
-        id: '1',
-        challengeTitle: 'Vocal Range Test',
-        audioUrl: '/mock-audio-1.mp3',
-        duration: 45,
-        selfRating: 4,
-        judgeCount: 23,
-        waveform: Array.from({ length: 40 }, () => Math.random()),
-        timestamp: new Date(),
-        isAnonymous: true
-      },
-      {
-        id: '2',
-        challengeTitle: 'Pitch Perfect',
-        audioUrl: '/mock-audio-2.mp3',
-        duration: 32,
-        selfRating: 5,
-        judgeCount: 18,
-        waveform: Array.from({ length: 40 }, () => Math.random()),
-        timestamp: new Date(),
-        isAnonymous: true
-      },
-      {
-        id: '3',
-        challengeTitle: 'Show Off Mode',
-        audioUrl: '/mock-audio-3.mp3',
-        duration: 67,
-        selfRating: 3,
-        judgeCount: 31,
-        waveform: Array.from({ length: 40 }, () => Math.random()),
-        timestamp: new Date(),
-        isAnonymous: true
+    const fetchAttempts = async () => {
+      try {
+        const response = await fetch("/api/judging/queue?advanced=true");
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Process attempts data
+        const processedAttempts = data.attempts.map((attempt: any) => {
+          // Generate waveform from audio data if not provided
+          const waveform =
+            attempt.waveform ||
+            Array.from({ length: 40 }, () => Math.random() * 0.8 + 0.2);
+
+          return {
+            ...attempt,
+            waveform,
+            timestamp: new Date(attempt.timestamp || Date.now()),
+          };
+        });
+
+        setAttempts(processedAttempts);
+
+        // Get judging stats
+        if (data.stats) {
+          setJudgingStats({
+            judged: data.stats.judgedToday || 0,
+            remaining: data.stats.remaining || 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch attempts:", error);
       }
-    ];
-    setAttempts(mockAttempts);
+    };
+
+    fetchAttempts();
   }, []);
 
-  const handleJudgment = (rating: number) => {
-    // Update stats
-    setJudgingStats(prev => ({
-      judged: prev.judged + 1,
-      remaining: prev.remaining - 1
-    }));
+  const handleJudgment = async (rating: number) => {
+    if (attempts.length === 0 || currentIndex >= attempts.length) {
+      return;
+    }
 
-    // Move to next attempt
-    if (currentIndex < attempts.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else {
-      // Show completion screen or load more attempts
-      console.log('All attempts judged!');
+    const currentAttempt = attempts[currentIndex];
+
+    try {
+      // Submit judgment to API
+      const response = await fetch("/api/judging/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          attemptId: currentAttempt.id,
+          rating,
+          feedback: {
+            category:
+              rating <= 2
+                ? "needs_work"
+                : rating <= 3
+                ? "pretty_good"
+                : rating === 4
+                ? "try_again"
+                : "excellent",
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit judgment: ${response.status}`);
+      }
+
+      // Update stats
+      setJudgingStats((prev) => ({
+        judged: prev.judged + 1,
+        remaining: prev.remaining - 1,
+      }));
+
+      // Move to next attempt
+      if (currentIndex < attempts.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        // Load more attempts if available
+        try {
+          const moreResponse = await fetch("/api/judging/queue?advanced=true");
+          if (moreResponse.ok) {
+            const moreData = await moreResponse.json();
+            if (moreData.attempts && moreData.attempts.length > 0) {
+              // Process new attempts
+              const newAttempts = moreData.attempts.map((attempt: any) => {
+                const waveform =
+                  attempt.waveform ||
+                  Array.from({ length: 40 }, () => Math.random() * 0.8 + 0.2);
+                return {
+                  ...attempt,
+                  waveform,
+                  timestamp: new Date(attempt.timestamp || Date.now()),
+                };
+              });
+
+              // Add new attempts and reset index
+              setAttempts(newAttempts);
+              setCurrentIndex(0);
+
+              // Update stats
+              if (moreData.stats) {
+                setJudgingStats({
+                  judged: moreData.stats.judgedToday || 0,
+                  remaining: moreData.stats.remaining || 0,
+                });
+              }
+            }
+          }
+        } catch (loadError) {
+          console.error("Failed to load more attempts:", loadError);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to submit judgment:", error);
+      alert("Failed to submit your judgment. Please try again.");
     }
   };
 
@@ -336,23 +454,26 @@ export default function PeerJudgingInterface() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative overflow-hidden">
-      
       {/* Header */}
-      <motion.div 
+      <motion.div
         className="relative z-10 flex items-center justify-between p-6 backdrop-blur-md bg-white/5"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
         <div>
-          <h1 className="text-2xl font-bold text-white">Judge Vocal Attempts</h1>
+          <h1 className="text-2xl font-bold text-white">
+            Judge Vocal Attempts
+          </h1>
           <p className="text-gray-300 text-sm">
             Help the community discover their true vocal rating
           </p>
         </div>
-        
+
         <div className="text-right">
-          <div className="text-lg font-bold text-white">{judgingStats.judged}</div>
+          <div className="text-lg font-bold text-white">
+            {judgingStats.judged}
+          </div>
           <div className="text-xs text-gray-400">judged today</div>
         </div>
       </motion.div>
@@ -361,39 +482,41 @@ export default function PeerJudgingInterface() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] p-6">
         <div className="relative w-full max-w-sm h-[600px]">
           <AnimatePresence>
-            {attempts.slice(currentIndex, currentIndex + 3).map((attempt, index) => (
-              <motion.div
-                key={attempt.id}
-                className="absolute inset-0"
-                initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                animate={{ 
-                  scale: index === 0 ? 1 : 0.95 - (index * 0.02),
-                  opacity: index === 0 ? 1 : 0.7 - (index * 0.2),
-                  y: index * 8,
-                  zIndex: 10 - index
-                }}
-                exit={{ 
-                  scale: 1.05, 
-                  opacity: 0,
-                  transition: { duration: 0.2 }
-                }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <JudgingCard
-                  attempt={attempt}
-                  onSwipeLeft={handleSwipeLeft}
-                  onSwipeRight={handleSwipeRight}
-                  onSwipeUp={handleSwipeUp}
-                  onSwipeDown={handleSwipeDown}
-                  isActive={index === 0}
-                />
-              </motion.div>
-            ))}
+            {attempts
+              .slice(currentIndex, currentIndex + 3)
+              .map((attempt, index) => (
+                <motion.div
+                  key={attempt.id}
+                  className="absolute inset-0"
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{
+                    scale: index === 0 ? 1 : 0.95 - index * 0.02,
+                    opacity: index === 0 ? 1 : 0.7 - index * 0.2,
+                    y: index * 8,
+                    zIndex: 10 - index,
+                  }}
+                  exit={{
+                    scale: 1.05,
+                    opacity: 0,
+                    transition: { duration: 0.2 },
+                  }}
+                  transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                >
+                  <JudgingCard
+                    attempt={attempt}
+                    onSwipeLeft={handleSwipeLeft}
+                    onSwipeRight={handleSwipeRight}
+                    onSwipeUp={handleSwipeUp}
+                    onSwipeDown={handleSwipeDown}
+                    isActive={index === 0}
+                  />
+                </motion.div>
+              ))}
           </AnimatePresence>
         </div>
 
         {/* Progress Indicator */}
-        <motion.div 
+        <motion.div
           className="mt-8 flex items-center gap-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -403,14 +526,14 @@ export default function PeerJudgingInterface() {
             <div
               key={i}
               className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                i < currentIndex ? 'bg-indigo-500' : 'bg-gray-600'
+                i < currentIndex ? "bg-indigo-500" : "bg-gray-600"
               }`}
             />
           ))}
         </motion.div>
 
         {/* Remaining Count */}
-        <motion.p 
+        <motion.p
           className="mt-4 text-gray-400 text-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

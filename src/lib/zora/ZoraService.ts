@@ -1,12 +1,28 @@
 'use client';
 
-import { 
-  createCoin, 
-  tradeCoin, 
-  setApiKey, 
+import {
+  createCoin,
+  tradeCoin,
+  setApiKey,
   DeployCurrency
 } from '@zoralabs/coins-sdk';
-import { Address, createPublicClient, createWalletClient, http, parseEther } from 'viem';
+import { fetcher } from '@/lib/utils/fetcher';
+// Define a TradeParams type that matches the SDK's expected structure
+type TradeParams = {
+  direction: 'buy' | 'sell';
+  target: Address;
+  amountIn: bigint;
+  slippage: number;
+  sender: Address;
+  args: {
+    recipient: Address;
+    orderSize: bigint;
+    minAmountOut?: bigint;
+    sqrtPriceLimitX96?: bigint;
+    tradeReferrer?: Address;
+  };
+};
+import { Account, Address, createPublicClient, createWalletClient, http, parseEther } from 'viem';
 import { base } from 'viem/chains';
 import { RealityCheckResult, PerformanceCoin, CoinEligibility } from './types';
 
@@ -16,7 +32,7 @@ export class ZoraService {
   private platformReferrer: Address;
 
   constructor() {
-    // Set up Zora API key
+    // Set up Zora API key (for direct SDK usage in this service)
     const apiKey = process.env.NEXT_PUBLIC_ZORA_API_KEY;
     if (apiKey) {
       setApiKey(apiKey);
@@ -40,77 +56,129 @@ export class ZoraService {
 
   /**
    * Check if a performance is eligible for coin creation
+   * @throws Error if leaderboard data cannot be retrieved
    */
-  checkCoinEligibility(performance: RealityCheckResult): CoinEligibility | null {
-    // Leaderboard winner (top 3 in any category)
-    if (performance.category && this.isLeaderboardWinner(performance)) {
-      return {
-        type: 'leaderboard_winner',
-        performance,
-        reason: `Top 3 in ${performance.category} category`,
-        autoMint: true
-      };
-    }
+  async checkCoinEligibility(performance: RealityCheckResult): Promise<CoinEligibility | null> {
+    try {
+      // Leaderboard winner (top 3 in any category)
+      if (performance.category && await this.isLeaderboardWinner(performance)) {
+        return {
+          type: 'leaderboard_winner',
+          performance,
+          reason: `Top 3 in ${performance.category} category`,
+          autoMint: true
+        };
+      }
 
-    // Viral moment (100+ shares)
-    if (performance.shareCount >= 100) {
-      return {
-        type: 'viral_moment',
-        performance,
-        reason: `${performance.shareCount} shares - viral moment!`,
-        autoMint: true
-      };
-    }
+      // Viral moment (100+ shares)
+      if (performance.shareCount >= 100) {
+        return {
+          type: 'viral_moment',
+          performance,
+          reason: `${performance.shareCount} shares - viral moment!`,
+          autoMint: true
+        };
+      }
 
-    // Perfect score (5.0 community rating)
-    if (performance.communityRating >= 5.0) {
-      return {
-        type: 'perfect_score',
-        performance,
-        reason: 'Perfect 5⭐ community rating',
-        autoMint: true
-      };
-    }
+      // Perfect score (5.0 community rating)
+      if (performance.communityRating >= 5.0) {
+        return {
+          type: 'perfect_score',
+          performance,
+          reason: 'Perfect 5⭐ community rating',
+          autoMint: true
+        };
+      }
 
-    // Reality gap (3+ star difference - hilarious fails)
-    if (performance.gap >= 3) {
-      return {
-        type: 'reality_gap',
-        performance,
-        reason: `${performance.gap}⭐ reality gap - comedy gold!`,
-        autoMint: true
-      };
-    }
+      // Reality gap (3+ star difference - hilarious fails)
+      if (performance.gap >= 3) {
+        return {
+          type: 'reality_gap',
+          performance,
+          reason: `${performance.gap}⭐ reality gap - comedy gold!`,
+          autoMint: true
+        };
+      }
 
-    return null;
+      return null;
+    } catch (error) {
+      console.error('Failed to check coin eligibility:', error);
+      throw new Error(`Eligibility check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Create a coin using server-side API validation
+   * Final coin creation still requires wallet signature
+   */
+  async createCoin(
+    name: string,
+    symbol: string,
+    uri: string,
+    payoutRecipient: Address,
+    metadataJson?: any
+  ) {
+    try {
+      // Validate and prepare parameters using the API
+      const createResponse = await fetcher('/api/zora/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          symbol,
+          uri,
+          payoutRecipient,
+          metadataJson
+        }),
+      });
+
+      if (!createResponse.success) {
+        throw new Error(createResponse.error || 'Coin creation validation failed');
+      }
+
+      return createResponse.parameters;
+    } catch (error) {
+      console.error('Failed to prepare coin creation:', error);
+      throw error;
+    }
   }
 
   /**
    * Create a performance coin for eligible Reality Check results
+   * Using the server-side API for validation
+   *
+   * @throws Error if performance is not eligible or coin creation fails
    */
   async createPerformanceCoin(
     performance: RealityCheckResult,
     walletClient: any
-  ): Promise<{ address: Address; hash: string } | null> {
+  ): Promise<{ address: Address; hash: string }> {
     try {
-      const eligibility = this.checkCoinEligibility(performance);
+      const eligibility = await this.checkCoinEligibility(performance);
       if (!eligibility) {
         throw new Error('Performance not eligible for coin creation');
       }
 
-      // Create metadata URI (fallback implementation for now)
-      const metadataUri = await this.createFallbackMetadata(performance);
+      // Use the metadata service to create proper metadata
+      const metadataUri = await this.createMetadata(performance);
 
-      // Create the coin
-      const coinResult = await createCoin({
-        name: `${performance.challengeTitle} - Reality Check`,
-        symbol: `RC${performance.eventId.slice(-4).toUpperCase()}`,
-        uri: metadataUri as any, // Temporary type assertion
-        payoutRecipient: performance.userAddress,
-        platformReferrer: this.platformReferrer,
-        currency: DeployCurrency.ETH,
-        chainId: base.id
-      }, walletClient, this.publicClient);
+      // Validate and prepare coin parameters
+      const createParams = await this.createCoin(
+        `${performance.challengeTitle} - Reality Check`,
+        `RC${performance.eventId.slice(-4).toUpperCase()}`,
+        metadataUri,
+        performance.userAddress
+      );
+
+      // For actual creation, we would then use the SDK with the wallet
+      // This part would remain client-side since it needs the wallet signature
+      const coinResult = await createCoin(
+        createParams,
+        walletClient,
+        this.publicClient
+      );
 
       console.log('Performance coin created:', {
         address: coinResult.address,
@@ -125,12 +193,12 @@ export class ZoraService {
 
     } catch (error) {
       console.error('Failed to create performance coin:', error);
-      return null;
+      throw new Error(`Coin creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
-   * Trade performance coins
+   * Trade performance coins using server-side API
    */
   async tradePerformanceCoin(
     coinAddress: Address,
@@ -141,28 +209,64 @@ export class ZoraService {
     slippage: number = 0.05
   ) {
     try {
-      const tradeParameters = {
-        sell: action === 'buy' 
-          ? { type: 'eth' as const }
-          : { type: 'erc20' as const, address: coinAddress },
-        buy: action === 'buy'
-          ? { type: 'erc20' as const, address: coinAddress }
-          : { type: 'eth' as const },
-        amountIn,
-        slippage,
-        sender: userAddress
-      };
-
-      const receipt = await tradeCoin({
-        tradeParameters,
-        walletClient,
-        account: walletClient.account,
-        publicClient: this.publicClient
+      // Get trade parameters from the API
+      const tradeResponse = await fetcher('/api/zora/trade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          coinAddress,
+          userAddress,
+          amountIn: amountIn.toString(), // Convert BigInt to string for JSON
+          slippage,
+        }),
       });
 
-      return receipt;
+      if (!tradeResponse.success) {
+        throw new Error(tradeResponse.error || 'Trade validation failed');
+      }
+
+      // For actual execution, we'd pass these parameters to the SDK
+      // This could be done directly from a client component where the wallet is available
+      // or we could add logic here to use the provided walletClient
+      const tradeParameters = tradeResponse.parameters;
+      
+      // The actual trade execution would still need the wallet client
+      // and could be implemented here by calling the SDK directly
+      // But for now, we're keeping SDK usage on the server side only
+      
+      console.log('Trade parameters prepared:', tradeParameters);
+      return tradeParameters;
     } catch (error) {
       console.error('Trade failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get coin information using server-side API
+   */
+  async getCoinInfo(coinAddress: Address) {
+    try {
+      return await fetcher(`/api/zora/info?address=${coinAddress}`);
+    } catch (error) {
+      console.error('Failed to get coin info:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user balance for a coin using server-side API
+   */
+  async getUserBalance(userAddress: Address, coinAddress: Address) {
+    try {
+      return await fetcher(
+        `/api/zora/balance?userAddress=${userAddress}&coinAddress=${coinAddress}`
+      );
+    } catch (error) {
+      console.error('Failed to get user balance:', error);
       throw error;
     }
   }
@@ -190,127 +294,69 @@ Own a piece of this viral vocal moment! This coin represents a genuine community
 #VocalRealityCheck #GIGAVIBE #PerformanceCoin`;
   }
 
-  /**
-   * Generate or fetch result image for the performance
-   */
-  private async generateResultImage(performance: RealityCheckResult): Promise<string> {
-    // In a real implementation, this would generate a meme-style image
-    // For now, return a placeholder
-    return `https://api.dicebear.com/7.x/shapes/svg?seed=${performance.id}&backgroundColor=8b5cf6,ec4899,06b6d4`;
-  }
+  // Image generation and manipulation methods removed
+  // Now handled by the metadata service API
+
+  // Removed createRealMetadata method - now using createMetadata instead
 
   /**
-   * Create result image blob for metadata upload
+   * Create metadata URI via API service
+   * @throws Error if metadata service fails
    */
-  private async createResultImageBlob(performance: RealityCheckResult): Promise<Blob> {
+  private async createMetadata(performance: RealityCheckResult): Promise<string> {
     try {
-      // Generate a simple canvas-based result image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas context not available');
-
-      canvas.width = 400;
-      canvas.height = 400;
-
-      // Background gradient
-      const gradient = ctx.createLinearGradient(0, 0, 400, 400);
-      gradient.addColorStop(0, '#8b5cf6');
-      gradient.addColorStop(1, '#ec4899');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 400, 400);
-
-      // Add text
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('Reality Check', 200, 100);
-      
-      ctx.font = '18px Arial';
-      ctx.fillText(`"I thought ${performance.selfRating}⭐"`, 200, 180);
-      ctx.fillText(`"They said ${performance.communityRating}⭐"`, 200, 220);
-      
-      ctx.font = 'bold 32px Arial';
-      ctx.fillText(this.getGapEmoji(performance.gap), 200, 280);
-      
-      ctx.font = '16px Arial';
-      ctx.fillText(performance.challengeTitle, 200, 320);
-
-      // Convert canvas to blob
-      return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-          resolve(blob || new Blob());
-        }, 'image/png');
+      // Call the metadata service API
+      const response = await fetch('/api/zora/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          performance,
+          description: this.generateCoinDescription(performance)
+        }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Metadata service failed: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (!data.metadataUri) {
+        throw new Error('No metadata URI returned from service');
+      }
+      
+      return data.metadataUri;
     } catch (error) {
-      console.error('Failed to create result image blob:', error);
-      // Return empty blob as fallback
-      return new Blob();
+      console.error('Failed to create metadata:', error);
+      throw new Error(`Metadata creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  // generateMetadataHash method removed - now handled by metadata service
+
   /**
-   * Create real metadata using Zora's metadata builder
+   * Check if performance is a leaderboard winner based on actual leaderboard data
+   * @throws Error if leaderboard data cannot be retrieved
    */
-  private async createRealMetadata(performance: RealityCheckResult): Promise<string> {
+  private async isLeaderboardWinner(performance: RealityCheckResult): Promise<boolean> {
     try {
-      // Create result image for the performance
-      const resultImageBlob = await this.createResultImageBlob(performance);
-      const imageFile = new File([resultImageBlob], `${performance.id}.png`, { type: 'image/png' });
-
-      // Use Zora's metadata builder
-      const { createMetadataParameters } = await createMetadataBuilder()
-        .withName(`${performance.challengeTitle} - Reality Check`)
-        .withSymbol(`RC${performance.eventId.slice(-4).toUpperCase()}`)
-        .withDescription(this.generateCoinDescription(performance))
-        .withImage(imageFile)
-        .withAttributes([
-          { trait_type: 'Category', value: performance.category },
-          { trait_type: 'Self Rating', value: performance.selfRating.toString() },
-          { trait_type: 'Community Rating', value: performance.communityRating.toString() },
-          { trait_type: 'Reality Gap', value: performance.gap.toString() },
-          { trait_type: 'Shares', value: performance.shareCount.toString() },
-          { trait_type: 'Event ID', value: performance.eventId },
-          { trait_type: 'Challenge ID', value: performance.challengeId }
-        ])
-        .upload(createZoraUploaderForCreator(performance.userAddress));
-
-      return createMetadataParameters.uri;
+      // Fetch leaderboard data from API
+      const response = await fetch(`/api/leaderboard/category/${performance.category}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch leaderboard: ${response.statusText}`);
+      }
+      
+      const leaderboard = await response.json();
+      
+      // Check if this performance is in the top 3
+      const topPerformances = leaderboard.performances || [];
+      return topPerformances.some((p: any) => p.id === performance.id && p.rank <= 3);
     } catch (error) {
-      console.error('Failed to create real metadata, using fallback:', error);
-      return this.createFallbackMetadata(performance);
+      console.error('Failed to check leaderboard status:', error);
+      throw new Error(`Leaderboard check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  /**
-   * Create fallback metadata URI when real upload fails
-   */
-  private async createFallbackMetadata(performance: RealityCheckResult): Promise<string> {
-    // Return a deterministic IPFS URI based on performance data
-    const hash = this.generateMetadataHash(performance);
-    return `ipfs://bafybei${hash}`;
-  }
-
-  /**
-   * Generate deterministic hash for metadata
-   */
-  private generateMetadataHash(performance: RealityCheckResult): string {
-    const data = `${performance.id}-${performance.challengeTitle}-${performance.selfRating}-${performance.communityRating}`;
-    // Simple hash function for demo - in production use proper crypto hash
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36).padStart(50, '0');
-  }
-
-  /**
-   * Check if performance is a leaderboard winner (mock implementation)
-   */
-  private isLeaderboardWinner(performance: RealityCheckResult): boolean {
-    // In real implementation, check against actual leaderboard data
-    return performance.communityRating >= 4.5 || performance.shareCount >= 50;
   }
 
   /**
@@ -338,49 +384,4 @@ Own a piece of this viral vocal moment! This coin represents a genuine community
     return emojis[category as keyof typeof emojis] || '🎤';
   }
 
-  /**
-   * Get mock market data for testing
-   */
-  getMockMarketData(): PerformanceCoin[] {
-    return [
-      {
-        address: '0x1234567890123456789012345678901234567890' as Address,
-        name: 'Viral Pop Challenge - Reality Check',
-        symbol: 'RCVP01',
-        creator: '0x1111111111111111111111111111111111111111' as Address,
-        performance: {
-          id: 'mock-1',
-          eventId: 'truth-tuesday-001',
-          challengeTitle: 'Viral Pop Challenge',
-          challengeId: 'challenge-001',
-          userAddress: '0x1111111111111111111111111111111111111111' as Address,
-          selfRating: 5,
-          communityRating: 2.3,
-          gap: 2.7,
-          wittyCommentary: "Someone's been practicing in the shower a bit too much",
-          shareCount: 156,
-          timestamp: new Date(),
-          audioUrl: '/mock-audio.mp3',
-          category: 'comedy'
-        },
-        marketData: {
-          price: 0.025,
-          volume24h: 2.4,
-          marketCap: 12.5,
-          holders: 47,
-          priceChange24h: 0.008,
-          priceChangePercent24h: 47.2
-        },
-        metadata: {
-          description: 'Comedy gold performance coin',
-          image: 'https://api.dicebear.com/7.x/shapes/svg?seed=mock1',
-          attributes: [
-            { trait_type: 'Category', value: 'Comedy' },
-            { trait_type: 'Reality Gap', value: '2.7⭐' },
-            { trait_type: 'Shares', value: 156 }
-          ]
-        }
-      }
-    ];
-  }
 }

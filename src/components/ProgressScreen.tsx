@@ -186,7 +186,7 @@ const ProgressScreen = () => {
                       achievement.earned ? "text-yellow-800" : "text-gray-600"
                     }`}
                   >
-                    {achievement.name}
+                    {achievement.title}
                   </div>
                   <div
                     className={`text-sm ${

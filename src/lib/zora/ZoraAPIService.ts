@@ -5,7 +5,6 @@ import { PerformanceCoin, TradingMetrics } from './types';
 
 /**
  * Real Zora API Service for fetching live market data
- * Replaces mock data with actual Zora protocol calls
  */
 export class ZoraAPIService {
   private static instance: ZoraAPIService;
@@ -65,14 +64,13 @@ export class ZoraAPIService {
       const response = await this.makeGraphQLRequest(query, variables);
       
       if (!response.data?.tokens) {
-        console.warn('No tokens found, using fallback data');
-        return this.getFallbackCoins();
+        throw new Error('No performance coins found');
       }
 
       return response.data.tokens.map(this.transformTokenToPerformanceCoin);
     } catch (error) {
-      console.error('Failed to fetch performance coins:', error);
-      return this.getFallbackCoins();
+      console.error('[ZoraAPIService] Failed to fetch performance coins:', error);
+      throw new Error(`Unable to fetch performance coins: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -115,6 +113,7 @@ export class ZoraAPIService {
       const response = await this.makeGraphQLRequest(query, variables);
       
       if (!response.data?.user?.tokenBalances) {
+        // Empty results is a valid state - user might not own any coins
         return [];
       }
 
@@ -122,8 +121,8 @@ export class ZoraAPIService {
         .filter((balance: any) => balance.token.name.includes('Reality Check'))
         .map((balance: any) => this.transformTokenToPerformanceCoin(balance.token));
     } catch (error) {
-      console.error('Failed to fetch user coins:', error);
-      return [];
+      console.error('[ZoraAPIService] Failed to fetch user coins:', error);
+      throw new Error(`Unable to fetch user coins: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -160,10 +159,15 @@ export class ZoraAPIService {
       };
 
       const response = await this.makeGraphQLRequest(query, variables);
-      return response.data?.trades || [];
+      
+      if (!response.data?.trades) {
+        throw new Error('No trade data available');
+      }
+      
+      return response.data.trades;
     } catch (error) {
-      console.error('Failed to fetch recent trades:', error);
-      return [];
+      console.error('[ZoraAPIService] Failed to fetch recent trades:', error);
+      throw new Error(`Unable to fetch recent trades: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -207,13 +211,14 @@ export class ZoraAPIService {
       const response = await this.makeGraphQLRequest(graphQLQuery, variables);
       
       if (!response.data?.tokens) {
+        // Empty search results is a valid state
         return [];
       }
 
       return response.data.tokens.map(this.transformTokenToPerformanceCoin);
     } catch (error) {
-      console.error('Failed to search coins:', error);
-      return [];
+      console.error('[ZoraAPIService] Failed to search coins:', error);
+      throw new Error(`Search operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -248,14 +253,8 @@ export class ZoraAPIService {
         }))
       };
     } catch (error) {
-      console.error('Failed to get trading metrics:', error);
-      return {
-        totalVolume: 0,
-        totalCoins: 0,
-        topPerformer: null,
-        trendingCoins: [],
-        recentTrades: []
-      };
+      console.error('[ZoraAPIService] Failed to get trading metrics:', error);
+      throw new Error(`Unable to retrieve trading metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -334,45 +333,4 @@ export class ZoraAPIService {
     };
   }
 
-  /**
-   * Fallback data when API is unavailable
-   */
-  private getFallbackCoins(): PerformanceCoin[] {
-    return [
-      {
-        address: '0x1111111111111111111111111111111111111111' as Address,
-        name: 'Shower Singer Reality Check',
-        symbol: 'RCSS01',
-        creator: '0xaaaa' as Address,
-        performance: {
-          id: 'fallback-1',
-          eventId: 'truth-tuesday-001',
-          challengeTitle: 'Pop Diva Challenge',
-          challengeId: 'challenge-001',
-          userAddress: '0xaaaa' as Address,
-          selfRating: 5,
-          communityRating: 2.1,
-          gap: 2.9,
-          wittyCommentary: "Someone's been practicing in the shower a bit too much",
-          shareCount: 234,
-          timestamp: new Date(),
-          audioUrl: '/mock-audio.mp3',
-          category: 'comedy'
-        },
-        marketData: {
-          price: 0.045,
-          volume24h: 3.2,
-          marketCap: 18.7,
-          holders: 67,
-          priceChange24h: 0.012,
-          priceChangePercent24h: 36.4
-        },
-        metadata: {
-          description: 'Legendary reality check moment',
-          image: 'https://api.dicebear.com/7.x/shapes/svg?seed=fallback1',
-          attributes: []
-        }
-      }
-    ];
-  }
 }

@@ -120,16 +120,16 @@ export function useCommunityOwnership() {
   /**
    * Get community ownership for a performance
    */
-  const getCommunityOwnership = useCallback((performanceId: string): CommunityOwnership | null => {
-    return communityService.getCommunityOwnership(performanceId);
+  const getCommunityOwnership = useCallback(async (performanceId: string): Promise<CommunityOwnership | null> => {
+    return await communityService.getCommunityOwnership(performanceId);
   }, [communityService]);
 
   /**
    * Get user's contributions across all performances
    */
-  const getUserContributions = useCallback(() => {
+  const getUserContributions = useCallback(async () => {
     if (!address) return [];
-    return communityService.getUserContributions(address);
+    return await communityService.getUserContributions(address);
   }, [address, communityService]);
 
   /**
@@ -143,12 +143,12 @@ export function useCommunityOwnership() {
   /**
    * Check if user has contributed to a performance
    */
-  const hasUserContributed = useCallback((performanceId: string, contributionType?: string): boolean => {
+  const hasUserContributed = useCallback(async (performanceId: string, contributionType?: string): Promise<boolean> => {
     if (!address) return false;
     
-    const contributions = communityService.getContributions(performanceId);
-    return contributions.some(c => 
-      c.userAddress === address && 
+    const contributions = await communityService.getContributions(performanceId);
+    return contributions.some(c =>
+      c.userAddress === address &&
       (!contributionType || c.contributionType === contributionType)
     );
   }, [address, communityService]);
@@ -156,8 +156,8 @@ export function useCommunityOwnership() {
   /**
    * Get contribution stats for a performance
    */
-  const getContributionStats = useCallback((performanceId: string) => {
-    const contributions = communityService.getContributions(performanceId);
+  const getContributionStats = useCallback(async (performanceId: string) => {
+    const contributions = await communityService.getContributions(performanceId);
     
     return {
       totalContributions: contributions.length,
