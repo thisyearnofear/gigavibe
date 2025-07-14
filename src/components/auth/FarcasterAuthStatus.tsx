@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, AlertCircle, CheckCircle } from 'lucide-react';
-import { useFarcasterAuth } from '@/contexts/FarcasterAuthContext';
-import SIWNButton, { FarcasterProfile } from './SIWNButton';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, LogOut, AlertCircle, CheckCircle } from "lucide-react";
+import { useFarcasterAuth } from "@/contexts/FarcasterAuthContext";
+import SIWNButton, { FarcasterProfile } from "./SIWNButton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface FarcasterAuthStatusProps {
   compact?: boolean;
@@ -15,20 +15,20 @@ interface FarcasterAuthStatusProps {
   className?: string;
 }
 
-export default function FarcasterAuthStatus({ 
-  compact = false, 
+export function FarcasterAuthStatus({
+  compact = false,
   showSignInButton = true,
-  className = '' 
+  className = "",
 }: FarcasterAuthStatusProps) {
-  const { 
-    isAuthenticated, 
-    user, 
-    loading, 
-    error, 
-    signIn, 
-    signOut, 
+  const {
+    isAuthenticated,
+    user,
+    loading,
+    error,
+    signIn,
+    signOut,
     clearError,
-    canPost 
+    canPost,
   } = useFarcasterAuth();
 
   if (loading) {
@@ -71,8 +71,11 @@ export default function FarcasterAuthStatus({
             className="w-6 h-6 rounded-full"
           />
           <span className="text-white text-sm">@{user.username}</span>
-          <Badge variant="outline" className="text-green-400 border-green-400 text-xs">
-            {canPost ? 'Connected' : 'Read Only'}
+          <Badge
+            variant="outline"
+            className="text-green-400 border-green-400 text-xs"
+          >
+            {canPost ? "Connected" : "Read Only"}
           </Badge>
         </div>
       );
@@ -98,7 +101,7 @@ export default function FarcasterAuthStatus({
     <div className={className}>
       <SIWNButton
         onSuccess={signIn}
-        onError={(error) => console.error('SIWN Error:', error)}
+        onError={(error) => console.error("SIWN Error:", error)}
         theme="dark"
       />
     </div>
@@ -106,32 +109,38 @@ export default function FarcasterAuthStatus({
 }
 
 // Compact version for inline use
-export function FarcasterAuthBadge({ className = '' }: { className?: string }) {
+export function FarcasterAuthBadge({ className = "" }: { className?: string }) {
   const { isAuthenticated, user, canPost } = useFarcasterAuth();
 
   if (!isAuthenticated || !user) {
     return (
-      <Badge variant="outline" className={`text-gray-400 border-gray-600 ${className}`}>
+      <Badge
+        variant="outline"
+        className={`text-gray-400 border-gray-600 ${className}`}
+      >
         Not Connected
       </Badge>
     );
   }
 
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={`text-green-400 border-green-400 ${className}`}
     >
       <div className="flex items-center gap-1">
-        <CheckCircle className="w-3 h-3" />
-        @{user.username}
+        <CheckCircle className="w-3 h-3" />@{user.username}
       </div>
     </Badge>
   );
 }
 
 // Status indicator for upload interfaces
-export function FarcasterUploadStatus({ className = '' }: { className?: string }) {
+export function FarcasterUploadStatus({
+  className = "",
+}: {
+  className?: string;
+}) {
   const { isAuthenticated, user, canPost, hasValidSigner } = useFarcasterAuth();
 
   if (!isAuthenticated) {

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MiniKitContextProvider } from './MiniKitProvider';
 import { FilCDNProvider } from './FilCDNProvider';
 import { FarcasterAuthProvider } from '@/contexts/FarcasterAuthContext';
+import { UnifiedAuthProvider } from '@/contexts/UnifiedAuthContext';
 
 export function Providers({ children }: { children: ReactNode }) {
   // Create QueryClient in component to avoid SSR issues
@@ -22,7 +23,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <MiniKitContextProvider>
         <FilCDNProvider>
           <FarcasterAuthProvider>
-            {children}
+            <UnifiedAuthProvider>
+              {children}
+            </UnifiedAuthProvider>
           </FarcasterAuthProvider>
         </FilCDNProvider>
       </MiniKitContextProvider>

@@ -10,6 +10,8 @@ import { AudioUploadService } from "@/lib/audio/AudioUploadService";
 import { AudioMixerService } from "@/lib/audio/AudioMixerService";
 import { AudioRecordingService } from "@/lib/audio/AudioRecordingService";
 import { GroveService } from "@/lib/storage/GroveService";
+import PerformanceSubmissionFlow from "@/components/performance/PerformanceSubmissionFlow";
+import { PerformanceData } from "@/types/performance.types";
 
 interface ViralChallengeProps {
   challenge?: ViralChallenge;
@@ -36,7 +38,7 @@ export default function ViralChallengeComponent({
   } = useAudioRecording();
 
   const [phase, setPhase] = useState<
-    "loading" | "listen" | "countdown" | "singing" | "processing" | "complete"
+    "loading" | "listen" | "countdown" | "singing" | "processing" | "complete" | "submission"
   >("loading");
   const [currentChallenge, setCurrentChallenge] =
     useState<ViralChallenge | null>(null);
@@ -463,9 +465,8 @@ export default function ViralChallengeComponent({
 
         console.log("🎤 Stopping all audio/microphone access for results page");
 
-        // We don't automatically upload - instead we show the complete UI
-        // and let the user decide if they want to submit
-        setPhase("complete");
+        // Move to submission flow instead of complete
+        setPhase("submission");
         return;
       } catch (mixError) {
         console.error("Caught exception during mixing process:", mixError);
@@ -474,8 +475,8 @@ export default function ViralChallengeComponent({
       }
     } catch (error) {
       console.error("Failed to mix audio:", error);
-      // Continue to complete phase even if mixing fails
-      setPhase("complete");
+      // Continue to submission phase even if mixing fails
+      setPhase("submission");
       return;
     }
   };
@@ -795,9 +796,9 @@ export default function ViralChallengeComponent({
             </motion.div>
           )}
 
-          {phase === "complete" && (
+          {phase === "submission" && (
             <motion.div
-              key="complete"
+              key="submission"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -807,12 +808,6 @@ export default function ViralChallengeComponent({
               <h2 className="text-3xl font-bold mb-4">Performance Complete!</h2>
 
               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 mb-8">
-                <h3 className="text-lg font-semibold mb-4">How did you do?</h3>
-                <p className="text-gray-300 mb-6">
-                  Rate your own performance before letting the community judge
-                  it!
-                </p>
-
                 {/* Audio playback of recorded performance - prioritize mixed audio if available */}
                 {localMixedAudioBlob ? (
                   <div className="mb-6">
@@ -880,98 +875,78 @@ export default function ViralChallengeComponent({
                   </div>
                 )}
 
-                <div className="mb-6">
-                  <div className="flex justify-between mb-3">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <motion.button
-                        key={star}
-                        onClick={() => {
-                          console.log(
-                            `⭐ User rated performance: ${star} stars (${
-                              star * 20
-                            }%)`
-                          );
-                          setAccuracy(star * 20);
-                        }}
-                        className={`text-4xl transition-colors ${
-                          star <= Math.ceil(accuracy / 20)
-                            ? "text-yellow-400"
-                            : "text-gray-600"
-                        }`}
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        ⭐
-                      </motion.button>
-                    ))}
-                  </div>
-
-                  {accuracy > 0 && (
-                    <div className="text-center">
-                      <p className="text-lg font-semibold text-yellow-400">
-                        {Math.ceil(accuracy / 20)} out of 5 stars
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        {accuracy === 20 && "Needs work"}
-                        {accuracy === 40 && "Getting better"}
-                        {accuracy === 60 && "Pretty good"}
-                        {accuracy === 80 && "Great job!"}
-                        {accuracy === 100 && "Amazing!"}
-                      </p>
-                    </div>
-                  )}
-
-                  {accuracy === 0 && (
-                    <p className="text-center text-gray-400 text-sm">
-                      Tap stars to rate your performance
-                    </p>
-                  )}
-                </div>
-
-                <div className="text-sm text-gray-400">
-                  The community will judge your performance next!
-                </div>
-              </div>
-
-              <div className="flex gap-4 relative z-20">
-                <motion.button
-                  onClick={() => {
-                    console.log("🔄 Try Again button clicked!");
+                {/* Enhanced Submission Flow Component */}
+                <PerformanceSubmissionFlow
+                  audioBlob={localMixedAudioBlob || localAudioBlob || new Blob()}
+                  performanceData={{
+                    challengeId: currentChallenge?.id || 'unknown',
+                    challengeTitle: currentChallenge?.title || 'Unknown Challenge',
+                    challengeType: 'viral',
+                    challengeDifficulty: currentChallenge?.difficulty || 'Medium',
+                    accuracy: accuracy,
+                    duration: currentChallenge?.duration || 30,
+                    selfRating: Math.ceil(accuracy / 20), // Convert accuracy to star rating
+                    audioFormat: 'audio/webm',
+                    fileSize: localMixedAudioBlob?.size || localAudioBlob?.size || 0,
+                    isMixed: !!localMixedAudioBlob,
+                    recordingQuality: 'high',
+                    timestamp: Date.now(),
+                    completedAt: new Date().toISOString()
+                  }}
+                  onComplete={(recordingId) => {
+                    console.log('✅ Performance submitted successfully:', recordingId);
+                    onComplete(accuracy, recordingId, currentChallenge?.id || 'unknown');
+                  }}
+                  onRetry={() => {
+                    console.log('🔄 User requested retry');
                     resetChallenge();
                   }}
-                  className="flex-1 py-3 bg-white/10 border border-white/20 rounded-2xl font-semibold flex items-center justify-center gap-2 relative z-10 cursor-pointer"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{ pointerEvents: "auto" }}
-                >
-                  <RotateCcw className="w-5 h-5" />
-                  Try Again
-                </motion.button>
+                />
+              </div>
+            </motion.div>
+          )}
 
-                <motion.button
-                  onClick={() => {
-                    console.log(
-                      "🚀 Submit button clicked! Accuracy:",
-                      accuracy
-                    );
-                    if (accuracy > 0) {
-                      handleSubmitPerformance();
-                    } else {
-                      console.log("❌ Submit blocked - no rating selected");
-                    }
-                  }}
-                  className={`flex-1 py-3 rounded-2xl font-semibold transition-all relative z-10 ${
-                    accuracy === 0
-                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-purple-500 to-pink-500 text-white cursor-pointer"
-                  }`}
-                  whileHover={accuracy > 0 ? { scale: 1.02 } : {}}
-                  whileTap={accuracy > 0 ? { scale: 0.98 } : {}}
-                  style={{ pointerEvents: "auto" }}
-                  disabled={accuracy === 0}
-                >
-                  {accuracy === 0 ? "Rate to Submit" : "Submit Performance"}
-                </motion.button>
+          {phase === "complete" && (
+            <motion.div
+              key="complete"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="text-6xl mb-6">🎉</div>
+              <h2 className="text-3xl font-bold mb-4">Performance Complete!</h2>
+
+              <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 mb-8">
+                <p className="text-gray-300 mb-6">
+                  Your performance has been submitted successfully!
+                </p>
+                
+                <div className="flex gap-4">
+                  <motion.button
+                    onClick={() => {
+                      console.log("🔄 Try Again button clicked!");
+                      resetChallenge();
+                    }}
+                    className="flex-1 py-3 bg-white/10 border border-white/20 rounded-2xl font-semibold flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                    Try Again
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => {
+                      onComplete(accuracy, userRecording, currentChallenge?.id || 'unknown');
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Continue to Feed
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}

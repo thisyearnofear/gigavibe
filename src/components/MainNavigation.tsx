@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, Users, Trophy, Zap, Lock, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { Mic, Users, Trophy, Zap, Sparkles } from "lucide-react";
 import Image from "next/image";
 import SmoothVocalChallenge from "./SmoothVocalChallenge";
 import PeerJudging from "./PeerJudging";
@@ -12,9 +11,9 @@ import MarketLeaderboard from "./market/MarketLeaderboard";
 import DiscoveryFeed from "./discovery/DiscoveryFeed";
 import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
 import GigavibeLogo from "./ui/gigavibe-logo";
-import { Button } from "./ui/button";
 import { FloatingActionButton } from "./ui/floating-action-button";
 import { FullScreenLoading } from "./ui/loading";
+import Header from "./Header";
 
 type MainScreen = "challenge" | "discovery" | "judging" | "leaderboard";
 
@@ -99,20 +98,12 @@ export default function MainNavigation() {
       <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/10" />
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gigavibe-600/20 via-transparent to-transparent" />
 
-      {/* App Logo */}
-      <div className="fixed top-4 left-4 z-50">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GigavibeLogo size="md" showText={false} />
-        </motion.div>
-      </div>
+      {/* Header */}
+      <Header />
 
       {/* Main Content */}
       <motion.div 
-        className="pb-20"
+        className="pb-20 pt-4"
         key={activeScreen}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,13 +113,6 @@ export default function MainNavigation() {
         {renderScreen()}
       </motion.div>
 
-      {/* Auth Test Link */}
-      <Link href="/auth-test" className="fixed top-4 right-4 z-50">
-        <Button variant="glassmorphism" size="sm" className="gap-2 text-xs">
-          <Lock className="w-4 h-4" />
-          Auth Test
-        </Button>
-      </Link>
 
       {/* Bottom Navigation */}
       <motion.nav

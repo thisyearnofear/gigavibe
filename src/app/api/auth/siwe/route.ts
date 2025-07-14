@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SiweMessage } from 'siwe';
+import { AUTH_CONFIG, isProductionDomain, getErrorMessage, getSuccessMessage } from '@/config/auth.config';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
     console.log('SIWE authentication request received');
+    
+    // Validate request origin in production
+    if (AUTH_CONFIG.SECURITY.VALIDATE_ORIGIN) {
+      const origin = request.headers.get('origin');
+      const host = request.headers.get('host');
+      
+      if (origin && !isProductionDomain(new URL(origin).hostname)) {
+        return NextResponse.json(
+          { error: getErrorMessage('INVALID_DOMAIN') },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!body.message || !body.signature) {
       return NextResponse.json(
-        { error: 'Missing message or signature' },
+        { error: getErrorMessage('INVALID_SIGNATURE') },
         { status: 400 }
       );
     }
@@ -22,7 +36,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Failed to parse SIWE message:', error);
       return NextResponse.json(
-        { error: 'Invalid message format' },
+        { error: getErrorMessage('INVALID_SIGNATURE') },
         { status: 400 }
       );
     }
@@ -36,7 +50,7 @@ export async function POST(request: NextRequest) {
 
       if (!fields.success) {
         return NextResponse.json(
-          { error: 'Signature verification failed' },
+          { error: getErrorMessage('INVALID_SIGNATURE') },
           { status: 401 }
         );
       }
@@ -45,7 +59,7 @@ export async function POST(request: NextRequest) {
       const expirationTime = fields.data.expirationTime;
       if (expirationTime && new Date(expirationTime) < new Date()) {
         return NextResponse.json(
-          { error: 'Message has expired' },
+          { error: getErrorMessage('EXPIRED_SESSION') },
           { status: 401 }
         );
       }
@@ -67,24 +81,25 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: true,
-        message: 'Authentication successful',
+        message: getSuccessMessage('SIGN_IN') || 'Authentication successful',
         user: {
           address,
           fid: fid || undefined,
-          username: username || address.substring(0, 8)
-        }
+          username: username || `${address.substring(0, 6)}...${address.substring(38)}`
+        },
+        timestamp: Date.now()
       });
     } catch (error) {
       console.error('Signature verification error:', error);
       return NextResponse.json(
-        { error: 'Signature verification failed' },
+        { error: getErrorMessage('INVALID_SIGNATURE') },
         { status: 401 }
       );
     }
   } catch (error) {
     console.error('SIWE authentication error:', error);
     return NextResponse.json(
-      { error: 'Authentication failed' },
+      { error: getErrorMessage('NETWORK_ERROR') },
       { status: 500 }
     );
   }
