@@ -7,13 +7,27 @@ import {
   PanInfo,
   useMotionValue,
   useTransform,
+  animate,
 } from "framer-motion";
 import { usePitchDetection } from "@/hooks/usePitchDetection";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Sphere, MeshDistortMaterial } from "@react-three/drei";
-import { Mic, Share2, Heart, X, ChevronUp } from "lucide-react";
+import {
+  Mic,
+  Share2,
+  Heart,
+  X,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import StructuredChallenge from "./StructuredChallenge";
 import ViralChallenge from "./ViralChallenge";
+import {
+  MusicalPulse,
+  FestivalGlow,
+  SubtleAudioParticles,
+} from "@/components/ui/musical-effects";
 
 // Smooth 3D Audio Visualizer
 function AudioVisualizer({
@@ -75,34 +89,59 @@ function SwipeableCard({
 }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-25, 25]);
+  const rotate = useTransform(x, [-200, 200], [-15, 15]); // Reduced rotation for smoother feel
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
-    const threshold = 100;
+  // Add color feedback during swipe
+  const backgroundColor = useTransform(
+    x,
+    [-150, -50, 0, 50, 150],
+    [
+      "rgba(239, 68, 68, 0.1)",
+      "rgba(0, 0, 0, 0)",
+      "rgba(0, 0, 0, 0)",
+      "rgba(34, 197, 94, 0.1)",
+      "rgba(34, 197, 94, 0.2)",
+    ]
+  );
 
-    if (info.offset.x > threshold && onSwipeRight) {
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    const threshold = 75; // Reduced for more responsive swiping
+    const velocity = Math.abs(info.velocity.x) + Math.abs(info.velocity.y);
+    const velocityThreshold = 500; // Consider velocity for quick swipes
+
+    // Check for quick swipes (lower distance threshold if high velocity)
+    const effectiveThreshold =
+      velocity > velocityThreshold ? threshold * 0.6 : threshold;
+
+    if (info.offset.x > effectiveThreshold && onSwipeRight) {
+      // Haptic feedback on mobile
+      if ("vibrate" in navigator) navigator.vibrate(50);
       onSwipeRight();
-    } else if (info.offset.x < -threshold && onSwipeLeft) {
+    } else if (info.offset.x < -effectiveThreshold && onSwipeLeft) {
+      if ("vibrate" in navigator) navigator.vibrate(50);
       onSwipeLeft();
-    } else if (info.offset.y < -threshold && onSwipeUp) {
+    } else if (info.offset.y < -effectiveThreshold && onSwipeUp) {
+      if ("vibrate" in navigator) navigator.vibrate(50);
       onSwipeUp();
     } else {
-      // Snap back
-      x.set(0);
-      y.set(0);
+      // Smooth snap back with spring animation
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
     }
   };
 
   return (
     <motion.div
       className={`absolute inset-0 cursor-grab active:cursor-grabbing ${className}`}
-      style={{ x, y, rotate, opacity }}
+      style={{ x, y, rotate, opacity, backgroundColor }}
       drag
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.2}
+      dragConstraints={{ left: -300, right: 300, top: -300, bottom: 50 }}
+      dragElastic={0.3}
+      dragMomentum={false}
       onDragEnd={handleDragEnd}
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.98 }}
+      whileDrag={{ scale: 1.02, zIndex: 10 }}
     >
       {children}
     </motion.div>
@@ -236,6 +275,8 @@ export default function SmoothVocalChallenge({
   onChallengeComplete,
   isLoading = false,
 }: SmoothVocalChallengeProps) {
+  // Only use pitch detection for structured challenges, not viral challenges
+  const pitchDetection = usePitchDetection();
   const {
     pitchData,
     isListening,
@@ -243,7 +284,7 @@ export default function SmoothVocalChallenge({
     stopListening,
     error,
     hasPermission,
-  } = usePitchDetection();
+  } = pitchDetection;
   const [accuracy, setAccuracy] = useState(0);
   const [phase, setPhase] = useState<"intro" | "challenge" | "results">(
     "intro"
@@ -253,6 +294,26 @@ export default function SmoothVocalChallenge({
   const [selectedChallengeTitle, setSelectedChallengeTitle] =
     useState<string>("");
   const [challengeId, setChallengeId] = useState<string>("");
+  const [actionFeedback, setActionFeedback] = useState<string>("");
+
+  // Show action feedback and auto-hide
+  const showActionFeedback = (message: string) => {
+    setActionFeedback(message);
+    setTimeout(() => setActionFeedback(""), 2000);
+  };
+
+  // Stop pitch detection when switching to viral challenges (they don't need it)
+  useEffect(() => {
+    if (
+      phase === "challenge" &&
+      challenges[currentChallenge]?.type === "viral"
+    ) {
+      if (isListening) {
+        console.log("🔇 Stopping pitch detection for viral challenge");
+        stopListening();
+      }
+    }
+  }, [phase, currentChallenge, isListening, stopListening]);
 
   useEffect(() => {
     if (isListening && pitchData.frequency > 0) {
@@ -342,11 +403,21 @@ export default function SmoothVocalChallenge({
   // Main interface - Tinder-style card stack
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative overflow-hidden">
-      {/* Subtle animated background */}
+      {/* Subtle Audio Particles */}
+      <SubtleAudioParticles />
+
+      {/* Enhanced animated background */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-purple-600/10 to-pink-600/10"
         animate={{
-          opacity: isListening ? [0.1, 0.2, 0.1] : 0.1,
+          opacity: isListening ? [0.1, 0.3, 0.1] : 0.1,
+          background: isListening
+            ? [
+                "linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(147, 51, 234, 0.1), rgba(236, 72, 153, 0.1))",
+                "linear-gradient(to bottom right, rgba(147, 51, 234, 0.15), rgba(236, 72, 153, 0.15), rgba(99, 102, 241, 0.15))",
+                "linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(147, 51, 234, 0.1), rgba(236, 72, 153, 0.1))",
+              ]
+            : "linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(147, 51, 234, 0.1), rgba(236, 72, 153, 0.1))",
         }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -359,18 +430,22 @@ export default function SmoothVocalChallenge({
         transition={{ duration: 0.6 }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-            <motion.div
-              animate={{ rotate: isListening ? 360 : 0 }}
-              transition={{
-                duration: 2,
-                repeat: isListening ? Infinity : 0,
-                ease: "linear",
-              }}
-            >
-              <Mic className="w-5 h-5 text-white" />
-            </motion.div>
-          </div>
+          <MusicalPulse isActive={isListening} intensity="low">
+            <FestivalGlow color="purple" intensity="subtle">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                <motion.div
+                  animate={{ rotate: isListening ? 360 : 0 }}
+                  transition={{
+                    duration: 2,
+                    repeat: isListening ? Infinity : 0,
+                    ease: "linear",
+                  }}
+                >
+                  <Mic className="w-5 h-5 text-white" />
+                </motion.div>
+              </div>
+            </FestivalGlow>
+          </MusicalPulse>
           <span className="font-semibold text-xl text-white">GIGAVIBE</span>
         </div>
 
@@ -404,82 +479,170 @@ export default function SmoothVocalChallenge({
                     y: index === currentChallenge ? 0 : 20,
                     zIndex: challenges.length - index,
                   }}
-                  transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                  }}
                 >
                   <SwipeableCard
                     onSwipeRight={() => {
+                      console.log("➡️ Swiped right - Starting challenge!");
                       setSelectedChallengeTitle(challenge.title);
                       setPhase("challenge");
                     }}
                     onSwipeLeft={() => {
+                      console.log(
+                        "⬅️ Swiped left - Skipping to next challenge"
+                      );
                       setCurrentChallenge(
                         (prev) => (prev + 1) % challenges.length
                       );
                     }}
                     onSwipeUp={() => {
+                      console.log("⬆️ Swiped up - Quick start!");
                       setSelectedChallengeTitle(challenge.title);
                       setPhase("challenge");
                     }}
                   >
-                    <div
-                      className={`w-full h-full bg-gradient-to-br ${challenge.color} rounded-3xl p-8 flex flex-col justify-between text-white shadow-2xl backdrop-blur-md`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
-                            {challenge.difficulty}
-                          </span>
-                          <span className="text-sm opacity-80">
-                            {challenge.duration}
-                          </span>
+                    <FestivalGlow color="purple" intensity="subtle">
+                      <div
+                        className={`w-full h-full bg-gradient-to-br ${challenge.color} rounded-3xl p-8 flex flex-col justify-between text-white shadow-2xl backdrop-blur-md border border-white/20`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
+                              {challenge.difficulty}
+                            </span>
+                            <span className="text-sm opacity-80">
+                              {challenge.duration}
+                            </span>
+                          </div>
+                          <h3 className="text-2xl font-bold mb-4">
+                            {challenge.title}
+                          </h3>
+                          <p className="text-lg opacity-90 leading-relaxed">
+                            {challenge.description}
+                          </p>
                         </div>
-                        <h3 className="text-2xl font-bold mb-4">
-                          {challenge.title}
-                        </h3>
-                        <p className="text-lg opacity-90 leading-relaxed">
-                          {challenge.description}
-                        </p>
-                      </div>
 
-                      <div className="flex items-center justify-center gap-8 mt-8">
-                        <motion.div
-                          className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <X className="w-6 h-6" />
-                        </motion.div>
-                        <motion.div
-                          className="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Heart className="w-8 h-8" />
-                        </motion.div>
+                        <div className="flex items-center justify-center gap-8 mt-8">
+                          <motion.button
+                            className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center border border-red-400/30"
+                            whileHover={{
+                              scale: 1.1,
+                              backgroundColor: "rgba(239, 68, 68, 0.3)",
+                            }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              console.log("❌ Skip challenge");
+                              showActionFeedback("Skipped! 👋");
+                              if ("vibrate" in navigator)
+                                navigator.vibrate(100);
+                              setCurrentChallenge(
+                                (prev) => (prev + 1) % challenges.length
+                              );
+                            }}
+                          >
+                            <X className="w-6 h-6 text-red-400" />
+                          </motion.button>
+                          <motion.button
+                            className="w-16 h-16 bg-gradient-to-r from-pink-500/30 to-purple-500/30 rounded-full flex items-center justify-center border border-pink-400/50"
+                            whileHover={{
+                              scale: 1.1,
+                              boxShadow: "0 0 20px rgba(236, 72, 153, 0.5)",
+                              backgroundColor: "rgba(236, 72, 153, 0.4)",
+                            }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              console.log("❤️ Start challenge with love!");
+                              showActionFeedback("Let's sing! 🎤✨");
+                              if ("vibrate" in navigator)
+                                navigator.vibrate([50, 50, 100]);
+                              setSelectedChallengeTitle(challenge.title);
+                              setPhase("challenge");
+                            }}
+                          >
+                            <Heart className="w-8 h-8 text-pink-300" />
+                          </motion.button>
+                        </div>
                       </div>
-                    </div>
+                    </FestivalGlow>
                   </SwipeableCard>
                 </motion.div>
               ))}
             </AnimatePresence>
           </div>
 
-          {/* Swipe hints */}
+          {/* Enhanced Swipe hints with animations */}
           <motion.div
-            className="flex items-center gap-4 mt-8 text-white/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="flex flex-col items-center gap-3 mt-8 text-white/70"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.6 }}
           >
-            <div className="flex items-center gap-2">
-              <ChevronUp className="w-4 h-4" />
-              <span className="text-sm">Swipe up to start</span>
+            <div className="flex items-center gap-6">
+              <motion.div
+                className="flex items-center gap-2"
+                animate={{ x: [0, -5, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <ChevronLeft className="w-4 h-4 text-red-400" />
+                <span className="text-sm">Swipe left or tap ❌ to skip</span>
+              </motion.div>
+
+              <motion.div
+                className="flex items-center gap-2"
+                animate={{ x: [0, 5, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5,
+                }}
+              >
+                <span className="text-sm">Swipe right to start</span>
+                <ChevronRight className="w-4 h-4 text-green-400" />
+              </motion.div>
             </div>
-            <div className="flex items-center gap-2">
-              <Heart className="w-4 h-4" />
-              <span className="text-sm">Tap heart to begin</span>
-            </div>
+
+            <motion.div
+              className="flex items-center gap-4"
+              animate={{ y: [0, -3, 0] }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1,
+              }}
+            >
+              <ChevronUp className="w-4 h-4 text-purple-400" />
+              <span className="text-sm">
+                Swipe up or tap ❤️ for instant start
+              </span>
+              <Heart className="w-4 h-4 text-pink-400 animate-pulse" />
+            </motion.div>
           </motion.div>
+
+          {/* Action Feedback Toast */}
+          <AnimatePresence>
+            {actionFeedback && (
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-md rounded-2xl px-6 py-3 text-white font-semibold shadow-lg border border-white/30 z-50"
+              >
+                {actionFeedback}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 

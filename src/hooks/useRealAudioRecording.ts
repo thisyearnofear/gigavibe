@@ -142,10 +142,31 @@ export function useRealAudioRecording() {
   }, [initializeRecorder]);
 
   // Stop recording
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback(async () => {
     if (recorderRef.current && state.isRecording) {
-      recorderRef.current.stopRecording();
+      try {
+        // Wait for recording to fully stop and process
+        const success = await recorderRef.current.stopRecording();
+        
+        if (!success) {
+          console.warn('Recording stopped but no data was captured');
+          setState(prev => ({
+            ...prev,
+            error: 'No audio data was captured'
+          }));
+        }
+        
+        return success;
+      } catch (error) {
+        console.error('Error in stopRecording:', error);
+        setState(prev => ({
+          ...prev,
+          error: error instanceof Error ? error.message : 'Error stopping recording'
+        }));
+        return false;
+      }
     }
+    return false;
   }, [state.isRecording]);
 
   // Clear recording

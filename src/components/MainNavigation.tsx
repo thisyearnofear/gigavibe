@@ -2,20 +2,25 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, Users, Trophy, Zap, Lock } from "lucide-react";
+import { Mic, Users, Trophy, Zap, Lock, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import VocalRealityFlow from "./VocalRealityFlow";
+import SmoothVocalChallenge from "./SmoothVocalChallenge";
 import PeerJudging from "./PeerJudging";
 import FarcasterIntegration from "./FarcasterIntegration";
 import MarketLeaderboard from "./market/MarketLeaderboard";
 import DiscoveryFeed from "./discovery/DiscoveryFeed";
 import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
+import GigavibeLogo from "./ui/gigavibe-logo";
+import { Button } from "./ui/button";
+import { FloatingActionButton } from "./ui/floating-action-button";
+import { FullScreenLoading } from "./ui/loading";
 
 type MainScreen = "challenge" | "discovery" | "judging" | "leaderboard";
 
 export default function MainNavigation() {
   const [activeScreen, setActiveScreen] = useState<MainScreen>("discovery");
+  const [isLoading, setIsLoading] = useState(false);
   const { userInfo, notifyNewChallenge } = useFarcasterIntegration();
 
   const navItems = [
@@ -45,10 +50,38 @@ export default function MainNavigation() {
     },
   ];
 
+  const handleScreenChange = (screen: MainScreen) => {
+    if (screen === activeScreen) return;
+    setIsLoading(true);
+    setActiveScreen(screen);
+    // Simulate loading time for smooth transitions
+    setTimeout(() => setIsLoading(false), 300);
+  };
+
+  const handleQuickRecord = () => {
+    handleScreenChange("challenge");
+  };
+
+  const handleQuickChallenge = () => {
+    handleScreenChange("challenge");
+  };
+
+  const handleSocialClick = () => {
+    handleScreenChange("judging");
+  };
+
+  const handleLeaderboardClick = () => {
+    handleScreenChange("leaderboard");
+  };
+
   const renderScreen = () => {
+    if (isLoading) {
+      return <FullScreenLoading message="Loading..." showLogo={false} />;
+    }
+
     switch (activeScreen) {
       case "challenge":
-        return <VocalRealityFlow />;
+        return <SmoothVocalChallenge />; // Use SmoothVocalChallenge instead of VocalRealityFlow
       case "discovery":
         return <DiscoveryFeed initialFeedType="foryou" />;
       case "judging":
@@ -61,7 +94,11 @@ export default function MainNavigation() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative">
+    <div className="min-h-screen bg-gigavibe-mesh relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/10" />
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gigavibe-600/20 via-transparent to-transparent" />
+
       {/* App Logo */}
       <div className="fixed top-4 left-4 z-50">
         <motion.div
@@ -69,34 +106,33 @@ export default function MainNavigation() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Image
-            src="/images/gigavibe.png"
-            alt="GIGAVIBE"
-            width={40}
-            height={40}
-            className="rounded-lg shadow-lg"
-          />
+          <GigavibeLogo size="md" showText={false} />
         </motion.div>
       </div>
 
       {/* Main Content */}
-      <div className="pb-20">{renderScreen()}</div>
+      <motion.div 
+        className="pb-20"
+        key={activeScreen}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+      >
+        {renderScreen()}
+      </motion.div>
 
       {/* Auth Test Link */}
       <Link href="/auth-test" className="fixed top-4 right-4 z-50">
-        <motion.div
-          className="flex items-center gap-2 bg-black/50 backdrop-blur-sm text-white px-3 py-2 rounded-full border border-purple-500/30 hover:bg-black/70"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Lock className="w-4 h-4 text-purple-400" />
-          <span className="text-xs font-medium">Auth Test</span>
-        </motion.div>
+        <Button variant="glassmorphism" size="sm" className="gap-2 text-xs">
+          <Lock className="w-4 h-4" />
+          Auth Test
+        </Button>
       </Link>
 
       {/* Bottom Navigation */}
       <motion.nav
-        className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-lg border-t border-white/10 px-4 py-3 z-50"
+        className="fixed bottom-0 left-0 right-0 gigavibe-glass-dark border-t border-gigavibe-500/20 px-4 py-3 z-50"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
@@ -109,38 +145,83 @@ export default function MainNavigation() {
             return (
               <motion.button
                 key={item.id}
-                onClick={() => setActiveScreen(item.id)}
-                className={`flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-all duration-200 min-h-[56px] min-w-[56px] touch-manipulation ${
+                onClick={() => handleScreenChange(item.id)}
+                className={`flex flex-col items-center gap-1 py-3 px-4 rounded-2xl transition-all duration-300 min-h-[64px] min-w-[64px] touch-target haptic-medium gpu-accelerated will-change-transform focus-ring relative ${
                   isActive
-                    ? "text-purple-400"
-                    : "text-gray-400 hover:text-white active:bg-white/10"
+                    ? "text-gigavibe-400 bg-gigavibe-500/10"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
+                disabled={isLoading}
               >
+                {/* Active background glow */}
+                {isActive && (
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gigavibe-500/20 to-purple-500/20 blur-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+
                 <motion.div
                   animate={{
                     scale: isActive ? 1.2 : 1,
-                    rotate: isActive ? [0, 10, -10, 0] : 0,
+                    rotate: isActive ? [0, 5, -5, 0] : 0,
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="relative z-10"
                 >
                   <Icon className="w-6 h-6" />
                 </motion.div>
-                <span className="text-xs font-medium">{item.label}</span>
+
+                <span className="text-xs font-medium relative z-10">
+                  {item.label}
+                </span>
+
+                {/* Active indicator */}
                 {isActive && (
                   <motion.div
-                    className="w-1 h-1 bg-purple-400 rounded-full"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
+                    className="w-2 h-2 bg-gradient-to-r from-gigavibe-400 to-purple-400 rounded-full absolute -bottom-1 left-1/2 transform -translate-x-1/2"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
                   />
+                )}
+
+                {/* Sparkle effect for active state */}
+                {isActive && (
+                  <motion.div
+                    className="absolute -top-1 -right-1 text-gigavibe-400"
+                    initial={{ scale: 0, rotate: 0 }}
+                    animate={{
+                      scale: [0, 1, 0],
+                      rotate: [0, 180, 360],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </motion.div>
                 )}
               </motion.button>
             );
           })}
         </div>
       </motion.nav>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        variant="menu"
+        onRecordClick={handleQuickRecord}
+        onQuickChallengeClick={handleQuickChallenge}
+        onSocialClick={handleSocialClick}
+        onLeaderboardClick={handleLeaderboardClick}
+      />
     </div>
   );
 }

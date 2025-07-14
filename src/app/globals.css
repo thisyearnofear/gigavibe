@@ -1,26 +1,295 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* GIGAVIBE Brand Colors */
+  --gigavibe-primary: 212 70 239;
+  --gigavibe-secondary: 139 69 19;
+  --gigavibe-accent: 14 165 233;
+  
+  /* Dark theme colors */
+  --background: 15 23 42;
+  --foreground: 248 250 252;
+  --card: 30 41 59;
+  --card-foreground: 248 250 252;
+  --popover: 30 41 59;
+  --popover-foreground: 248 250 252;
+  --primary: 212 70 239;
+  --primary-foreground: 248 250 252;
+  --secondary: 71 85 105;
+  --secondary-foreground: 248 250 252;
+  --muted: 51 65 85;
+  --muted-foreground: 148 163 184;
+  --accent: 14 165 233;
+  --accent-foreground: 248 250 252;
+  --destructive: 239 68 68;
+  --destructive-foreground: 248 250 252;
+  --border: 51 65 85;
+  --input: 30 41 59;
+  --ring: 212 70 239;
+  --chart-1: 212 70 239;
+  --chart-2: 14 165 233;
+  --chart-3: 16 185 129;
+  --chart-4: 245 158 11;
+  --chart-5: 239 68 68;
+  
+  /* Font variables */
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-cal: 'Cal Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --font-comic: 'Comic Neue', cursive;
+  --font-fredoka: 'Fredoka One', cursive;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+    --primary: 212 70 239;
+    --primary-foreground: 255 255 255;
+    --secondary: 241 245 249;
+    --secondary-foreground: 15 23 42;
+    --muted: 241 245 249;
+    --muted-foreground: 100 116 139;
+    --accent: 241 245 249;
+    --accent-foreground: 15 23 42;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 212 70 239;
   }
 }
 
+* {
+  border-color: hsl(var(--border));
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg,
+    rgb(15 23 42) 0%,
+    rgb(30 41 59) 50%,
+    rgb(51 65 85) 100%
+  );
+  min-height: 100vh;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variation-settings: 'opsz' 32;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(51, 65, 85, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 70, 239, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 70, 239, 0.5);
+}
+
+/* GIGAVIBE brand animations */
+@keyframes gigavibe-shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.gigavibe-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 70, 239, 0.2),
+    transparent
+  );
+  background-size: 200px 100%;
+  animation: gigavibe-shimmer 1.5s infinite;
+}
+
+/* Glassmorphism utility */
+.gigavibe-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.gigavibe-glass-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Music-themed utility classes */
+.gigavibe-beat {
+  animation: gigavibe-beat 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes gigavibe-beat {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+.gigavibe-rhythm {
+  animation: gigavibe-rhythm 2s ease-in-out infinite;
+}
+
+@keyframes gigavibe-rhythm {
+  0%, 100% { transform: translateY(0px); }
+  25% { transform: translateY(-2px); }
+  50% { transform: translateY(0px); }
+  75% { transform: translateY(2px); }
+}
+
+/* Focus styles */
+.gigavibe-focus:focus {
+  outline: 2px solid rgb(212 70 239);
+  outline-offset: 2px;
+}
+
+/* Mobile touch optimization */
+@media (max-width: 768px) {
+  .gigavibe-touch {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Enhanced accessibility and modern color system */
+@media (prefers-contrast: high) {
+  :root {
+    --primary: 255 255 255;
+    --background: 0 0 0;
+    --foreground: 255 255 255;
+    --gigavibe-primary: 255 255 255;
+  }
+}
+
+/* Modern color system additions */
+:root {
+  /* Success states */
+  --success-gradient: linear-gradient(135deg, rgb(16 185 129), rgb(5 150 105));
+  --success-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+  
+  /* Warning states */
+  --warning-gradient: linear-gradient(135deg, rgb(245 158 11), rgb(217 119 6));
+  --warning-glow: 0 0 20px rgba(245, 158, 11, 0.3);
+  
+  /* Error states */
+  --error-gradient: linear-gradient(135deg, rgb(239 68 68), rgb(220 38 38));
+  --error-glow: 0 0 20px rgba(239, 68, 68, 0.3);
+  
+  /* Neutral states */
+  --neutral-gradient: linear-gradient(135deg, rgb(107 114 128), rgb(75 85 99));
+  
+  /* Performance optimized shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Enhanced touch targets */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Haptic feedback simulation */
+.haptic-light {
+  transition: transform 0.1s ease-out;
+}
+
+.haptic-light:active {
+  transform: scale(0.98);
+}
+
+.haptic-medium {
+  transition: transform 0.15s ease-out;
+}
+
+.haptic-medium:active {
+  transform: scale(0.95);
+}
+
+/* Modern loading states */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* Enhanced focus states */
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.2s ease-in-out;
+}
+
+.focus-ring:focus-visible {
+  outline-color: rgb(212 70 239);
+  box-shadow: 0 0 0 4px rgba(212, 70, 239, 0.1);
+}
+
+/* Enhanced reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .gigavibe-motion {
+    animation: none !important;
+    transition: none !important;
+  }
 }
