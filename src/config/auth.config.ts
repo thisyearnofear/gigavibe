@@ -20,7 +20,8 @@ export const AUTH_CONFIG = {
       'localhost',
       'gigavibe.app',
       'www.gigavibe.app',
-      process.env.NEXT_PUBLIC_VERCEL_URL
+      process.env.NEXT_PUBLIC_VERCEL_URL,
+      process.env.URL
     ].filter(Boolean),
     
     // Session validation

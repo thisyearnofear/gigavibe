@@ -155,7 +155,7 @@ export function FullScreenLoading({
             <div className="bg-gradient-to-r from-gigavibe-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
               <h1 className="text-4xl font-bold tracking-wide">GIGAVIBE</h1>
               <p className="text-sm text-slate-300 font-medium tracking-widest mt-2">
-                VOCAL TRAINING
+                "Sing Like Nobody’s Listening. They Are."
               </p>
             </div>
 
