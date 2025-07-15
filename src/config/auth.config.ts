@@ -23,7 +23,14 @@ export const AUTH_CONFIG = {
       'www.gigavibe.app',
       process.env.NEXT_PUBLIC_VERCEL_URL,
       process.env.URL,
-      process.env.VERCEL_URL
+      process.env.VERCEL_URL,
+      // Add common development and deployment patterns
+      'localhost:3000',
+      '127.0.0.1:3000',
+      // Add any Vercel preview URLs pattern
+      ...(process.env.VERCEL_URL ? [process.env.VERCEL_URL, `https://${process.env.VERCEL_URL}`] : []),
+      // Add any custom domain from NEXT_PUBLIC_URL
+      ...(process.env.NEXT_PUBLIC_URL ? [new URL(process.env.NEXT_PUBLIC_URL).hostname] : [])
     ].filter(Boolean),
     
     // Session validation
