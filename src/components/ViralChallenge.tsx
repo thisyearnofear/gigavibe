@@ -12,6 +12,7 @@ import { AudioRecordingService } from "@/lib/audio/AudioRecordingService";
 import { GroveService } from "@/lib/storage/GroveService";
 import PerformanceSubmissionFlow from "@/components/performance/PerformanceSubmissionFlow";
 import { PerformanceData } from "@/types/performance.types";
+import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
 
 interface ViralChallengeProps {
   challenge?: ViralChallenge;
@@ -600,7 +601,7 @@ export default function ViralChallengeComponent({
 
   // Helper function to create Farcaster cast
   const createFarcasterCast = async (recordingId: string) => {
-    const { userInfo } = useFarcasterIntegration();
+    const { userInfo, signerUuid } = useFarcasterIntegration();
     
     if (!userInfo?.fid) {
       throw new Error("User not authenticated with Farcaster");
@@ -611,7 +612,7 @@ export default function ViralChallengeComponent({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'publishCast',
-        signerUuid: userInfo.signerUuid,
+        signerUuid: signerUuid,
         text: `🎤 Reality Check: "${currentChallenge?.title}" - I thought ${Math.ceil(accuracy / 20)}⭐ #GigaVibe`,
         embeds: [
           { url: `lens://${recordingId}` }, // Grove audio URI
