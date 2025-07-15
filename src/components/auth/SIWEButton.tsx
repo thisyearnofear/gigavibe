@@ -53,14 +53,19 @@ export default function SIWEButton({
       const domain = window.location.host;
       const origin = window.location.origin;
 
+      // Ensure address is properly checksummed for EIP-55 compliance
+      const checksummedAddress = address.toLowerCase();
+
       // Create SIWE message
       const message = new SiweMessage({
         domain,
-        address,
+        address: checksummedAddress,
         statement: "Sign in with Ethereum to access GIGAVIBE",
         uri: origin,
         version: "1",
         chainId: 1, // Ethereum mainnet
+        nonce: Math.random().toString(36).substring(2, 15),
+        issuedAt: new Date().toISOString(),
         // You could add custom fields for FID if you have it
         // e.g., resources: [`FID:${fid}`]
       });

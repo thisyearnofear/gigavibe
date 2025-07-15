@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Upload, 
-  CheckCircle, 
-  XCircle, 
-  RotateCcw, 
-  Share2, 
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Upload,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  Share2,
   Star,
   Loader2,
   AlertCircle,
   User,
-  Zap
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { usePerformanceUpload } from '@/hooks/usePerformanceUpload';
-import { useSocialIntegration } from '@/hooks/useSocialIntegration';
-import { useUnifiedAuth } from '@/contexts/UnifiedAuthContext';
-import { PerformanceData } from '@/types/performance.types';
-import MobileAuthSheet from '@/components/auth/MobileAuthSheet';
+  Zap,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePerformanceUpload } from "@/hooks/usePerformanceUpload";
+import { useSocialIntegration } from "@/hooks/useSocialIntegration";
+import { useUnifiedAuth } from "@/contexts/UnifiedAuthContext";
+import { PerformanceData } from "@/types/performance.types";
+import MobileAuthSheet from "@/components/auth/MobileAuthSheet";
 
 interface PerformanceSubmissionFlowProps {
   audioBlob: Blob;
@@ -37,7 +37,7 @@ export default function PerformanceSubmissionFlow({
   performanceData,
   onComplete,
   onRetry,
-  className = ''
+  className = "",
 }: PerformanceSubmissionFlowProps) {
   const { isAuthenticated, displayName, avatarUrl } = useUnifiedAuth();
   const {
@@ -48,9 +48,9 @@ export default function PerformanceSubmissionFlow({
     submitPerformance,
     retryUpload,
     clearError,
-    reset
+    reset,
   } = usePerformanceUpload();
-  
+
   const {
     isSharing,
     shareError,
@@ -58,7 +58,7 @@ export default function PerformanceSubmissionFlow({
     canShare,
     shareToFarcaster,
     generateShareMessage,
-    clearShareState
+    clearShareState,
   } = useSocialIntegration();
 
   const [selfRating, setSelfRating] = useState(performanceData.selfRating || 0);
@@ -66,11 +66,18 @@ export default function PerformanceSubmissionFlow({
 
   // Auto-submit when component mounts if authenticated
   useEffect(() => {
-    if (isAuthenticated && uploadState === 'idle') {
+    if (isAuthenticated && uploadState === "idle") {
       const dataWithRating = { ...performanceData, selfRating };
       submitPerformance(audioBlob, dataWithRating);
     }
-  }, [isAuthenticated, uploadState, audioBlob, performanceData, selfRating, submitPerformance]);
+  }, [
+    isAuthenticated,
+    uploadState,
+    audioBlob,
+    performanceData,
+    selfRating,
+    submitPerformance,
+  ]);
 
   const handleSelfRating = (rating: number) => {
     setSelfRating(rating);
@@ -80,18 +87,18 @@ export default function PerformanceSubmissionFlow({
 
   const handleSubmitWithRating = async () => {
     if (selfRating === 0) return;
-    
+
     const dataWithRating = { ...performanceData, selfRating };
     await submitPerformance(audioBlob, dataWithRating);
   };
 
   const handleShare = async () => {
     if (!uploadResult) return;
-    
+
     const success = await shareToFarcaster(uploadResult);
     if (success) {
       // Optional: Track sharing analytics
-      console.log('Performance shared successfully');
+      console.log("Performance shared successfully");
     }
   };
 
@@ -103,12 +110,12 @@ export default function PerformanceSubmissionFlow({
 
   const getUploadStateIcon = () => {
     switch (uploadState) {
-      case 'uploading':
-      case 'retrying':
+      case "uploading":
+      case "retrying":
         return <Loader2 className="w-6 h-6 animate-spin text-blue-500" />;
-      case 'success':
+      case "success":
         return <CheckCircle className="w-6 h-6 text-green-500" />;
-      case 'error':
+      case "error":
         return <XCircle className="w-6 h-6 text-red-500" />;
       default:
         return <Upload className="w-6 h-6 text-gray-500" />;
@@ -117,23 +124,23 @@ export default function PerformanceSubmissionFlow({
 
   const getUploadStateMessage = () => {
     switch (uploadState) {
-      case 'uploading':
-        return uploadProgress?.message || 'Uploading your performance...';
-      case 'retrying':
-        return 'Retrying upload...';
-      case 'success':
-        return 'Performance uploaded successfully!';
-      case 'error':
-        return error || 'Upload failed';
-      case 'auth_required':
-        return 'Please sign in to submit your performance';
+      case "uploading":
+        return uploadProgress?.message || "Uploading your performance...";
+      case "retrying":
+        return "Retrying upload...";
+      case "success":
+        return "Performance uploaded successfully!";
+      case "error":
+        return error || "Upload failed";
+      case "auth_required":
+        return "Please sign in to submit your performance";
       default:
-        return 'Ready to upload';
+        return "Ready to upload";
     }
   };
 
   // Auth Required State
-  if (uploadState === 'auth_required') {
+  if (uploadState === "auth_required") {
     return (
       <div className={`space-y-6 ${className}`}>
         <Card className="bg-gray-800/50 border-gray-700">
@@ -147,19 +154,21 @@ export default function PerformanceSubmissionFlow({
             <p className="text-gray-300 text-center">
               Sign in to submit your performance and join the community!
             </p>
-            
-            <MobileAuthSheet>
+
+            <MobileAuthSheet
+              onAuthSuccess={() => {
+                // Retry the upload after successful authentication
+                const dataWithRating = { ...performanceData, selfRating };
+                submitPerformance(audioBlob, dataWithRating);
+              }}
+            >
               <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
                 <User className="w-4 h-4 mr-2" />
                 Sign In to Submit
               </Button>
             </MobileAuthSheet>
-            
-            <Button
-              onClick={onRetry}
-              variant="outline"
-              className="w-full"
-            >
+
+            <Button onClick={onRetry} variant="outline" className="w-full">
               <RotateCcw className="w-4 h-4 mr-2" />
               Try Again
             </Button>
@@ -181,7 +190,7 @@ export default function PerformanceSubmissionFlow({
           {avatarUrl ? (
             <img
               src={avatarUrl}
-              alt={displayName || 'User'}
+              alt={displayName || "User"}
               className="w-10 h-10 rounded-full"
             />
           ) : (
@@ -214,17 +223,20 @@ export default function PerformanceSubmissionFlow({
                 onClick={() => handleSelfRating(star)}
                 className={`p-2 rounded-full transition-colors ${
                   star <= selfRating
-                    ? 'text-yellow-400 bg-yellow-400/20'
-                    : 'text-gray-600 hover:text-gray-400'
+                    ? "text-yellow-400 bg-yellow-400/20"
+                    : "text-gray-600 hover:text-gray-400"
                 }`}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <Star className="w-8 h-8" fill={star <= selfRating ? 'currentColor' : 'none'} />
+                <Star
+                  className="w-8 h-8"
+                  fill={star <= selfRating ? "currentColor" : "none"}
+                />
               </motion.button>
             ))}
           </div>
-          
+
           <AnimatePresence>
             {showDunningKrugerHint && (
               <motion.div
@@ -235,7 +247,7 @@ export default function PerformanceSubmissionFlow({
               >
                 <p className="text-purple-300 text-sm">
                   <Zap className="w-4 h-4 inline mr-1" />
-                  We'll compare this to community ratings later! 
+                  We'll compare this to community ratings later!
                 </p>
               </motion.div>
             )}
@@ -269,20 +281,17 @@ export default function PerformanceSubmissionFlow({
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-gray-300">{getUploadStateMessage()}</span>
-            {uploadState === 'uploading' && uploadProgress && (
+            {uploadState === "uploading" && uploadProgress && (
               <span className="text-sm text-gray-400">
                 {uploadProgress.progress}%
               </span>
             )}
           </div>
-          
+
           {uploadProgress && (
-            <Progress 
-              value={uploadProgress.progress} 
-              className="h-2"
-            />
+            <Progress value={uploadProgress.progress} className="h-2" />
           )}
-          
+
           {error && (
             <Alert className="bg-red-500/20 border-red-500/50">
               <AlertCircle className="w-4 h-4" />
@@ -296,18 +305,14 @@ export default function PerformanceSubmissionFlow({
 
       {/* Action Buttons */}
       <div className="flex gap-4">
-        {uploadState === 'error' && (
-          <Button
-            onClick={retryUpload}
-            variant="outline"
-            className="flex-1"
-          >
+        {uploadState === "error" && (
+          <Button onClick={retryUpload} variant="outline" className="flex-1">
             <RotateCcw className="w-4 h-4 mr-2" />
             Retry Upload
           </Button>
         )}
-        
-        {uploadState === 'idle' && selfRating > 0 && (
+
+        {uploadState === "idle" && selfRating > 0 && (
           <Button
             onClick={handleSubmitWithRating}
             className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
@@ -316,8 +321,8 @@ export default function PerformanceSubmissionFlow({
             Submit Performance
           </Button>
         )}
-        
-        {uploadState === 'success' && uploadResult && (
+
+        {uploadState === "success" && uploadResult && (
           <>
             {canShare && (
               <Button
@@ -334,7 +339,7 @@ export default function PerformanceSubmissionFlow({
                 Share to Farcaster
               </Button>
             )}
-            
+
             <Button
               onClick={handleContinue}
               className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
@@ -355,7 +360,7 @@ export default function PerformanceSubmissionFlow({
           </AlertDescription>
         </Alert>
       )}
-      
+
       {shareError && (
         <Alert className="bg-red-500/20 border-red-500/50">
           <AlertCircle className="w-4 h-4" />

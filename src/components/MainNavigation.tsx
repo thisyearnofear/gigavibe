@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mic, Users, Trophy, Zap, Sparkles } from "lucide-react";
 import Image from "next/image";
@@ -13,6 +13,7 @@ import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
 import GigavibeLogo from "./ui/gigavibe-logo";
 import { FloatingActionButton } from "./ui/floating-action-button";
 import { FullScreenLoading } from "./ui/loading";
+import { useCrossTab } from "@/contexts/CrossTabContext";
 import Header from "./Header";
 
 type MainScreen = "challenge" | "discovery" | "judging" | "leaderboard";
@@ -21,6 +22,7 @@ export default function MainNavigation() {
   const [activeScreen, setActiveScreen] = useState<MainScreen>("discovery");
   const [isLoading, setIsLoading] = useState(false);
   const { userInfo, notifyNewChallenge } = useFarcasterIntegration();
+  const { navigateWithContext } = useCrossTab();
 
   const navItems = [
     {
@@ -49,13 +51,27 @@ export default function MainNavigation() {
     },
   ];
 
-  const handleScreenChange = (screen: MainScreen) => {
-    if (screen === activeScreen) return;
+  const handleScreenChange = (screen: MainScreen, context?: any) => {
+    if (screen === activeScreen && !context) return;
     setIsLoading(true);
     setActiveScreen(screen);
     // Simulate loading time for smooth transitions
     setTimeout(() => setIsLoading(false), 300);
   };
+
+  // Listen for cross-tab navigation events
+  useEffect(() => {
+    const handleNavigationEvent = (event: CustomEvent) => {
+      const { tab, context } = event.detail;
+      handleScreenChange(tab as MainScreen, context);
+    };
+
+    window.addEventListener('gigavibe-navigate', handleNavigationEvent as EventListener);
+    
+    return () => {
+      window.removeEventListener('gigavibe-navigate', handleNavigationEvent as EventListener);
+    };
+  }, []);
 
   const handleQuickRecord = () => {
     handleScreenChange("challenge");

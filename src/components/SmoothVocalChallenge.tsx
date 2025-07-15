@@ -20,6 +20,11 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  Target,
+  Star,
+  Zap,
+  Users,
+  Music,
 } from "lucide-react";
 import StructuredChallenge from "./StructuredChallenge";
 import ViralChallenge from "./ViralChallenge";
@@ -328,24 +333,45 @@ export default function SmoothVocalChallenge({
       description: "Copy an AI-generated track and see how you really sound",
       difficulty: "Fun Mode",
       duration: "30s",
-      color: "from-purple-500 to-pink-600",
+      color: "from-orange-500 via-red-500 to-pink-500",
       type: "viral",
+      preview: {
+        features: ["AI backing track", "Auto-mix vocals", "Instant viral potential"],
+        viralThreshold: 75,
+        channel: "/creators",
+        iconType: "mic",
+        accent: "from-orange-400 to-red-400"
+      }
     },
     {
       title: "Vocal Range Test",
       description: "Find out if you're secretly Mariah Carey",
       difficulty: "Training",
       duration: "2 min",
-      color: "from-blue-500 to-indigo-600",
+      color: "from-blue-500 via-indigo-500 to-purple-500",
       type: "structured",
+      preview: {
+        features: ["Pitch tracking", "Real-time feedback", "Technical scoring"],
+        viralThreshold: 150,
+        channel: "/music",
+        iconType: "target",
+        accent: "from-blue-400 to-indigo-400"
+      }
     },
     {
       title: "Show Off Mode",
       description: "Time to prove you've got the goods",
       difficulty: "Advanced",
       duration: "5 min",
-      color: "from-pink-500 to-red-600",
+      color: "from-cyan-500 via-blue-500 to-indigo-600",
       type: "structured",
+      preview: {
+        features: ["Extended performance", "Advanced analytics", "Pro scoring"],
+        viralThreshold: 200,
+        channel: "/music",
+        iconType: "star",
+        accent: "from-cyan-400 to-blue-400"
+      }
     },
   ];
 
@@ -509,23 +535,59 @@ export default function SmoothVocalChallenge({
                   >
                     <FestivalGlow color="purple" intensity="subtle">
                       <div
-                        className={`w-full h-full bg-gradient-to-br ${challenge.color} rounded-3xl p-8 flex flex-col justify-between text-white shadow-2xl backdrop-blur-md border border-white/20`}
+                        className={`w-full h-full bg-gradient-to-br ${challenge.color} rounded-3xl p-6 flex flex-col justify-between text-white shadow-2xl backdrop-blur-md border border-white/20`}
                       >
                         <div>
+                          {/* Header with icon and meta */}
                           <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
-                              {challenge.difficulty}
-                            </span>
-                            <span className="text-sm opacity-80">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 bg-gradient-to-r ${challenge.preview.accent} rounded-xl flex items-center justify-center shadow-lg`}>
+                                {challenge.preview.iconType === "mic" && <Mic className="w-5 h-5 text-white" />}
+                                {challenge.preview.iconType === "target" && <Target className="w-5 h-5 text-white" />}
+                                {challenge.preview.iconType === "star" && <Star className="w-5 h-5 text-white" />}
+                              </div>
+                              <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
+                                {challenge.difficulty}
+                              </span>
+                            </div>
+                            <span className="text-sm opacity-80 font-medium">
                               {challenge.duration}
                             </span>
                           </div>
-                          <h3 className="text-2xl font-bold mb-4">
+
+                          {/* Title and description */}
+                          <h3 className="text-2xl font-bold mb-3">
                             {challenge.title}
                           </h3>
-                          <p className="text-lg opacity-90 leading-relaxed">
+                          <p className="text-base opacity-90 leading-relaxed mb-4">
                             {challenge.description}
                           </p>
+
+                          {/* Clean feature preview */}
+                          <div className="space-y-2 mb-4">
+                            {challenge.preview.features.map((feature, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm">
+                                <div className="w-1.5 h-1.5 bg-white/60 rounded-full"></div>
+                                <span className="opacity-90">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Viral threshold and channel info */}
+                          <div className="flex items-center justify-between text-xs opacity-80 bg-white/10 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-1">
+                              <Zap className="w-3 h-3" />
+                              <span>{challenge.preview.viralThreshold} pts to viral</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {challenge.preview.channel === "/creators" ? (
+                                <Users className="w-3 h-3" />
+                              ) : (
+                                <Music className="w-3 h-3" />
+                              )}
+                              <span>{challenge.preview.channel}</span>
+                            </div>
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-center gap-8 mt-8">

@@ -40,9 +40,15 @@ export interface DiscoveryFeedData {
   next?: {
     cursor: string | null;
   };
+  channel?: {
+    id: string;
+    name: string;
+    description?: string;
+    imageUrl?: string;
+  };
 }
 
-export type FeedType = 'foryou' | 'trending' | 'following';
+export type FeedType = "foryou" | "trending" | "following" | "gigavibe" | "arbitrum" | "base" | "base-creators" | "music" | "creators";
 
 export function useFarcasterDiscovery() {
   const { isAuthenticated, user } = useFarcasterAuth();
@@ -63,33 +69,55 @@ export function useFarcasterDiscovery() {
       setLoading(true);
       setError(null);
       
-      const params = new URLSearchParams({
-        action: 'fetchDiscoveryFeed',
-        feedType,
-        limit: limit.toString(),
-        ...(loadMore && cursor ? { cursor } : {})
-      });
+      // Check if it's a channel feed
+      const channelFeeds = ['gigavibe', 'arbitrum', 'base', 'base-creators', 'music', 'creators'];
+      let response;
       
-      const response = await fetch(`/api/farcaster/discovery?${params}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch discovery feed: ${response.status}`);
+      if (channelFeeds.includes(feedType)) {
+        // Use Neynar channel API for channel feeds
+        response = await fetch(`/api/farcaster/cast?action=fetchChannel&channelId=${feedType}`);
+      } else {
+        // Use existing discovery API for algorithmic feeds
+        const params = new URLSearchParams({
+          action: 'fetchDiscoveryFeed',
+          feedType,
+          limit: limit.toString(),
+          ...(loadMore && cursor ? { cursor } : {})
+        });
+        response = await fetch(`/api/farcaster/discovery?${params}`);
       }
       
-      const data: DiscoveryFeedData = await response.json();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${feedType} feed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform channel response to match DiscoveryFeedData format
+      let transformedData: DiscoveryFeedData;
+      if (channelFeeds.includes(feedType)) {
+        transformedData = {
+          casts: data.casts || [],
+          next: data.next,
+          channel: data.channel || { id: feedType, name: feedType }
+        };
+      } else {
+        transformedData = data;
+      }
       
       if (loadMore && feedData) {
         // Append new data for infinite scroll
         const updatedData = {
-          casts: [...feedData.casts, ...data.casts],
-          next: data.next
+          casts: [...feedData.casts, ...transformedData.casts],
+          next: transformedData.next,
+          channel: transformedData.channel
         };
         setFeedData(updatedData);
         return updatedData;
       } else {
         // Fresh data
-        setFeedData(data);
-        return data;
+        setFeedData(transformedData);
+        return transformedData;
       }
     } catch (err) {
       console.error('Failed to fetch discovery feed:', err);

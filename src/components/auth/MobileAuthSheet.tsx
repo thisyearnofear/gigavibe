@@ -1,33 +1,60 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, X, Wallet, Users, Shield, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { FarcasterAuthStatus } from '@/components/auth/FarcasterAuthStatus';
-import { useFarcasterAuth } from '@/contexts/FarcasterAuthContext';
-import { useUnifiedAuth } from '@/contexts/UnifiedAuthContext';
-import SIWEButton from '@/components/auth/SIWEButton';
-import SIWNButton from '@/components/auth/SIWNButton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, X, Wallet, Users, Shield, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { FarcasterAuthStatus } from "@/components/auth/FarcasterAuthStatus";
+import { useFarcasterAuth } from "@/contexts/FarcasterAuthContext";
+import { useUnifiedAuth } from "@/contexts/UnifiedAuthContext";
+import SIWEButton from "@/components/auth/SIWEButton";
+import SIWNButton from "@/components/auth/SIWNButton";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface MobileAuthSheetProps {
   children: React.ReactNode;
+  onAuthSuccess?: () => void;
 }
 
-export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
+export default function MobileAuthSheet({
+  children,
+  onAuthSuccess,
+}: MobileAuthSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [authMethod, setAuthMethod] = useState<'select' | 'farcaster' | 'ethereum'>('select');
-  const { isAuthenticated, displayName, avatarUrl, authMethod: currentAuthMethod, setEthUser } = useUnifiedAuth();
+  const [authMethod, setAuthMethod] = useState<
+    "select" | "farcaster" | "ethereum"
+  >("select");
+  const {
+    isAuthenticated,
+    displayName,
+    avatarUrl,
+    authMethod: currentAuthMethod,
+    setEthUser,
+  } = useUnifiedAuth();
+  const farcasterAuth = useFarcasterAuth();
 
   const handleSuccess = () => {
     setIsOpen(false);
-    setAuthMethod('select');
+    setAuthMethod("select");
+    // Call the callback to continue the upload flow
+    onAuthSuccess?.();
   };
 
   const handleBack = () => {
-    setAuthMethod('select');
+    setAuthMethod("select");
   };
 
   const AuthMethodSelector = () => (
@@ -41,9 +68,9 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
         </p>
       </div>
 
-      <Card 
+      <Card
         className="bg-gray-800/50 border-gray-700 cursor-pointer hover:bg-gray-800/70 transition-colors"
-        onClick={() => setAuthMethod('farcaster')}
+        onClick={() => setAuthMethod("farcaster")}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -52,7 +79,9 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
                 <Users className="w-5 h-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-white text-base">Farcaster</CardTitle>
+                <CardTitle className="text-white text-base">
+                  Farcaster
+                </CardTitle>
                 <CardDescription className="text-gray-400">
                   Social features & casting
                 </CardDescription>
@@ -63,9 +92,9 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
         </CardHeader>
       </Card>
 
-      <Card 
+      <Card
         className="bg-gray-800/50 border-gray-700 cursor-pointer hover:bg-gray-800/70 transition-colors"
-        onClick={() => setAuthMethod('ethereum')}
+        onClick={() => setAuthMethod("ethereum")}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -125,11 +154,16 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
         <CardContent>
           <div className="text-center">
             <p className="text-gray-300 mb-4 text-sm">
-              Sign in with your Farcaster account to cast, follow, and interact with the community
+              Sign in with your Farcaster account to cast, follow, and interact
+              with the community
             </p>
             <SIWNButton
-              onSuccess={handleSuccess}
-              onError={(error) => console.error('SIWN Error:', error)}
+              onSuccess={(data) => {
+                // Update the Farcaster auth context
+                farcasterAuth.signIn(data);
+                handleSuccess();
+              }}
+              onError={(error) => console.error("SIWN Error:", error)}
               theme="dark"
             />
           </div>
@@ -178,7 +212,7 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
                 setEthUser(user);
                 handleSuccess();
               }}
-              onError={(error) => console.error('SIWE Error:', error)}
+              onError={(error) => console.error("SIWE Error:", error)}
             />
           </div>
         </CardContent>
@@ -188,19 +222,17 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        {children}
-      </SheetTrigger>
-      <SheetContent 
-        side="bottom" 
+      <SheetTrigger asChild>{children}</SheetTrigger>
+      <SheetContent
+        side="bottom"
         className="h-[80vh] bg-gradient-to-br from-gray-900 to-indigo-900 text-white border-gray-700 rounded-t-3xl"
       >
         <SheetHeader className="pb-4">
           <SheetTitle className="text-white text-center">
-            {isAuthenticated ? 'Account' : 'Sign In'}
+            {isAuthenticated ? "Account" : "Sign In"}
           </SheetTitle>
         </SheetHeader>
-        
+
         <div className="h-full overflow-y-auto">
           {isAuthenticated ? (
             <div className="pt-4">
@@ -215,9 +247,9 @@ export default function MobileAuthSheet({ children }: MobileAuthSheetProps) {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                {authMethod === 'select' && <AuthMethodSelector />}
-                {authMethod === 'farcaster' && <FarcasterAuth />}
-                {authMethod === 'ethereum' && <EthereumAuth />}
+                {authMethod === "select" && <AuthMethodSelector />}
+                {authMethod === "farcaster" && <FarcasterAuth />}
+                {authMethod === "ethereum" && <EthereumAuth />}
               </motion.div>
             </AnimatePresence>
           )}

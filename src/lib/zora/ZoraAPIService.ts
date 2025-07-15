@@ -8,14 +8,10 @@ import { PerformanceCoin, TradingMetrics } from './types';
  */
 export class ZoraAPIService {
   private static instance: ZoraAPIService;
-  private baseURL = 'https://api.zora.co/graphql';
-  private apiKey: string;
+  private baseURL = '/api/zora/proxy';
 
   constructor() {
-    this.apiKey = process.env.NEXT_PUBLIC_ZORA_API_KEY || '';
-    if (!this.apiKey) {
-      console.warn('ZORA_API_KEY not found - using fallback data');
-    }
+    // No need for API key in client since we're using the proxy
   }
 
   static getInstance(): ZoraAPIService {
@@ -259,14 +255,13 @@ export class ZoraAPIService {
   }
 
   /**
-   * Make GraphQL request to Zora API
+   * Make GraphQL request to Zora API via proxy
    */
   private async makeGraphQLRequest(query: string, variables: any) {
     const response = await fetch(this.baseURL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        ...(this.apiKey && { 'Authorization': `Bearer ${this.apiKey}` })
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         query,
@@ -278,7 +273,14 @@ export class ZoraAPIService {
       throw new Error(`GraphQL request failed: ${response.statusText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    
+    // Check for proxy errors
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    return result;
   }
 
   /**

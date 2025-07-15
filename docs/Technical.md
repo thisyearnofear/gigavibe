@@ -43,30 +43,25 @@ GIGAVIBE leverages the Farcaster protocol as a decentralized social database, el
 
 ### Data Queries Using Neynar API
 
-- Fetching recent performances, community votes, user performance history, and search functionalities through the Neynar API.
+GIGAVIBE leverages the Neynar Node.js SDK v3.22.0 through server-side API routes for all Farcaster operations:
 
   ```typescript
-  // Get recent performances
-  const performances = await neynar.fetchCastsInChannel("gigavibe", {
-    limit: 50,
-    hasEmbeds: true, // Only casts with audio/metadata
-  });
+  // Get recent performances from /gigavibe channel
+  const channelResponse = await fetch('/api/farcaster/cast?action=fetchChannel&channelId=gigavibe');
+  const { casts: performances } = await channelResponse.json();
 
-  // Get community votes for a performance
-  const votes = await neynar.fetchCastReplies(performanceCastHash, {
-    limit: 100,
-  });
-
-  // Get user's performance history
-  const userPerformances = await neynar.fetchCastsForUser(fid, {
-    channel: "gigavibe",
-  });
+  // Get community votes for a performance (via replies)
+  const votesResponse = await fetch(`/api/farcaster/replies?castHash=${performanceCastHash}`);
+  const { casts: allReplies } = await votesResponse.json();
+  const votes = allReplies.filter(cast => cast.text.includes('Rating:') && cast.text.includes('⭐'));
 
   // Search performances by text
-  const searchResults = await neynar.searchCasts({
-    q: "reality check",
-    channel: "gigavibe",
-  });
+  const searchResponse = await fetch('/api/farcaster/cast?action=searchCasts&query=reality check');
+  const { casts: searchResults } = await searchResponse.json();
+
+  // Get user profile data
+  const userResponse = await fetch(`/api/farcaster/user?action=fetchUserProfile&fid=${fid}`);
+  const userProfile = await userResponse.json();
   ```
 
 ## 📊 Benefits of Farcaster-Native Approach
@@ -77,12 +72,35 @@ GIGAVIBE leverages the Farcaster protocol as a decentralized social database, el
 - **Real Identity**: Verified users, established reputation systems, social proof, and minimal bot issues.
 - **Mobile Integration**: Native Warpcast support, push notifications, mobile-first UX, and cross-platform compatibility.
 
-## 🎭 Implementation Strategy for Farcaster Integration
+## 🎭 Post-Submission Flow: Four-Tab Integration Strategy
 
-- **Phase 1: Core Integration**: Performance uploads as casts, community voting via replies, discovery feed from channel queries, and user profile integration.
-- **Phase 2: Enhanced Metadata**: Rich IPFS metadata, community cards, performance analytics, and viral detection.
-- **Phase 3: Advanced Features**: Cross-app integration, composable social features, real-time updates via hub subscriptions, and custom indexing for complex queries.
-- **Phase 4: Social Optimization**: Weekly challenge rituals, enhanced identity expression, viral loop amplification, and habit formation triggers.
+GIGAVIBE's post-submission experience orchestrates users through all four tabs using Farcaster primitives:
+
+### **Phase 1: Cast Creation (Sing Tab)**
+- Performance upload to Grove storage (`lens://` URIs)
+- Cast creation in `/gigavibe` channel with audio embeds
+- Immediate navigation to Discovery tab with cast highlighting
+
+### **Phase 2: Channel Discovery (Discover Tab)**  
+- Channel-aware feed using Neynar `fetchChannel` API
+- Real-time cast highlighting for user's new performance
+- Cross-tab navigation to encourage voting participation
+
+### **Phase 3: Reply-Based Voting (Judge Tab)**
+- Community voting via cast replies with structured ratings
+- Gamified voting progress to unlock user's own performance rating
+- Real-time vote tracking using Neynar replies API
+
+### **Phase 4: Viral Metrics Tracking (Market Tab)**
+- Cast performance monitoring (likes, recasts, replies)
+- Viral threshold detection for coin creation
+- Community ownership breakdown based on voting participation
+
+### **Implementation Strategy**
+- **Leverage Existing Neynar Routes**: Use established `/api/farcaster/*` endpoints
+- **Channel-Centric Architecture**: Focus on `/gigavibe` channel as primary data source  
+- **Reply-Based Voting**: Parse reply text for rating extraction and progress tracking
+- **Cross-Tab State Management**: Shared context for seamless navigation with cast data
 
 ## 🔧 Technical Implementation Details
 
@@ -90,23 +108,59 @@ GIGAVIBE leverages the Farcaster protocol as a decentralized social database, el
 
   ```typescript
   class FarcasterDataService {
-    // Upload performance to Farcaster
-    async createPerformance(audioIPFS: string, metadata: any): Promise<string>;
+    // Upload performance to Farcaster via Neynar API
+    async createPerformance(audioIPFS: string, metadata: any): Promise<string> {
+      const response = await fetch('/api/farcaster/cast', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'publishCast',
+          signerUuid: metadata.signerUuid,
+          text: `🎤 Reality Check: "${metadata.challengeTitle}" - I thought ${metadata.selfRating}⭐ #GigaVibe`,
+          embeds: [{ url: audioIPFS }, { url: `https://gigavibe.app/performance/${metadata.id}` }],
+          channelId: 'gigavibe'
+        })
+      });
+      const { cast } = await response.json();
+      return cast.hash;
+    }
 
-    // Get performances from channel
-    async getPerformances(
-      limit: number,
-      cursor?: string
-    ): Promise<Performance[]>;
+    // Get performances from /gigavibe channel
+    async getPerformances(limit: number = 50): Promise<Performance[]> {
+      const response = await fetch(`/api/farcaster/cast?action=fetchChannel&channelId=gigavibe`);
+      const { casts } = await response.json();
+      return casts.slice(0, limit).map(this.transformCastToPerformance);
+    }
 
-    // Submit community vote
-    async submitVote(performanceHash: string, rating: number): Promise<string>;
+    // Submit community vote as reply
+    async submitVote(performanceHash: string, rating: number): Promise<string> {
+      const response = await fetch('/api/farcaster/cast', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'publishCast',
+          text: `Rating: ${rating}⭐ #GigaVibe`,
+          parent: performanceHash,
+          channelId: 'gigavibe'
+        })
+      });
+      const { cast } = await response.json();
+      return cast.hash;
+    }
 
-    // Get votes for performance
-    async getVotes(performanceHash: string): Promise<Vote[]>;
+    // Get votes for performance via replies
+    async getVotes(performanceHash: string): Promise<Vote[]> {
+      const response = await fetch(`/api/farcaster/replies?castHash=${performanceHash}`);
+      const { casts } = await response.json();
+      return casts.filter(cast => cast.text.includes('Rating:') && cast.text.includes('⭐'))
+                  .map(this.transformReplyToVote);
+    }
 
-    // Search performances
-    async searchPerformances(query: string): Promise<Performance[]>;
+    // Search performances in channel
+    async searchPerformances(query: string): Promise<Performance[]> {
+      const response = await fetch(`/api/farcaster/cast?action=searchCasts&query=${query}`);
+      const { casts } = await response.json();
+      return casts.filter(cast => cast.channel?.id === 'gigavibe')
+                  .map(this.transformCastToPerformance);
+    }
   }
   ```
 

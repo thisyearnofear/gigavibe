@@ -6,6 +6,7 @@ import { MiniKitContextProvider } from './MiniKitProvider';
 import { FilCDNProvider } from './FilCDNProvider';
 import { FarcasterAuthProvider } from '@/contexts/FarcasterAuthContext';
 import { UnifiedAuthProvider } from '@/contexts/UnifiedAuthContext';
+import { CrossTabProvider } from '@/contexts/CrossTabContext';
 
 export function Providers({ children }: { children: ReactNode }) {
   // Create QueryClient in component to avoid SSR issues
@@ -24,7 +25,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <FilCDNProvider>
           <FarcasterAuthProvider>
             <UnifiedAuthProvider>
-              {children}
+              <CrossTabProvider>
+                {children}
+              </CrossTabProvider>
             </UnifiedAuthProvider>
           </FarcasterAuthProvider>
         </FilCDNProvider>

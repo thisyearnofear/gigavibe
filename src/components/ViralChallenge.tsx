@@ -560,22 +560,73 @@ export default function ViralChallengeComponent({
       challengeId: currentChallenge?.id,
     });
 
-    // Only now do we upload the recording - this ensures we only upload submissions
-    // the user wants to keep, not every recording
+    // 1. Upload to Grove storage (existing functionality)
     const recordingId = await handleUpload("mixed_audio_final_submission");
-    console.log("📤 Upload result:", recordingId);
+    console.log("📤 Grove upload result:", recordingId);
 
     if (recordingId) {
-      console.log("✅ Calling onComplete with:", {
-        accuracy,
-        recordingId,
-        challengeId: currentChallenge.id,
-      });
-      onComplete(accuracy, recordingId, currentChallenge.id);
+      // 2. Create Farcaster cast in /gigavibe channel
+      try {
+        const castResult = await createFarcasterCast(recordingId);
+        console.log("✅ Farcaster cast created:", castResult.castHash);
+        
+        // 3. Navigate to Discovery tab with cast context
+        if (window.parent && window.parent.postMessage) {
+          window.parent.postMessage({
+            type: 'GIGAVIBE_NAVIGATE',
+            payload: {
+              tab: 'discovery',
+              context: {
+                highlightCast: castResult.castHash,
+                channelFocus: 'gigavibe',
+                showSuccessMessage: true
+              }
+            }
+          }, '*');
+        }
+        
+        // 4. Call original onComplete for backward compatibility
+        onComplete(accuracy, recordingId, currentChallenge.id);
+      } catch (error) {
+        console.error("❌ Failed to create Farcaster cast:", error);
+        // Still complete the flow even if Farcaster cast fails
+        onComplete(accuracy, recordingId, currentChallenge.id);
+      }
     } else {
       console.error("❌ Upload failed");
       alert("Failed to upload your recording. Please try again.");
     }
+  };
+
+  // Helper function to create Farcaster cast
+  const createFarcasterCast = async (recordingId: string) => {
+    const { userInfo } = useFarcasterIntegration();
+    
+    if (!userInfo?.fid) {
+      throw new Error("User not authenticated with Farcaster");
+    }
+
+    const response = await fetch('/api/farcaster/cast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'publishCast',
+        signerUuid: userInfo.signerUuid,
+        text: `🎤 Reality Check: "${currentChallenge?.title}" - I thought ${Math.ceil(accuracy / 20)}⭐ #GigaVibe`,
+        embeds: [
+          { url: `lens://${recordingId}` }, // Grove audio URI
+          { url: `https://gigavibe.app/performance/${recordingId}` } // Deep link
+        ],
+        channelId: 'gigavibe'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create cast: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return { castHash: result.cast?.hash || result.hash };
   };
 
   if (!currentChallenge) {

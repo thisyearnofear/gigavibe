@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { LogIn, User, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { LogIn, User, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface SIWNData {
   signer_uuid: string;
@@ -26,29 +26,29 @@ interface SIWNData {
 interface SIWNButtonProps {
   onSuccess: (data: SIWNData) => void;
   onError?: (error: string) => void;
-  theme?: 'light' | 'dark';
+  theme?: "light" | "dark";
   className?: string;
 }
 
-export default function SIWNButton({ 
-  onSuccess, 
-  onError, 
-  theme = 'dark',
-  className = '' 
+export default function SIWNButton({
+  onSuccess,
+  onError,
+  theme = "dark",
+  className = "",
 }: SIWNButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Load Neynar SIWN script
-    const script = document.createElement('script');
-    script.src = 'https://neynarxyz.github.io/siwn/raw/1.2.0/index.js';
+    const script = document.createElement("script");
+    script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js";
     script.async = true;
     document.body.appendChild(script);
 
     // Define global callback function
     (window as any).onSignInSuccess = (data: SIWNData) => {
-      console.log('✅ SIWN Success:', data);
+      console.log("✅ SIWN Success:", data);
       setIsLoading(false);
       setError(null);
       onSuccess(data);
@@ -56,7 +56,7 @@ export default function SIWNButton({
 
     // Define global error callback
     (window as any).onSignInError = (error: string) => {
-      console.error('❌ SIWN Error:', error);
+      console.error("❌ SIWN Error:", error);
       setIsLoading(false);
       setError(error);
       onError?.(error);
@@ -136,11 +136,11 @@ export default function SIWNButton({
 }
 
 // Custom SIWN Button for more control
-export function CustomSIWNButton({ 
-  onSuccess, 
-  onError, 
+export function CustomSIWNButton({
+  onSuccess,
+  onError,
   children,
-  className = '' 
+  className = "",
 }: {
   onSuccess: (data: SIWNData) => void;
   onError?: (error: string) => void;
@@ -151,20 +151,20 @@ export function CustomSIWNButton({
 
   useEffect(() => {
     // Load Neynar SIWN script
-    const script = document.createElement('script');
-    script.src = 'https://neynarxyz.github.io/siwn/raw/1.2.0/index.js';
+    const script = document.createElement("script");
+    script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js";
     script.async = true;
     document.body.appendChild(script);
 
     // Define global callback function
     (window as any).onCustomSignInSuccess = (data: SIWNData) => {
-      console.log('✅ Custom SIWN Success:', data);
+      console.log("✅ Custom SIWN Success:", data);
       setIsLoading(false);
       onSuccess(data);
     };
 
     (window as any).onCustomSignInError = (error: string) => {
-      console.error('❌ Custom SIWN Error:', error);
+      console.error("❌ Custom SIWN Error:", error);
       setIsLoading(false);
       onError?.(error);
     };
@@ -195,22 +195,16 @@ export function CustomSIWNButton({
 }
 
 // User Profile Display Component
-export function FarcasterProfile({ 
-  user, 
-  onSignOut 
-}: { 
-  user: SIWNData['user']; 
+export function FarcasterProfile({
+  user,
+  onSignOut,
+}: {
+  user: SIWNData["user"];
   onSignOut: () => void;
 }) {
   return (
     <Card className="bg-gray-900 border-gray-800">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-white flex items-center gap-2">
-          <User className="w-4 h-4" />
-          Farcaster Profile
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <div className="flex items-center gap-3 mb-4">
           <img
             src={user.pfp_url}
@@ -229,11 +223,15 @@ export function FarcasterProfile({
 
         <div className="flex gap-4 mb-4">
           <div className="text-center">
-            <div className="text-white font-semibold">{user.follower_count}</div>
+            <div className="text-white font-semibold">
+              {user.follower_count}
+            </div>
             <div className="text-gray-400 text-xs">Followers</div>
           </div>
           <div className="text-center">
-            <div className="text-white font-semibold">{user.following_count}</div>
+            <div className="text-white font-semibold">
+              {user.following_count}
+            </div>
             <div className="text-gray-400 text-xs">Following</div>
           </div>
         </div>

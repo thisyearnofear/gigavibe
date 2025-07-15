@@ -12,13 +12,18 @@ export class ViralDetectionService {
   private zoraService: ZoraService;
   private monitoringInterval: NodeJS.Timeout | null = null;
 
-  // Viral thresholds for automatic coin creation
+  // Viral thresholds for automatic coin creation (challenge-specific)
   private readonly VIRAL_THRESHOLDS = {
     SHARE_COUNT: 100,        // 100+ shares = viral moment
     PERFECT_SCORE: 4.8,      // 4.8+ rating = perfect performance
     REALITY_GAP: 2.5,        // 2.5+ gap = comedy gold
     ENGAGEMENT_RATE: 0.3,    // 30% engagement rate
     VELOCITY: 50,            // 50 shares in 1 hour = trending
+    
+    // Challenge-specific viral thresholds
+    VIRAL_CHALLENGE: 75,     // Fun mode - lower threshold for accessibility
+    STRUCTURED_CHALLENGE: 150, // Training mode - higher threshold for quality
+    ADVANCED_CHALLENGE: 200,   // Show off mode - highest threshold for excellence
   };
 
   constructor() {
@@ -439,6 +444,30 @@ export class ViralDetectionService {
       console.error('Failed to update thresholds:', error);
       throw new Error(`Threshold update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Get challenge-specific viral threshold
+   */
+  getChallengeThreshold(challengeType: 'viral' | 'structured' | 'advanced'): number {
+    switch (challengeType) {
+      case 'viral':
+        return this.VIRAL_THRESHOLDS.VIRAL_CHALLENGE;
+      case 'structured':
+        return this.VIRAL_THRESHOLDS.STRUCTURED_CHALLENGE;
+      case 'advanced':
+        return this.VIRAL_THRESHOLDS.ADVANCED_CHALLENGE;
+      default:
+        return this.VIRAL_THRESHOLDS.SHARE_COUNT; // fallback to default
+    }
+  }
+
+  /**
+   * Check if performance meets viral threshold for its challenge type
+   */
+  meetsViralThreshold(viralScore: number, challengeType: 'viral' | 'structured' | 'advanced'): boolean {
+    const threshold = this.getChallengeThreshold(challengeType);
+    return viralScore >= threshold;
   }
 
   /**
