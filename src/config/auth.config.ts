@@ -18,14 +18,16 @@ export const AUTH_CONFIG = {
     // Domains allowed for SIWE
     ALLOWED_DOMAINS: [
       'localhost',
+      '127.0.0.1',
       'gigavibe.app',
       'www.gigavibe.app',
       process.env.NEXT_PUBLIC_VERCEL_URL,
-      process.env.URL
+      process.env.URL,
+      process.env.VERCEL_URL
     ].filter(Boolean),
     
     // Session validation
-    VALIDATE_ORIGIN: true,
+    VALIDATE_ORIGIN: process.env.NODE_ENV === 'production',
     REQUIRE_HTTPS: process.env.NODE_ENV === 'production',
     
     // Rate limiting
