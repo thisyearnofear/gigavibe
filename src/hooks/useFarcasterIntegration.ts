@@ -260,6 +260,7 @@ Join me and test your skills! 🎤
     userInfo,
     isFrameReady,
     isFrameAdded,
+    signerUuid,
     
     // Actions
     addGigavibeFrame,
