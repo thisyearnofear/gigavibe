@@ -94,7 +94,7 @@ const Header = () => {
   );
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 px-4 py-3 sticky top-0 z-40">
+    <header className="bg-gray-900 border-b border-gray-700 px-4 py-3 sticky top-0 z-40">
       <div className="flex items-center justify-between max-w-6xl mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-3">
