@@ -8,6 +8,7 @@ interface CastContext {
   trackCast?: string;
   channelFocus?: string;
   showSuccessMessage?: boolean;
+  showRatingReveal?: boolean;
 }
 
 interface TabContext {
