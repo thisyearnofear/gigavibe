@@ -53,8 +53,8 @@ export default function SIWEButton({
       const domain = window.location.host;
       const origin = window.location.origin;
 
-      // Ensure address is properly checksummed for EIP-55 compliance
-      const checksummedAddress = address.toLowerCase();
+      // Use the address directly. SiweMessage handles EIP-55 checksumming internally.
+      const checksummedAddress = address;
 
       // Create SIWE message
       const message = new SiweMessage({
