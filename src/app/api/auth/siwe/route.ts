@@ -7,6 +7,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     console.log('SIWE authentication request received');
+    console.log('Request Origin:', origin);
+    console.log('Request Host:', host);
+    console.log('Allowed Domains:', AUTH_CONFIG.SECURITY.ALLOWED_DOMAINS);
     
     // Validate request origin in production
     if (AUTH_CONFIG.SECURITY.VALIDATE_ORIGIN) {
