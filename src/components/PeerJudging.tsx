@@ -235,7 +235,7 @@ export default function PeerJudging() {
   // Get tab context and cross-tab navigation
   const { context: tabContext, clearContext } = useTabContext('judging');
   const { navigateWithContext, votingProgress, updateVotingProgress } = useCrossTab();
-  const { userInfo } = useFarcasterIntegration();
+  const { userInfo, signerUuid } = useFarcasterIntegration();
 
   // Fetch attempts from Farcaster channel or API
   useEffect(() => {
@@ -322,13 +322,13 @@ export default function PeerJudging() {
 
     try {
       // Submit vote as Farcaster reply if we have a cast hash
-      if (currentAttempt.hash && userInfo?.signerUuid) {
+      if (currentAttempt.hash && signerUuid) {
         const farcasterResponse = await fetch('/api/farcaster/cast', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'publishCast',
-            signerUuid: userInfo.signerUuid,
+            signerUuid: signerUuid,
             text: `Rating: ${rating}⭐ #GigaVibe`,
             parent: currentAttempt.hash,
             channelId: 'gigavibe'
