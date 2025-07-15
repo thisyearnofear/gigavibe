@@ -102,7 +102,7 @@ export class ZoraAPIService {
       `;
 
       const variables = {
-        userAddress: userAddress.toLowerCase(),
+        userAddress: userAddress,
         first: 50
       };
 

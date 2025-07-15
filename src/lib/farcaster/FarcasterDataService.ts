@@ -338,7 +338,7 @@ I thought ${metadata.selfRating}⭐... let's see what you think!
       
       const data = await response.json();
       
-      const userData = data[address.toLowerCase()];
+      const userData = data[address];
       if (!userData || userData.length === 0) {
         throw new Error(`No Farcaster user found for address ${address}`);
       }
