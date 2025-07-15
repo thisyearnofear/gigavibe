@@ -6,6 +6,7 @@ import { LogIn, Wallet, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiweMessage } from "siwe";
+import { getAddress } from "viem";
 
 interface SIWEUser {
   address: string;
@@ -53,8 +54,8 @@ export default function SIWEButton({
       const domain = window.location.host;
       const origin = window.location.origin;
 
-      // Use the address directly. SiweMessage handles EIP-55 checksumming internally.
-      const checksummedAddress = address;
+      // Use viem's getAddress to ensure EIP-55 checksum compliance.
+      const checksummedAddress = getAddress(address);
 
       // Create SIWE message
       const message = new SiweMessage({
