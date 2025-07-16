@@ -1,0 +1,28 @@
+[
+  {
+    "id": "challenge-1752707413941-grwlit",
+    "title": "Español",
+    "artist": "GIGAVIBE",
+    "audioUrl": "https://gateway.pinata.cloud/ipfs/bafybeicq27s6mkmllsxdaj3y2gdkmc4ddul5urxqn2zgs2al3wc6gmmbyy",
+    "ipfsHash": "bafybeicq27s6mkmllsxdaj3y2gdkmc4ddul5urxqn2zgs2al3wc6gmmbyy",
+    "difficulty": "medium",
+    "description": "Vocal challenge with Spanish lyrics",
+    "duration": 180,
+    "bpm": 120,
+    "key": "C Major",
+    "uploadedAt": "2025-07-16T23:10:13.941Z"
+  },
+  {
+    "id": "challenge-1752707413942-ytjoi0",
+    "title": "Español (Instrumental)",
+    "artist": "GIGAVIBE",
+    "audioUrl": "https://gateway.pinata.cloud/ipfs/bafybeib3svxxqnjs4ex675xtpm6shpsy6md6ddxdu4ahh6r5avy3upak4u",
+    "ipfsHash": "bafybeib3svxxqnjs4ex675xtpm6shpsy6md6ddxdu4ahh6r5avy3upak4u",
+    "difficulty": "medium",
+    "description": "Instrumental backing track for Español",
+    "duration": 180,
+    "bpm": 120,
+    "key": "C Major",
+    "uploadedAt": "2025-07-16T23:10:13.942Z"
+  }
+]

@@ -9,6 +9,9 @@ interface CastContext {
   channelFocus?: string;
   showSuccessMessage?: boolean;
   showRatingReveal?: boolean;
+  highlightPerformance?: string;
+  fromDiscovery?: boolean;
+  fromChallenge?: boolean;
 }
 
 interface TabContext {
@@ -23,38 +26,45 @@ interface CrossTabContextType {
   setTabContext: (context: TabContext) => void;
   navigateWithContext: (tab: string, context: CastContext) => void;
   clearTabContext: (tab: string) => void;
-  
+
   // User performance tracking
   userPerformances: string[];
   addUserPerformance: (castHash: string) => void;
-  
+
   // Voting progress
   votingProgress: number;
   updateVotingProgress: (increment?: number) => void;
   resetVotingProgress: () => void;
 }
 
-const CrossTabContext = createContext<CrossTabContextType | undefined>(undefined);
+const CrossTabContext = createContext<CrossTabContextType | undefined>(
+  undefined
+);
 
 export function CrossTabProvider({ children }: { children: React.ReactNode }) {
   const [tabContext, setTabContext] = useState<TabContext>({});
   const [userPerformances, setUserPerformances] = useState<string[]>([]);
   const [votingProgress, setVotingProgress] = useState(0);
 
-  const navigateWithContext = useCallback((tab: string, context: CastContext) => {
-    setTabContext(prev => ({
-      ...prev,
-      [tab]: { ...prev[tab], ...context }
-    }));
-    
-    // Trigger navigation event for MainNavigation to listen to
-    window.dispatchEvent(new CustomEvent('gigavibe-navigate', {
-      detail: { tab, context }
-    }));
-  }, []);
+  const navigateWithContext = useCallback(
+    (tab: string, context: CastContext) => {
+      setTabContext((prev) => ({
+        ...prev,
+        [tab]: { ...prev[tab], ...context },
+      }));
+
+      // Trigger navigation event for MainNavigation to listen to
+      window.dispatchEvent(
+        new CustomEvent("gigavibe-navigate", {
+          detail: { tab, context },
+        })
+      );
+    },
+    []
+  );
 
   const clearTabContext = useCallback((tab: string) => {
-    setTabContext(prev => {
+    setTabContext((prev) => {
       const newContext = { ...prev };
       delete newContext[tab];
       return newContext;
@@ -62,7 +72,7 @@ export function CrossTabProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addUserPerformance = useCallback((castHash: string) => {
-    setUserPerformances(prev => {
+    setUserPerformances((prev) => {
       if (!prev.includes(castHash)) {
         return [...prev, castHash];
       }
@@ -71,7 +81,7 @@ export function CrossTabProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateVotingProgress = useCallback((increment: number = 1) => {
-    setVotingProgress(prev => prev + increment);
+    setVotingProgress((prev) => prev + increment);
   }, []);
 
   const resetVotingProgress = useCallback(() => {
@@ -87,7 +97,7 @@ export function CrossTabProvider({ children }: { children: React.ReactNode }) {
     addUserPerformance,
     votingProgress,
     updateVotingProgress,
-    resetVotingProgress
+    resetVotingProgress,
   };
 
   return (
@@ -100,7 +110,7 @@ export function CrossTabProvider({ children }: { children: React.ReactNode }) {
 export function useCrossTab() {
   const context = useContext(CrossTabContext);
   if (context === undefined) {
-    throw new Error('useCrossTab must be used within a CrossTabProvider');
+    throw new Error("useCrossTab must be used within a CrossTabProvider");
   }
   return context;
 }
@@ -108,12 +118,12 @@ export function useCrossTab() {
 // Hook for specific tab context
 export function useTabContext(tab: string) {
   const { tabContext, clearTabContext } = useCrossTab();
-  
+
   const context = tabContext[tab] || {};
-  
+
   const clearContext = useCallback(() => {
     clearTabContext(tab);
   }, [tab, clearTabContext]);
-  
+
   return { context, clearContext };
 }

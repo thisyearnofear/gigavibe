@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mic, Users, Trophy, Zap, Sparkles } from "lucide-react";
 import Image from "next/image";
-import SmoothVocalChallenge from "./SmoothVocalChallenge";
+import UnifiedChallengeFlow from "./UnifiedChallengeFlow";
 import PeerJudging from "./PeerJudging";
 import FarcasterIntegration from "./FarcasterIntegration";
 import MarketLeaderboard from "./market/MarketLeaderboard";
@@ -66,10 +66,16 @@ export default function MainNavigation() {
       handleScreenChange(tab as MainScreen, context);
     };
 
-    window.addEventListener('gigavibe-navigate', handleNavigationEvent as EventListener);
-    
+    window.addEventListener(
+      "gigavibe-navigate",
+      handleNavigationEvent as EventListener
+    );
+
     return () => {
-      window.removeEventListener('gigavibe-navigate', handleNavigationEvent as EventListener);
+      window.removeEventListener(
+        "gigavibe-navigate",
+        handleNavigationEvent as EventListener
+      );
     };
   }, []);
 
@@ -96,7 +102,11 @@ export default function MainNavigation() {
 
     switch (activeScreen) {
       case "challenge":
-        return <SmoothVocalChallenge />; // Use SmoothVocalChallenge instead of VocalRealityFlow
+        return (
+          <UnifiedChallengeFlow
+            onComplete={() => handleScreenChange("discovery")}
+          />
+        );
       case "discovery":
         return <DiscoveryFeed initialFeedType="foryou" />;
       case "judging":
@@ -118,7 +128,7 @@ export default function MainNavigation() {
       <Header />
 
       {/* Main Content */}
-      <motion.div 
+      <motion.div
         className="pb-20 pt-4"
         key={activeScreen}
         initial={{ opacity: 0, y: 20 }}
@@ -128,7 +138,6 @@ export default function MainNavigation() {
       >
         {renderScreen()}
       </motion.div>
-
 
       {/* Bottom Navigation */}
       <motion.nav

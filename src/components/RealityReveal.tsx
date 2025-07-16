@@ -9,6 +9,9 @@ import {
   TrendingDown,
   Minus,
   Star,
+  Trophy,
+  Users,
+  Zap,
 } from "lucide-react";
 import FarcasterIntegration from "./FarcasterIntegration";
 
@@ -20,6 +23,7 @@ interface RealityRevealProps {
   totalJudges: number;
   onShare: () => void;
   onTryAgain: () => void;
+  onContinue?: () => void;
   challengeId?: string;
 }
 
@@ -31,6 +35,7 @@ export default function RealityReveal({
   totalJudges,
   onShare,
   onTryAgain,
+  onContinue,
   challengeId = "",
 }: RealityRevealProps) {
   const [phase, setPhase] = useState<
@@ -359,25 +364,61 @@ export default function RealityReveal({
                   communityRating={communityRating}
                 />
 
-                <div className="flex gap-4 mt-6">
-                  <motion.button
-                    onClick={onShare}
-                    className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold flex items-center justify-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Share the Reality
-                  </motion.button>
+                <div className="space-y-4 mt-6">
+                  {/* Primary Actions */}
+                  <div className="flex gap-4">
+                    <motion.button
+                      onClick={onShare}
+                      className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold flex items-center justify-center gap-2"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Share2 className="w-5 h-5" />
+                      Share the Reality
+                    </motion.button>
 
-                  <motion.button
-                    onClick={onTryAgain}
-                    className="px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl font-semibold"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <RotateCcw className="w-5 h-5" />
-                  </motion.button>
+                    <motion.button
+                      onClick={onTryAgain}
+                      className="px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl font-semibold"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                    </motion.button>
+                  </div>
+
+                  {/* Continue Button */}
+                  {onContinue && (
+                    <motion.button
+                      onClick={onContinue}
+                      className="w-full py-4 bg-gradient-to-r from-gigavibe-500 to-purple-500 hover:from-gigavibe-600 hover:to-purple-600 rounded-2xl font-semibold text-white"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1 }}
+                    >
+                      Explore More Performances
+                    </motion.button>
+                  )}
+
+                  {/* Achievement Badge */}
+                  {getRatingGap().type === "accurate" && (
+                    <motion.div
+                      className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl p-4 text-center"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.5 }}
+                    >
+                      <div className="text-2xl mb-2">🏆</div>
+                      <p className="text-sm font-medium text-yellow-400">
+                        Self-Awareness Master!
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        You know your voice well
+                      </p>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             )}

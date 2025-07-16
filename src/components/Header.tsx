@@ -17,6 +17,7 @@ import SIWEButton from "@/components/auth/SIWEButton";
 import SIWNButton from "@/components/auth/SIWNButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MobileAuthSheet from "@/components/auth/MobileAuthSheet";
+import { OnboardingTrigger } from "@/components/onboarding";
 
 const Header = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);

@@ -1,0 +1,15 @@
+[
+  {
+    "id": "challenge-template",
+    "title": "Your Song Title",
+    "artist": "Your Artist Name", 
+    "audioUrl": "https://gateway.pinata.cloud/ipfs/YOUR_IPFS_HASH",
+    "ipfsHash": "YOUR_IPFS_HASH",
+    "difficulty": "medium",
+    "description": "Description of the vocal challenge",
+    "duration": 180,
+    "bpm": 120,
+    "key": "C Major",
+    "uploadedAt": "2024-01-01T00:00:00.000Z"
+  }
+]

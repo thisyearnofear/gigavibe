@@ -6,6 +6,8 @@ import { useFilCDN } from "@/providers/FilCDNProvider";
 import MainNavigation from "@/components/MainNavigation";
 import FilCDNSetup from "@/components/FilCDNSetup";
 import { FullScreenLoading } from "@/components/ui/loading";
+import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 export default function HomePage() {
   const { setFrameReady, isFrameReady } = useMiniKit();
@@ -16,6 +18,7 @@ export default function HomePage() {
     clientAddress,
     isOptional,
   } = useFilCDN();
+  const { isOnboardingActive, hasCompletedOnboarding } = useOnboarding();
 
   // Initialize MiniKit when ready
   useEffect(() => {
@@ -38,5 +41,13 @@ export default function HomePage() {
     return <FullScreenLoading />;
   }
 
-  return <MainNavigation />;
+  return (
+    <>
+      <MainNavigation />
+      <OnboardingFlow onComplete={() => {
+        // Onboarding completed, user can now use the app normally
+        console.log('Onboarding completed!');
+      }} />
+    </>
+  );
 }
