@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/providers/Providers";
+import { Toaster } from "@/components/ui/toaster";
 
 export async function generateViewport() {
   return {
@@ -65,6 +66,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

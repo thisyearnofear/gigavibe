@@ -27,6 +27,7 @@ export default function HomePage() {
     }
   }, [setFrameReady, isFrameReady, isInitialized]);
 
+  // Handle FilCDN setup requirements
   if ((filcdnError || needsPaymentSetup) && !isOptional) {
     return (
       <FilCDNSetup
@@ -37,17 +38,26 @@ export default function HomePage() {
     );
   }
 
+  // Show loading while initializing
   if (!isInitialized) {
     return <FullScreenLoading />;
   }
 
-  return (
-    <>
-      <MainNavigation />
-      <OnboardingFlow onComplete={() => {
-        // Onboarding completed, user can now use the app normally
-        console.log('Onboarding completed!');
-      }} />
-    </>
-  );
+  // 🎯 KEY CHANGE: Show onboarding FIRST for new users
+  // Only show main app after onboarding is complete
+  if (isOnboardingActive && !hasCompletedOnboarding) {
+    return (
+      <OnboardingFlow
+        onComplete={() => {
+          console.log("🎉 Onboarding completed! User ready for main app.");
+        }}
+        onSkip={() => {
+          console.log("⏭️ Onboarding skipped. User entering main app.");
+        }}
+      />
+    );
+  }
+
+  // Show main app for returning users or after onboarding completion
+  return <MainNavigation />;
 }
