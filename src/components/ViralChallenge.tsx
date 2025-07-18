@@ -8,7 +8,7 @@ import { SunoService, ViralChallenge } from "@/lib/audio/SunoService";
 import { AudioPlayerService } from "@/lib/audio/AudioPlayerService";
 import { AudioUploadService } from "@/lib/audio/AudioUploadService";
 import { AudioMixerService } from "@/lib/audio/AudioMixerService";
-import { AudioRecordingService } from "@/lib/audio/AudioRecordingService";
+import { audioRecordingService } from "@/services/AudioRecordingService";
 import { GroveService } from "@/lib/storage/GroveService";
 import PerformanceSubmissionFlow from "@/components/performance/PerformanceSubmissionFlow";
 import { PerformanceData } from "@/types/performance.types";
@@ -320,7 +320,7 @@ export default function ViralChallengeComponent({
 
     // Get the current audio blob directly from the recording service
     // This avoids stale closure issues with the component state
-    const recordingService = AudioRecordingService.getInstance();
+    const recordingService = audioRecordingService;
     const currentState = recordingService.getRecordingState();
 
     console.log("Getting audio blob from recording service:", {
