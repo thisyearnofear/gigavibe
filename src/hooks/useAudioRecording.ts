@@ -18,7 +18,8 @@ export function useAudioRecording() {
     hasRecording: false,
     audioBlob: null,
     mixedAudioBlob: null,
-    duration: 0
+    duration: 0,
+    error: null,
   });
   
   // Update state from service

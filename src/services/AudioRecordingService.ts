@@ -365,6 +365,25 @@ class EnhancedAudioRecordingService {
   }
 }
 
-// Export singleton instance
+// Export types for compatibility
+export enum AudioRecordingEvent {
+  RECORDING_START = 'recording_start',
+  RECORDING_STOP = 'recording_stop',
+  RECORDING_AVAILABLE = 'recording_available',
+  MIXED_AUDIO_AVAILABLE = 'mixed_audio_available',
+  RECORDING_ERROR = 'recording_error'
+}
+
+export interface RecordingState {
+  isRecording: boolean;
+  hasRecording: boolean;
+  audioBlob: Blob | null;
+  mixedAudioBlob: Blob | null;
+  duration: number;
+  error: string | null;
+}
+
+// Export class and instance
+export const AudioRecordingService = EnhancedAudioRecordingService;
 export const audioRecordingService = EnhancedAudioRecordingService.getInstance();
 export default EnhancedAudioRecordingService;

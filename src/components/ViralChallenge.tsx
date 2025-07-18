@@ -318,18 +318,15 @@ export default function ViralChallengeComponent({
     // We need to keep the audio blob for upload
     // The clearRecording() call was removing our audio data before we could use it
 
-    // Get the current audio blob directly from the recording service
-    // This avoids stale closure issues with the component state
-    const recordingService = audioRecordingService;
-    const currentState = recordingService.getRecordingState();
+    // Use the audioBlob from the hook state instead of trying to access service directly
+    // The hook manages the recording state properly
+    const finalAudioBlob = audioBlob;
 
-    console.log("Getting audio blob from recording service:", {
-      hasRecording: currentState.hasRecording,
-      audioBlobSize: currentState.audioBlob?.size || 0,
-      audioBlobType: currentState.audioBlob?.type || "none",
+    console.log("Getting audio blob from hook state:", {
+      hasRecording: hasRecording,
+      audioBlobSize: finalAudioBlob?.size || 0,
+      audioBlobType: finalAudioBlob?.type || "none",
     });
-
-    const finalAudioBlob = currentState.audioBlob;
 
     // Get recorded audio blob from the real audio recording hook
     console.log("Checking recording status:", {
