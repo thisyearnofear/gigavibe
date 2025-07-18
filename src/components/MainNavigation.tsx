@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mic, Users, Trophy, Zap, Sparkles, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Challenge, ChallengeResult } from "@/types/challenge.types";
 import { useUnifiedChallenge } from "@/hooks/useUnifiedChallenge";
 import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
@@ -11,6 +12,8 @@ import { useCrossTab } from "@/contexts/CrossTabContext";
 import Header from "./Header";
 
 // Import new unified components
+import { Container } from "@/components/ui/container";
+import { Section } from "@/components/ui/section";
 import ChallengeDiscovery from "./challenge/ChallengeDiscovery";
 import ChallengeFlow from "./challenge/ChallengeFlow";
 import DiscoveryFeed from "./discovery/DiscoveryFeed";
@@ -140,28 +143,72 @@ export default function MainNavigation() {
     switch (activeScreen) {
       case "home":
         return (
-          <div className="space-y-8">
+          <Container maxWidth="xl" className="space-y-12">
             {/* Welcome Section */}
-            <div className="text-center space-y-4 px-4">
-              <h1 className="text-3xl font-bold text-white">
-                Welcome back
-                {userInfo?.display_name ? `, ${userInfo.display_name}` : ""}!
-              </h1>
-              <p className="text-slate-400">
-                Ready to showcase your vocal talents?
-              </p>
-            </div>
+            <Section
+              centerTitle
+              title={
+                <>
+                  Welcome back
+                  {userInfo?.display_name
+                    ? `, ${userInfo.display_name}`
+                    : ""}!
+                </>
+              }
+              subtitle="Ready to showcase your vocal talents?"
+            />
 
             {/* Challenge Discovery Hub */}
-            <ChallengeDiscovery
-              onChallengeSelect={handleChallengeSelect}
-              onViewAllChallenges={() => {
-                // Could navigate to a full challenge browser
-                console.log("View all challenges");
-              }}
-              maxItems={5}
-            />
-          </div>
+            <Section
+              title="Featured Challenges"
+              subtitle="Jump into our top vocal challenges"
+            >
+              <ChallengeDiscovery
+                onChallengeSelect={handleChallengeSelect}
+                onViewAllChallenges={() => {
+                  // Could navigate to a full challenge browser
+                  console.log("View all challenges");
+                }}
+                maxItems={5}
+              />
+            </Section>
+
+            {/* Viral CTA Section */}
+            <Section centerTitle>
+              <motion.div
+                className="max-w-3xl mx-auto rounded-3xl p-10 bg-gradient-to-r from-purple-500/30 to-blue-600/30 backdrop-blur-md border border-purple-500/20"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              >
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Ready to go viral?
+                </h3>
+                <p className="text-slate-200 mb-8">
+                  Kick-off any challenge and watch your performance climb the
+                  leaderboards. Become the next vocal sensation on GIGAVIBE!
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button
+                    size="lg"
+                    onClick={handleQuickChallenge}
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-0"
+                  >
+                    Start Singing
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => setActiveScreen('discovery')}
+                  >
+                    Explore Performances
+                  </Button>
+                </div>
+              </motion.div>
+            </Section>
+          </Container>
         );
       case "challenge":
         // This case is handled above by the isChallengeActive check
