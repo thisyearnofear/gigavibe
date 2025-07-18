@@ -7,10 +7,7 @@ import { Mic, Heart, Star, Upload, Play, Pause } from "lucide-react";
 // Import all our enhanced UX components
 import { useFeedback, FeedbackHelpers } from "./feedback-system";
 import { LoadingState, InlineLoader, LoadingOverlay } from "./loading-states";
-import {
-  EnhancedErrorBoundary,
-  useErrorHandler,
-} from "./enhanced-error-boundary";
+import { EnhancedErrorBoundary } from "./enhanced-error-boundary";
 import {
   SmartTooltip,
   ContextualHelp,
@@ -60,7 +57,14 @@ export function EnhancedPerformanceCard({
   const [optimisticLiked, setOptimisticLiked] = useState(performance.isLiked);
 
   const feedback = useFeedback();
-  const { handleError } = useErrorHandler("voting");
+
+  // Simple error handler function
+  const handleError = (error: Error) => {
+    console.error("Error:", error);
+    return {
+      details: error.message || "An unexpected error occurred",
+    };
+  };
 
   // Optimistic like handling
   const handleLike = async () => {
@@ -122,7 +126,7 @@ export function EnhancedPerformanceCard({
   };
 
   return (
-    <EnhancedErrorBoundary context="voting">
+    <EnhancedErrorBoundary>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -313,7 +317,7 @@ export function EnhancedRecordingInterface() {
   };
 
   return (
-    <EnhancedErrorBoundary context="recording">
+    <EnhancedErrorBoundary>
       <div className="text-center space-y-8 p-8">
         {/* Recording Button */}
         <div className="flex justify-center" data-guide="record-button">

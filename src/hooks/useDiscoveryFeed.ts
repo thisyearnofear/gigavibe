@@ -94,35 +94,33 @@ export function useDiscoveryFeed(feedType: 'trending' | 'foryou' | 'recent' | 'v
   const likePerformance = useCallback(async (performanceId: string) => {
     try {
       // Instead of using our database, we use Farcaster's API directly
-      const success = await farcasterLike(performanceId);
+      await farcasterLike(performanceId);
       
-      if (success) {
-        // Optimistically update UI - update the likes count in farcasterData
-        setPerformances(prev =>
-          prev.map(p => {
-            if (p.id === performanceId) {
-              // Create or update the farcasterData object with incremented likes
-              const updatedFarcasterData = {
-                ...(p.farcasterData || {
-                  castHash: p.id,
-                  authorFid: 0,
-                  authorUsername: '',
-                  authorPfp: '',
-                  authorDisplayName: '',
-                  likes: 0,
-                  recasts: 0,
-                  replies: 0
-                }),
-                likes: ((p.farcasterData?.likes || 0) + 1)
-              };
-              
-              return { ...p, farcasterData: updatedFarcasterData };
-            }
-            return p;
-          })
-        );
-        console.log(`Liked performance: ${performanceId}`);
-      }
+      // Optimistically update UI - update the likes count in farcasterData
+      setPerformances(prev =>
+        prev.map(p => {
+          if (p.id === performanceId) {
+            // Create or update the farcasterData object with incremented likes
+            const updatedFarcasterData = {
+              ...(p.farcasterData || {
+                castHash: p.id,
+                authorFid: 0,
+                authorUsername: '',
+                authorPfp: '',
+                authorDisplayName: '',
+                likes: 0,
+                recasts: 0,
+                replies: 0
+              }),
+              likes: ((p.farcasterData?.likes || 0) + 1)
+            };
+            
+            return { ...p, farcasterData: updatedFarcasterData };
+          }
+          return p;
+        })
+      );
+      console.log(`Liked performance: ${performanceId}`);
     } catch (err) {
       console.error('Failed to like performance:', err);
     }
@@ -131,11 +129,8 @@ export function useDiscoveryFeed(feedType: 'trending' | 'foryou' | 'recent' | 'v
   const commentPerformance = useCallback(async (performanceId: string) => {
     try {
       // Use Farcaster for comments
-      const success = await farcasterComment(performanceId);
-      
-      if (success) {
-        console.log(`Opening comments for: ${performanceId}`);
-      }
+      await farcasterComment(performanceId, "Great performance!");
+      console.log(`Opening comments for: ${performanceId}`);
     } catch (err) {
       console.error('Failed to comment on performance:', err);
     }

@@ -1,48 +1,49 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Play, Pause, Volume2, MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFarcasterIntegration } from '@/hooks/useFarcasterIntegration';
-import { useDiscoveryFeed } from '@/hooks/useDiscoveryFeed';
-import { FeatureUnlock, ContextualTip } from '@/components/onboarding';
-
-interface PerformancePost {
-  id: string;
-  castHash?: string;
-  author: {
-    fid: number;
-    username: string;
-    displayName: string;
-    pfpUrl: string;
-  };
-  challenge: string;
-  audioUrl: string;
-  duration: number;
-  selfRating: number;
-  communityRating?: number;
-  gap?: number;
-  likes: number;
-  comments: number;
-  shares: number;
-  timestamp: Date;
-  isLiked?: boolean;
-  realityRevealed?: boolean;
-}
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Play,
+  Pause,
+  Volume2,
+  MoreHorizontal,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
+import { useDiscoveryFeed } from "@/hooks/useDiscoveryFeed";
+import { FeatureUnlock, ContextualTip } from "@/components/onboarding";
+import {
+  coldStartContentService,
+  SeedPerformance,
+} from "@/lib/coldstart/ColdStartContentService";
 
 interface FeedCardProps {
-  performance: PerformancePost;
+  performance: SeedPerformance;
   isActive: boolean;
   onLike: (id: string) => void;
   onComment: (id: string) => void;
   onShare: (id: string) => void;
-  onSwipe: (direction: 'up' | 'down') => void;
+  onSwipe: (direction: "up" | "down") => void;
+  showColdStartHints: boolean;
 }
 
-function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }: FeedCardProps) {
+function FeedCard({
+  performance,
+  isActive,
+  onLike,
+  onComment,
+  onShare,
+  onSwipe,
+  showColdStartHints,
+}: FeedCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showRealityCheck, setShowRealityCheck] = useState(false);
 
@@ -63,26 +64,26 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
   const handleDragEnd = (event: any, info: PanInfo) => {
     const threshold = 100;
     if (info.offset.y < -threshold) {
-      onSwipe('up');
+      onSwipe("up");
     } else if (info.offset.y > threshold) {
-      onSwipe('down');
+      onSwipe("down");
     }
   };
 
   const getRealityCheckColor = () => {
-    if (!performance.gap) return 'text-gray-400';
-    if (Math.abs(performance.gap) <= 1) return 'text-green-400';
-    if (Math.abs(performance.gap) <= 2) return 'text-yellow-400';
-    return 'text-red-400';
+    if (!performance.gap) return "text-gray-400";
+    if (Math.abs(performance.gap) <= 1) return "text-green-400";
+    if (Math.abs(performance.gap) <= 2) return "text-yellow-400";
+    return "text-red-400";
   };
 
   const getRealityCheckMessage = () => {
-    if (!performance.gap) return '';
+    if (!performance.gap) return "";
     const gap = Math.abs(performance.gap);
-    if (gap === 0) return 'Perfect self-awareness! 🎯';
-    if (gap <= 1) return 'Pretty accurate! 👍';
-    if (gap <= 2) return 'Reality check! 😅';
-    return 'Major reality check! 😱';
+    if (gap === 0) return "Perfect self-awareness! 🎯";
+    if (gap <= 1) return "Pretty accurate! 👍";
+    if (gap <= 2) return "Reality check! 😅";
+    return "Major reality check! 😱";
   };
 
   return (
@@ -103,7 +104,11 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
                   key={i}
                   className="w-1 bg-white/30 rounded"
                   animate={{ height: [4, Math.random() * 40 + 10, 4] }}
-                  transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    delay: i * 0.1,
+                  }}
                 />
               ))}
             </div>
@@ -118,11 +123,33 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10">
               <AvatarImage src={performance.author.pfpUrl} />
-              <AvatarFallback>{performance.author.displayName[0]}</AvatarFallback>
+              <AvatarFallback>
+                {performance.author.displayName[0]}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-white text-sm">{performance.author.displayName}</p>
-              <p className="text-gray-400 text-xs">@{performance.author.username}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-white text-sm">
+                  {performance.author.displayName}
+                </p>
+                {performance.author.isVerified && (
+                  <Badge variant="secondary" className="text-xs px-1 py-0">
+                    ✓
+                  </Badge>
+                )}
+                {performance.author.isSeedAccount && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs px-1 py-0 border-purple-400 text-purple-400"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Demo
+                  </Badge>
+                )}
+              </div>
+              <p className="text-gray-400 text-xs">
+                @{performance.author.username}
+              </p>
             </div>
           </div>
           <Button variant="ghost" size="sm" className="text-white">
@@ -130,11 +157,25 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
           </Button>
         </div>
 
+        {/* Cold Start Encouragement Banner */}
+        {showColdStartHints && performance.author.isSeedAccount && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-4 mb-2 p-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg border border-purple-500/30"
+          >
+            <div className="flex items-center gap-2 text-sm text-purple-200">
+              <Users className="w-4 h-4" />
+              <span>Be the first to try this challenge!</span>
+            </div>
+          </motion.div>
+        )}
+
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col justify-center items-center p-6">
           {/* Challenge Title */}
           <h3 className="text-xl font-bold text-white mb-4 text-center">
-            "{performance.challenge}"
+            "{performance.challengeTitle}"
           </h3>
 
           {/* Play Button */}
@@ -156,15 +197,19 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
             <div className="flex items-center justify-center gap-4 mb-2">
               <div className="text-center">
                 <p className="text-gray-400 text-xs">Self-rated</p>
-                <p className="text-yellow-400 font-bold text-lg">{performance.selfRating}⭐</p>
+                <p className="text-yellow-400 font-bold text-lg">
+                  {performance.selfRating}⭐
+                </p>
               </div>
-              
+
               {performance.communityRating !== undefined ? (
                 <>
                   <div className="text-gray-400">→</div>
                   <div className="text-center">
                     <p className="text-gray-400 text-xs">Community</p>
-                    <p className="text-blue-400 font-bold text-lg">{performance.communityRating}⭐</p>
+                    <p className="text-blue-400 font-bold text-lg">
+                      {performance.communityRating}⭐
+                    </p>
                   </div>
                 </>
               ) : (
@@ -198,10 +243,16 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
                 onClick={() => onLike(performance.id)}
                 variant="ghost"
                 size="sm"
-                className={`flex items-center gap-2 ${performance.isLiked ? 'text-red-400' : 'text-white'}`}
+                className={`flex items-center gap-2 ${
+                  performance.isLiked ? "text-red-400" : "text-white"
+                }`}
               >
-                <Heart className={`w-5 h-5 ${performance.isLiked ? 'fill-current' : ''}`} />
-                <span className="text-sm">{performance.likes}</span>
+                <Heart
+                  className={`w-5 h-5 ${
+                    performance.isLiked ? "fill-current" : ""
+                  }`}
+                />
+                <span className="text-sm">{performance.engagement.likes}</span>
               </Button>
 
               <Button
@@ -211,7 +262,9 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
                 className="flex items-center gap-2 text-white"
               >
                 <MessageCircle className="w-5 h-5" />
-                <span className="text-sm">{performance.comments}</span>
+                <span className="text-sm">
+                  {performance.engagement.comments}
+                </span>
               </Button>
 
               <Button
@@ -221,13 +274,11 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
                 className="flex items-center gap-2 text-white"
               >
                 <Share2 className="w-5 h-5" />
-                <span className="text-sm">{performance.shares}</span>
+                <span className="text-sm">{performance.engagement.shares}</span>
               </Button>
             </div>
 
-            <div className="text-gray-400 text-xs">
-              {performance.duration}s
-            </div>
+            <div className="text-gray-400 text-xs">{performance.duration}s</div>
           </div>
         </div>
       </div>
@@ -254,7 +305,9 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
               >
                 🎭
               </motion.div>
-              <h3 className="text-2xl font-bold text-white mb-2">Reality Check!</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Reality Check!
+              </h3>
               <p className="text-gray-300">Community rating revealed...</p>
             </motion.div>
           </motion.div>
@@ -266,83 +319,90 @@ function FeedCard({ performance, isActive, onLike, onComment, onShare, onSwipe }
 
 export default function DiscoveryFeedV2() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [performances, setPerformances] = useState<PerformancePost[]>([]);
+  const [performances, setPerformances] = useState<SeedPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showColdStartHints, setShowColdStartHints] = useState(false);
   const { likePerformance, commentOnPerformance } = useFarcasterIntegration();
 
-  // Mock data for now - will be replaced with real Farcaster data
+  // Load content using cold start service
   useEffect(() => {
-    const mockPerformances: PerformancePost[] = [
-      {
-        id: '1',
-        author: {
-          fid: 123,
-          username: 'vocalist1',
-          displayName: 'Sarah Chen',
-          pfpUrl: 'https://via.placeholder.com/40'
-        },
-        challenge: 'Happy Birthday',
-        audioUrl: '/audio/sample1.mp3',
-        duration: 12,
-        selfRating: 5,
-        communityRating: 2,
-        gap: -3,
-        likes: 24,
-        comments: 8,
-        shares: 3,
-        timestamp: new Date(),
-        realityRevealed: true
-      },
-      {
-        id: '2',
-        author: {
-          fid: 456,
-          username: 'singer2',
-          displayName: 'Mike Johnson',
-          pfpUrl: 'https://via.placeholder.com/40'
-        },
-        challenge: 'Twinkle Twinkle Little Star',
-        audioUrl: '/audio/sample2.mp3',
-        duration: 8,
-        selfRating: 3,
-        communityRating: 4,
-        gap: 1,
-        likes: 15,
-        comments: 5,
-        shares: 2,
-        timestamp: new Date(),
-        realityRevealed: true
-      }
-    ];
+    const loadContent = async () => {
+      try {
+        setIsLoading(true);
+        const { performances: feedContent, strategy } =
+          await coldStartContentService.getDiscoveryFeedContent(10, 0);
 
-    setPerformances(mockPerformances);
-    setIsLoading(false);
+        setPerformances(feedContent);
+        setShowColdStartHints(
+          strategy.showSeedContent && strategy.seedContentRatio > 0.5
+        );
+
+        // Add realityRevealed property for existing functionality
+        const enhancedPerformances = feedContent.map((perf) => ({
+          ...perf,
+          realityRevealed: perf.communityRating !== undefined,
+        }));
+
+        setPerformances(enhancedPerformances);
+      } catch (error) {
+        console.error("Failed to load discovery feed content:", error);
+        // Fallback to empty state - user will see encouragement messages
+        setPerformances([]);
+        setShowColdStartHints(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContent();
   }, []);
 
-  const handleSwipe = (direction: 'up' | 'down') => {
-    if (direction === 'up' && currentIndex > 0) {
+  const handleSwipe = (direction: "up" | "down") => {
+    if (direction === "up" && currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-    } else if (direction === 'down' && currentIndex < performances.length - 1) {
+    } else if (direction === "down" && currentIndex < performances.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
 
   const handleLike = async (id: string) => {
-    const success = await likePerformance(id);
-    if (success) {
-      setPerformances(prev => prev.map(p => 
-        p.id === id ? { ...p, likes: p.likes + (p.isLiked ? -1 : 1), isLiked: !p.isLiked } : p
-      ));
+    try {
+      await likePerformance(id);
+      // If no error was thrown, consider it successful
+      setPerformances((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                engagement: {
+                  ...p.engagement,
+                  likes: p.engagement.likes + (p.isLiked ? -1 : 1),
+                },
+                isLiked: !p.isLiked,
+              }
+            : p
+        )
+      );
+    } catch (error) {
+      console.error("Failed to like performance:", error);
+      // Optionally show user feedback about the error
     }
   };
 
   const handleComment = async (id: string) => {
-    await commentOnPerformance(id);
+    // For now, we'll use a placeholder comment since this is just a demo
+    // In a real implementation, this would open a comment dialog
+    try {
+      await commentOnPerformance(id, "Great performance! 🎤");
+      console.log("Comment added successfully");
+    } catch (error) {
+      console.error("Failed to comment on performance:", error);
+    }
   };
 
   const handleShare = async (id: string) => {
     // Implement sharing logic
-    console.log('Sharing performance:', id);
+    console.log("Sharing performance:", id);
   };
 
   if (isLoading) {
@@ -353,6 +413,34 @@ export default function DiscoveryFeedV2() {
           <p className="text-gray-400">Loading performances...</p>
         </div>
       </div>
+    );
+  }
+
+  if (performances.length === 0) {
+    return (
+      <FeatureUnlock feature="discovery">
+        <div className="h-full flex items-center justify-center bg-black p-8">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-6">🎤</div>
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Ready to Start the Show?
+            </h3>
+            <p className="text-gray-400 mb-6">
+              {coldStartContentService.getEncouragementMessage()}
+            </p>
+            <Button
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              onClick={() => {
+                // Navigate to challenges - this would be implemented based on your routing
+                console.log("Navigate to challenges");
+              }}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Explore Challenges
+            </Button>
+          </div>
+        </div>
+      </FeatureUnlock>
     );
   }
 
@@ -388,6 +476,7 @@ export default function DiscoveryFeedV2() {
                 onComment={handleComment}
                 onShare={handleShare}
                 onSwipe={handleSwipe}
+                showColdStartHints={showColdStartHints}
               />
             </motion.div>
           )}
@@ -399,7 +488,7 @@ export default function DiscoveryFeedV2() {
             <div
               key={index}
               className={`w-1 h-8 rounded-full transition-colors ${
-                index === currentIndex ? 'bg-white' : 'bg-white/30'
+                index === currentIndex ? "bg-white" : "bg-white/30"
               }`}
             />
           ))}

@@ -3,271 +3,355 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useFarcasterAuth } from '@/contexts/FarcasterAuthContext';
 import { useFarcasterData } from '@/hooks/useFarcasterData';
-// No direct Neynar SDK imports needed - using API routes
 
 interface UserInfo {
   fid?: number;
   username?: string;
-  displayName?: string;
-  pfpUrl?: string;
+  display_name?: string;
+  pfp_url?: string;
+  bio?: { text: string };
+  follower_count?: number;
+  following_count?: number;
 }
 
-interface ChallengeResult {
-  challengeId: string;
-  challengeTitle: string;
-  userScore: number;
-  selfRating: number;
-  communityRating: number;
+interface MiniAppContext {
+  isMiniApp: boolean;
+  parentUrl?: string;
+  embedContext?: string;
 }
 
-export function useFarcasterIntegration() {
-  const { user, isAuthenticated, signerUuid } = useFarcasterAuth();
-  const { uploadPerformance } = useFarcasterData();
-  
-  const [isFrameReady, setIsFrameReady] = useState(false);
-  const [isFrameAdded, setIsFrameAdded] = useState(false);
-  
-  // User info derived from auth context
-  const userInfo: UserInfo = user ? {
-    fid: user.fid,
-    username: user.username,
-    displayName: user.display_name,
-    pfpUrl: user.pfp_url
-  } : {};
+interface FrameGenerationOptions {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  buttons?: Array<{
+    label: string;
+    action: 'post' | 'link' | 'mint';
+    target?: string;
+  }>;
+}
 
-  // Check if frame has been added
+interface UseFarcasterIntegrationReturn {
+  // Existing functionality
+  userInfo: UserInfo | null;
+  signerUuid: string | null;
+  isConnected: boolean;
+  isLoading: boolean;
+  error: string | null;
+  
+  // NEW: Mini app detection
+  miniAppContext: MiniAppContext;
+  isMiniApp: boolean;
+  
+  // Enhanced actions
+  sharePerformance: (performanceData: any) => Promise<void>;
+  notifyNewChallenge: (challengeData: any) => Promise<void>;
+  addGigavibeFrame: (frameData: any) => Promise<void>;
+  
+  // NEW: Frame generation
+  generatePerformanceFrame: (performanceData: any, options?: FrameGenerationOptions) => Promise<string>;
+  generateChallengeFrame: (challengeData: any, options?: FrameGenerationOptions) => Promise<string>;
+  
+  // Social actions
+  likePerformance: (performanceId: string) => Promise<void>;
+  commentOnPerformance: (performanceId: string, comment: string) => Promise<void>;
+  viewProfile: (fid: number) => void;
+  
+  // Utility functions
+  shareChallengeResult: (challengeId: string, result: any) => Promise<void>;
+}
+
+export function useFarcasterIntegration(): UseFarcasterIntegrationReturn {
+  const { user, signerUuid, isAuthenticated } = useFarcasterAuth();
+  const { loading, error } = useFarcasterData();
+  
+  // Mini app detection state
+  const [miniAppContext, setMiniAppContext] = useState<MiniAppContext>({
+    isMiniApp: false
+  });
+
+  // Detect if we're running in a Farcaster mini app context
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const checkFrameStatus = async () => {
-        try {
-          // Call API to check if the user has added the frame
-          const response = await fetch(`/api/farcaster/frame-status?fid=${user.fid}`);
-          const data = await response.json();
-          
-          setIsFrameAdded(data.isAdded);
-          setIsFrameReady(true);
-        } catch (error) {
-          console.error('Failed to check frame status:', error);
-          setIsFrameReady(true); // Still set to ready so user can add
-        }
-      };
-      
-      checkFrameStatus();
-    }
-  }, [isAuthenticated, user]);
+    const detectMiniAppContext = () => {
+      // Check for Farcaster-specific window properties
+      const isMiniApp = !!(
+        typeof window !== 'undefined' && (
+          window.parent !== window || // Running in iframe
+          (window as any).farcaster || // Farcaster SDK available
+          document.referrer.includes('farcaster') || // Referred from Farcaster
+          window.location.search.includes('fc_frame') // Frame parameter
+        )
+      );
 
-  // Add the Gigavibe frame to user's Farcaster profile
-  const addGigavibeFrame = useCallback(async (): Promise<boolean> => {
-    try {
-      if (!isAuthenticated || !signerUuid || !user?.fid) {
-        throw new Error('Not authenticated with Farcaster');
-      }
-      
-      // Call API to add frame
-      const response = await fetch('/api/farcaster/add-frame', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          signerUuid,
-          fid: user.fid
-        }),
+      const parentUrl = document.referrer || undefined;
+      const embedContext = new URLSearchParams(window.location.search).get('fc_frame') || undefined;
+
+      setMiniAppContext({
+        isMiniApp,
+        parentUrl,
+        embedContext
       });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to add frame: ${error}`);
-      }
-      
-      const result = await response.json();
-      setIsFrameAdded(result.success);
-      return result.success;
-    } catch (error) {
-      console.error('Failed to add Gigavibe frame:', error);
-      return false;
-    }
-  }, [isAuthenticated, signerUuid, user]);
+    };
 
-  // Share challenge result to Farcaster
-  const shareChallengeResult = useCallback(async (result: ChallengeResult): Promise<boolean> => {
+    detectMiniAppContext();
+  }, []);
+
+  // Enhanced share performance with frame generation
+  const sharePerformance = useCallback(async (performanceData: any) => {
     try {
-      if (!isAuthenticated || !signerUuid) {
-        console.warn('Cannot share result: Not authenticated with Farcaster');
-        return false;
-      }
+      const frameUrl = await generatePerformanceFrame(performanceData);
       
-      const castText = `🎤 Reality Check: "${result.challengeTitle}"
-I thought ${result.selfRating}⭐... Community rated me ${result.communityRating}⭐!
-${Math.abs(result.selfRating - result.communityRating) > 1 ? 'My reality was checked! 😅' : 'Pretty accurate self-assessment! 🎯'}
+      const castText = `🎤 Just nailed this vocal challenge on @gigavibe! 
+${performanceData.challengeTitle}
+Self-rating: ${performanceData.selfRating}/5 ⭐
+${performanceData.communityRating ? `Community: ${performanceData.communityRating}/5 🎯` : ''}
 
-#GigaVibe #RealityCheck`;
-      
-      // Create a cast via API
+Check out my performance! 🎵`;
+
       const response = await fetch('/api/farcaster/cast', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'publishCast',
           signerUuid,
           text: castText,
-          challengeId: result.challengeId
-        }),
+          embeds: [{ url: frameUrl }],
+          channelId: 'gigavibe'
+        })
       });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to create cast: ${error}`);
-      }
-      
-      const castResult = await response.json();
-      return castResult.success;
-    } catch (error) {
-      console.error('Failed to share challenge result:', error);
-      return false;
-    }
-  }, [isAuthenticated, signerUuid]);
 
-  // Notify about a new challenge
-  const notifyNewChallenge = useCallback(async (challengeTitle: string): Promise<boolean> => {
+      if (!response.ok) {
+        throw new Error('Failed to share performance');
+      }
+    } catch (error) {
+      console.error('Error sharing performance:', error);
+      throw error;
+    }
+  }, [signerUuid]);
+
+  // Generate interactive frame for performance
+  const generatePerformanceFrame = useCallback(async (
+    performanceData: any, 
+    options?: FrameGenerationOptions
+  ): Promise<string> => {
     try {
-      if (!isAuthenticated || !signerUuid) {
-        console.warn('Cannot notify: Not authenticated with Farcaster');
-        return false;
-      }
-      
-      const castText = `🎵 New vocal challenge on GIGAVIBE: "${challengeTitle}"!
-Join me and test your skills! 🎤
-
-#GigaVibe #VocalChallenge`;
-      
-      // Create a cast via API
-      const response = await fetch('/api/farcaster/cast', {
+      const response = await fetch('/api/farcaster/frames/performance', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          signerUuid,
-          text: castText,
-          isChallengeNotification: true,
-          challengeTitle
-        }),
+          performanceData,
+          options: {
+            title: options?.title || `${performanceData.challengeTitle} Performance`,
+            description: options?.description || `Vocal performance by ${user?.display_name || 'Anonymous'}`,
+            buttons: options?.buttons || [
+              { label: '🎵 Listen', action: 'post', target: 'play' },
+              { label: '⭐ Rate', action: 'post', target: 'rate' },
+              { label: '🎤 Try Challenge', action: 'link', target: `/challenge/${performanceData.challengeId}` }
+            ],
+            ...options
+          }
+        })
       });
-      
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to create cast: ${error}`);
-      }
-      
-      const castResult = await response.json();
-      return castResult.success;
-    } catch (error) {
-      console.error('Failed to notify about new challenge:', error);
-      return false;
-    }
-  }, [isAuthenticated, signerUuid]);
 
-  // View user profile on Farcaster
-  const viewProfile = useCallback(() => {
-    if (user?.fid) {
-      const profileUrl = `https://warpcast.com/${user.username}`;
-      window.open(profileUrl, '_blank');
+      if (!response.ok) {
+        throw new Error('Failed to generate performance frame');
+      }
+
+      const { frameUrl } = await response.json();
+      return frameUrl;
+    } catch (error) {
+      console.error('Error generating performance frame:', error);
+      throw error;
     }
   }, [user]);
 
-  // Like a performance on Farcaster
-  const likePerformance = useCallback(async (performanceId: string): Promise<boolean> => {
+  // Generate interactive frame for challenge
+  const generateChallengeFrame = useCallback(async (
+    challengeData: any,
+    options?: FrameGenerationOptions
+  ): Promise<string> => {
     try {
-      if (!isAuthenticated || !signerUuid) {
-        console.warn('Cannot like: Not authenticated with Farcaster');
-        return false;
-      }
-      
-      console.log(`Liking performance ${performanceId} on Farcaster`);
-      
-      // Send like action to Farcaster via our API
-      const response = await fetch('/api/discovery/like', {
+      const response = await fetch('/api/farcaster/frames/challenge', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          performanceId,
-          signerUuid,
-        }),
+          challengeData,
+          options: {
+            title: options?.title || `New Challenge: ${challengeData.title}`,
+            description: options?.description || `Join the vocal challenge on GigaVibe!`,
+            buttons: options?.buttons || [
+              { label: '🎤 Accept Challenge', action: 'link', target: `/challenge/${challengeData.id}` },
+              { label: '👀 View Leaderboard', action: 'post', target: 'leaderboard' },
+              { label: '🎵 Preview Song', action: 'post', target: 'preview' }
+            ],
+            ...options
+          }
+        })
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API error: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('Performance liked successfully on Farcaster');
-      return result.success;
-    } catch (error) {
-      console.error('Failed to like performance:', error);
-      return false;
-    }
-  }, [isAuthenticated, signerUuid]);
 
-  // Comment on a performance on Farcaster
-  const commentOnPerformance = useCallback(async (performanceId: string, comment?: string): Promise<boolean> => {
+      if (!response.ok) {
+        throw new Error('Failed to generate challenge frame');
+      }
+
+      const { frameUrl } = await response.json();
+      return frameUrl;
+    } catch (error) {
+      console.error('Error generating challenge frame:', error);
+      throw error;
+    }
+  }, []);
+
+  // Notify about new challenge with enhanced frame
+  const notifyNewChallenge = useCallback(async (challengeData: any) => {
     try {
-      if (!isAuthenticated || !signerUuid) {
-        console.warn('Cannot comment: Not authenticated with Farcaster');
-        return false;
-      }
+      const frameUrl = await generateChallengeFrame(challengeData);
       
-      if (!comment) {
-        // If no comment provided, we can open a dialog in the UI
-        console.log(`Opening comment interface for performance ${performanceId}`);
-        // This would trigger a UI component to open
-        return true;
-      }
-      
-      // Otherwise post the comment directly
-      const response = await fetch('/api/discovery/comment', {
+      const castText = `🎤 New vocal challenge is live on @gigavibe!
+
+"${challengeData.title}"
+${challengeData.description}
+
+Who's ready to show off their vocals? 🎵✨`;
+
+      const response = await fetch('/api/farcaster/cast', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'publishCast',
+          signerUuid,
+          text: castText,
+          embeds: [{ url: frameUrl }],
+          channelId: 'gigavibe'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to notify about new challenge');
+      }
+    } catch (error) {
+      console.error('Error notifying about new challenge:', error);
+      throw error;
+    }
+  }, [signerUuid, generateChallengeFrame]);
+
+  // Add GigaVibe frame to existing cast
+  const addGigavibeFrame = useCallback(async (frameData: any) => {
+    try {
+      const response = await fetch('/api/farcaster/frames/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          frameData,
+          signerUuid
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add GigaVibe frame');
+      }
+    } catch (error) {
+      console.error('Error adding GigaVibe frame:', error);
+      throw error;
+    }
+  }, [signerUuid]);
+
+  // Like a performance
+  const likePerformance = useCallback(async (performanceId: string) => {
+    try {
+      const response = await fetch('/api/farcaster/reaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'like',
+          performanceId,
+          signerUuid
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to like performance');
+      }
+    } catch (error) {
+      console.error('Error liking performance:', error);
+      throw error;
+    }
+  }, [signerUuid]);
+
+  // Comment on a performance
+  const commentOnPerformance = useCallback(async (performanceId: string, comment: string) => {
+    try {
+      const response = await fetch('/api/farcaster/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           performanceId,
-          signerUuid,
           comment,
-        }),
+          signerUuid
+        })
       });
-      
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API error: ${response.status}`);
+        throw new Error('Failed to comment on performance');
       }
-      
-      const result = await response.json();
-      console.log('Comment posted successfully on Farcaster');
-      return result.success;
     } catch (error) {
-      console.error('Failed to comment on performance:', error);
-      return false;
+      console.error('Error commenting on performance:', error);
+      throw error;
     }
-  }, [isAuthenticated, signerUuid]);
+  }, [signerUuid]);
+
+  // View user profile
+  const viewProfile = useCallback((fid: number) => {
+    if (miniAppContext.isMiniApp) {
+      // In mini app context, open profile in new tab
+      window.open(`https://warpcast.com/~/profile/${fid}`, '_blank');
+    } else {
+      // In regular app, navigate to internal profile view
+      window.location.href = `/profile/${fid}`;
+    }
+  }, [miniAppContext.isMiniApp]);
+
+  // Share challenge result with enhanced presentation
+  const shareChallengeResult = useCallback(async (challengeId: string, result: any) => {
+    try {
+      await sharePerformance({
+        challengeId,
+        challengeTitle: result.challengeTitle,
+        selfRating: result.selfRating,
+        communityRating: result.communityRating,
+        audioUrl: result.audioUrl,
+        gap: result.gap
+      });
+    } catch (error) {
+      console.error('Error sharing challenge result:', error);
+      throw error;
+    }
+  }, [sharePerformance]);
 
   return {
-    // State
-    userInfo,
-    isFrameReady,
-    isFrameAdded,
+    // Existing functionality
+    userInfo: user,
     signerUuid,
+    isConnected: isAuthenticated,
+    isLoading: loading,
+    error,
     
-    // Actions
-    addGigavibeFrame,
-    shareChallengeResult,
+    // NEW: Mini app context
+    miniAppContext,
+    isMiniApp: miniAppContext.isMiniApp,
+    
+    // Enhanced actions
+    sharePerformance,
     notifyNewChallenge,
-    viewProfile,
+    addGigavibeFrame,
+    
+    // NEW: Frame generation
+    generatePerformanceFrame,
+    generateChallengeFrame,
+    
+    // Social actions
     likePerformance,
-    commentOnPerformance
+    commentOnPerformance,
+    viewProfile,
+    shareChallengeResult
   };
 }

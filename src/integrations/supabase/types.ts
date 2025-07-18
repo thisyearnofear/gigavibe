@@ -486,12 +486,157 @@ export type Database = {
           }
         ]
       }
+      challenge_results: {
+        Row: {
+          id: string
+          challenge_id: string
+          challenge_title: string
+          audio_url: string
+          self_rating: number
+          confidence: string
+          duration: number
+          user_fid: number | null
+          cast_hash: string | null
+          accuracy: number | null
+          community_rating: number | null
+          gap: number | null
+          likes_count: number
+          comments_count: number
+          shares_count: number
+          viral_score: number
+          coin_address: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          challenge_id: string
+          challenge_title: string
+          audio_url: string
+          self_rating: number
+          confidence: string
+          duration: number
+          user_fid?: number | null
+          cast_hash?: string | null
+          accuracy?: number | null
+          community_rating?: number | null
+          gap?: number | null
+          likes_count?: number
+          comments_count?: number
+          shares_count?: number
+          viral_score?: number
+          coin_address?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          challenge_id?: string
+          challenge_title?: string
+          audio_url?: string
+          self_rating?: number
+          confidence?: string
+          duration?: number
+          user_fid?: number | null
+          cast_hash?: string | null
+          accuracy?: number | null
+          community_rating?: number | null
+          gap?: number | null
+          likes_count?: number
+          comments_count?: number
+          shares_count?: number
+          viral_score?: number
+          coin_address?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      challenge_stats: {
+        Row: {
+          challenge_id: string
+          participants_count: number
+          total_submissions: number
+          average_self_rating: number | null
+          average_community_rating: number | null
+          highest_rated_submission_id: string | null
+          most_viral_submission_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_id: string
+          participants_count?: number
+          total_submissions?: number
+          average_self_rating?: number | null
+          average_community_rating?: number | null
+          highest_rated_submission_id?: string | null
+          most_viral_submission_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_id?: string
+          participants_count?: number
+          total_submissions?: number
+          average_self_rating?: number | null
+          average_community_rating?: number | null
+          highest_rated_submission_id?: string | null
+          most_viral_submission_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      challenge_leaderboard: {
+        Row: {
+          id: string
+          challenge_id: string
+          challenge_title: string
+          audio_url: string
+          self_rating: number
+          community_rating: number | null
+          gap: number | null
+          likes_count: number
+          viral_score: number
+          user_fid: number | null
+          created_at: string
+          rank: number
+          percentile: number
+        }
+        Relationships: []
+      }
+      discovery_feed: {
+        Row: {
+          id: string
+          challenge_id: string
+          challenge_title: string
+          audio_url: string
+          self_rating: number
+          community_rating: number | null
+          gap: number | null
+          likes_count: number
+          comments_count: number
+          shares_count: number
+          viral_score: number
+          user_fid: number | null
+          cast_hash: string | null
+          coin_address: string | null
+          created_at: string
+          trending_score: number
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      increment_challenge_participants: {
+        Args: {
+          challenge_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

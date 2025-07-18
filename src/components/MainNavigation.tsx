@@ -2,40 +2,56 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mic, Users, Trophy, Zap, Sparkles } from "lucide-react";
-import Image from "next/image";
-import UnifiedChallengeFlow from "./UnifiedChallengeFlow";
-import PeerJudging from "./PeerJudging";
-import FarcasterIntegration from "./FarcasterIntegration";
-import MarketLeaderboard from "./market/MarketLeaderboard";
-import DiscoveryFeed from "./discovery/DiscoveryFeed";
+import { Mic, Users, Trophy, Zap, Sparkles, Plus } from "lucide-react";
+import { Challenge, ChallengeResult } from "@/types/challenge.types";
+import { useUnifiedChallenge } from "@/hooks/useUnifiedChallenge";
 import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
-import GigavibeLogo from "./ui/gigavibe-logo";
-import { FloatingActionButton } from "./ui/floating-action-button";
 import { FullScreenLoading } from "./ui/loading";
 import { useCrossTab } from "@/contexts/CrossTabContext";
 import Header from "./Header";
 
-type MainScreen = "challenge" | "discovery" | "judging" | "leaderboard";
+// Import new unified components
+import ChallengeDiscovery from "./challenge/ChallengeDiscovery";
+import ChallengeFlow from "./challenge/ChallengeFlow";
+import DiscoveryFeed from "./discovery/DiscoveryFeed";
+import PeerJudging from "./PeerJudging";
+import MarketLeaderboard from "./market/MarketLeaderboard";
+
+type MainScreen =
+  | "home"
+  | "challenge"
+  | "discovery"
+  | "judging"
+  | "leaderboard";
 
 export default function MainNavigation() {
-  const [activeScreen, setActiveScreen] = useState<MainScreen>("discovery");
+  const [activeScreen, setActiveScreen] = useState<MainScreen>("home");
   const [isLoading, setIsLoading] = useState(false);
-  const { userInfo, notifyNewChallenge } = useFarcasterIntegration();
+
+  // Use unified challenge hook
+  const {
+    currentChallenge,
+    startChallenge,
+    completeChallenge,
+    cancelChallenge,
+    isActive: isChallengeActive,
+  } = useUnifiedChallenge();
+
+  const { userInfo } = useFarcasterIntegration();
   const { navigateWithContext } = useCrossTab();
 
   const navItems = [
     {
-      id: "challenge" as MainScreen,
-      label: "Sing",
-      icon: Mic,
-      description: "Take a challenge",
+      id: "home" as MainScreen,
+      label: "Home",
+      icon: Sparkles,
+      description: "Discover challenges",
     },
     {
       id: "discovery" as MainScreen,
-      label: "Discover",
+      label: "Feed",
       icon: Zap,
-      description: "For You feed",
+      description: "Social performances",
     },
     {
       id: "judging" as MainScreen,
@@ -56,7 +72,33 @@ export default function MainNavigation() {
     setIsLoading(true);
     setActiveScreen(screen);
     // Simulate loading time for smooth transitions
-    setTimeout(() => setIsLoading(false), 300);
+    setTimeout(() => setIsLoading(false), 200);
+  };
+
+  // Challenge handlers using unified system
+  const handleChallengeSelect = (challenge: Challenge) => {
+    startChallenge(challenge);
+    setActiveScreen("challenge");
+  };
+
+  const handleChallengeComplete = async (result: ChallengeResult) => {
+    try {
+      await completeChallenge(result);
+      // Navigate to discovery to see the performance
+      setActiveScreen("discovery");
+    } catch (error) {
+      console.error("Failed to complete challenge:", error);
+    }
+  };
+
+  const handleChallengeCancel = () => {
+    cancelChallenge();
+    setActiveScreen("home");
+  };
+
+  const handleQuickChallenge = () => {
+    // Quick start with a featured challenge - this would get the first featured challenge
+    setActiveScreen("home"); // Let user pick from discovery hub
   };
 
   // Listen for cross-tab navigation events
@@ -79,34 +121,51 @@ export default function MainNavigation() {
     };
   }, []);
 
-  const handleQuickRecord = () => {
-    handleScreenChange("challenge");
-  };
-
-  const handleQuickChallenge = () => {
-    handleScreenChange("challenge");
-  };
-
-  const handleSocialClick = () => {
-    handleScreenChange("judging");
-  };
-
-  const handleLeaderboardClick = () => {
-    handleScreenChange("leaderboard");
-  };
-
   const renderScreen = () => {
     if (isLoading) {
       return <FullScreenLoading message="Loading..." showLogo={false} />;
     }
 
+    // If there's an active challenge, show the challenge flow
+    if (isChallengeActive && currentChallenge) {
+      return (
+        <ChallengeFlow
+          challenge={currentChallenge}
+          onComplete={handleChallengeComplete}
+          onCancel={handleChallengeCancel}
+        />
+      );
+    }
+
     switch (activeScreen) {
-      case "challenge":
+      case "home":
         return (
-          <UnifiedChallengeFlow
-            onComplete={() => handleScreenChange("discovery")}
-          />
+          <div className="space-y-8">
+            {/* Welcome Section */}
+            <div className="text-center space-y-4 px-4">
+              <h1 className="text-3xl font-bold text-white">
+                Welcome back
+                {userInfo?.display_name ? `, ${userInfo.display_name}` : ""}!
+              </h1>
+              <p className="text-slate-400">
+                Ready to showcase your vocal talents?
+              </p>
+            </div>
+
+            {/* Challenge Discovery Hub */}
+            <ChallengeDiscovery
+              onChallengeSelect={handleChallengeSelect}
+              onViewAllChallenges={() => {
+                // Could navigate to a full challenge browser
+                console.log("View all challenges");
+              }}
+              maxItems={5}
+            />
+          </div>
         );
+      case "challenge":
+        // This case is handled above by the isChallengeActive check
+        return null;
       case "discovery":
         return <DiscoveryFeed initialFeedType="foryou" />;
       case "judging":
@@ -114,7 +173,12 @@ export default function MainNavigation() {
       case "leaderboard":
         return <MarketLeaderboard />;
       default:
-        return <DiscoveryFeed initialFeedType="foryou" />;
+        return (
+          <ChallengeDiscovery
+            onChallengeSelect={handleChallengeSelect}
+            onViewAllChallenges={() => console.log("View all challenges")}
+          />
+        );
     }
   };
 
@@ -223,14 +287,18 @@ export default function MainNavigation() {
         </div>
       </motion.nav>
 
-      {/* Floating Action Button */}
-      <FloatingActionButton
-        variant="menu"
-        onRecordClick={handleQuickRecord}
-        onQuickChallengeClick={handleQuickChallenge}
-        onSocialClick={handleSocialClick}
-        onLeaderboardClick={handleLeaderboardClick}
-      />
+      {/* Floating Quick Challenge Button */}
+      <motion.button
+        onClick={handleQuickChallenge}
+        className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-gigavibe-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-gigavibe-500/25 z-40"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Plus className="w-6 h-6 text-white" />
+      </motion.button>
     </div>
   );
 }

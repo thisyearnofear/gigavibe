@@ -273,7 +273,7 @@ export function ErrorBoundaryValidation() {
         {triggerError ? "Fix Error" : "Trigger Error"}
       </button>
 
-      <EnhancedErrorBoundary context="general">
+      <EnhancedErrorBoundary>
         <ErrorTrigger shouldError={triggerError} />
       </EnhancedErrorBoundary>
     </div>
