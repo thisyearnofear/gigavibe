@@ -40,6 +40,7 @@ class EnhancedAudioRecordingService {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private microphone: MediaStreamAudioSourceNode | null = null;
+  private eventListeners: Map<AudioRecordingEvent, Function[]> = new Map();
 
   static getInstance(): EnhancedAudioRecordingService {
     if (!EnhancedAudioRecordingService.instance) {
@@ -127,6 +128,7 @@ class EnhancedAudioRecordingService {
       this.isRecording = true;
 
       console.log('🎤 Recording started');
+      this.emit(AudioRecordingEvent.RECORDING_START);
     } catch (error) {
       console.error('❌ Failed to start recording:', error);
       throw error;
@@ -164,6 +166,8 @@ class EnhancedAudioRecordingService {
 
           this.isRecording = false;
           console.log('✅ Recording completed:', result);
+          this.emit(AudioRecordingEvent.RECORDING_STOP);
+          this.emit(AudioRecordingEvent.RECORDING_AVAILABLE, audioBlob);
           resolve(result);
         } catch (error) {
           reject(error);
@@ -388,6 +392,39 @@ class EnhancedAudioRecordingService {
     }
     this.isRecording = false;
     console.log('🧹 Recording data cleared');
+  }
+
+  /**
+   * Add event listener for compatibility with hooks
+   */
+  addEventListener(event: AudioRecordingEvent, callback: Function): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event)!.push(callback);
+  }
+
+  /**
+   * Remove event listener for compatibility with hooks
+   */
+  removeEventListener(event: AudioRecordingEvent, callback: Function): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      const index = listeners.indexOf(callback);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+  }
+
+  /**
+   * Emit event to listeners
+   */
+  private emit(event: AudioRecordingEvent, data?: any): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.forEach(callback => callback(data));
+    }
   }
 }
 
