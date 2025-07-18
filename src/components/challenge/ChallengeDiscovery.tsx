@@ -323,8 +323,9 @@ export default function ChallengeDiscovery({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid gap-4"
+              className="flex justify-center"
             >
+              <div className="grid gap-4 max-w-2xl w-full">
               {getCurrentChallenges().map((challenge, index) => (
                 <motion.div
                   key={challenge.id}
@@ -341,6 +342,7 @@ export default function ChallengeDiscovery({
                   />
                 </motion.div>
               ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
