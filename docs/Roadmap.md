@@ -30,6 +30,17 @@ GIGAVIBE has established a robust foundation with a premium user experience, com
 - **Data-Driven Features**: Introduce personalized challenges based on user performance history and analytics-driven user experience optimization.
 - **Monetization Strategies**: Introduce premium challenges, features, and platform referrer fees from coin trading activity to sustain growth.
 
+### Phase 9: Technical Debt Reduction & Architecture Optimization (Post-MVP)
+
+_Timeline: begins once MVP user-testing concludes_
+
+- **Service Consolidation**: Merge duplicate domain services (e.g., `ChallengeService`, audio services) into single, canonical implementations.  
+- **Hook Unification**: Collapse overlapping hooks (`useChallenge`, `useUnifiedChallenge`, multiple audio hooks) into focused, reusable abstractions.  
+- **Unified Directory Structure**: Adopt a clear, domain-driven layout (`src/services`, `src/hooks`, `src/utils`, etc.) to improve discoverability.  
+- **API Layer DRY-ing**: Fold disparate HTTP helpers into one resilient `ApiService` with shared retry / error-handling logic.  
+- **Incremental, Non-Breaking Migration**: Execute refactor in phased feature branches guarded by tests to avoid regressions before GA release.  
+- **Reference Doc**: Detailed steps live in `/docs/Code-Refactoring-Roadmap.md`.
+
 ## 🎭 Ritual Implementation Examples
 
 - **"Music Monday" Challenge Selection**: Community votes on song options every Monday, with a week-long submission period and Sunday results reveal.
