@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { AudioRecordingService, AudioRecordingEvent, RecordingState } from '@/lib/audio/AudioRecordingService';
+import { AudioRecordingService, AudioRecordingEvent, RecordingState } from '@/services/AudioRecordingService';
 
 /**
  * Hook for audio recording functionality using the AudioRecordingService
