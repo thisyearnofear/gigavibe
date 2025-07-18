@@ -392,6 +392,104 @@ class DatabaseService {
       return data;
     }
   }
+
+  // Discovery feed methods using database views
+  async getDiscoveryFeedRecent(limit: number = 20, offset: number = 0): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('discovery_feed')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw new Error(`Failed to get recent discovery feed: ${error.message}`);
+    return data || [];
+  }
+
+  async getDiscoveryFeedTrending(limit: number = 20, offset: number = 0): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('discovery_feed')
+      .select('*')
+      .order('trending_score', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw new Error(`Failed to get trending discovery feed: ${error.message}`);
+    return data || [];
+  }
+
+  async getDiscoveryFeedViral(limit: number = 20, offset: number = 0): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('discovery_feed')
+      .select('*')
+      .order('viral_score', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw new Error(`Failed to get viral discovery feed: ${error.message}`);
+    return data || [];
+  }
+
+  async getDiscoveryFeedForYou(limit: number = 20, offset: number = 0): Promise<any[]> {
+    // For "For You" feed, we can use a combination of factors
+    // For now, let's use a mix of recent and trending
+    const { data, error } = await supabase
+      .from('discovery_feed')
+      .select('*')
+      .order('trending_score', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw new Error(`Failed to get for you discovery feed: ${error.message}`);
+    return data || [];
+  }
+
+  // Challenge leaderboard methods
+  async getChallengeLeaderboard(challengeId?: string, limit: number = 20, offset: number = 0): Promise<any[]> {
+    let query = supabase
+      .from('challenge_leaderboard')
+      .select('*');
+    
+    if (challengeId) {
+      query = query.eq('challenge_id', challengeId);
+    }
+    
+    const { data, error } = await query
+      .order('rank', { ascending: true })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw new Error(`Failed to get challenge leaderboard: ${error.message}`);
+    return data || [];
+  }
+
+  // Challenge results methods (using challenge_results table)
+  async getChallengeResults(challengeId?: string, limit: number = 20, offset: number = 0): Promise<any[]> {
+    let query = supabase
+      .from('challenge_results')
+      .select('*');
+    
+    if (challengeId) {
+      query = query.eq('challenge_id', challengeId);
+    }
+    
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (error) throw new Error(`Failed to get challenge results: ${error.message}`);
+    return data || [];
+  }
+
+  async getRecentChallengeResults(hours: number = 24, limit: number = 20): Promise<any[]> {
+    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+    
+    const { data, error } = await supabase
+      .from('challenge_results')
+      .select('*')
+      .gte('created_at', cutoffTime)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw new Error(`Failed to get recent challenge results: ${error.message}`);
+    return data || [];
+  }
 }
 
 // Export a singleton instance
