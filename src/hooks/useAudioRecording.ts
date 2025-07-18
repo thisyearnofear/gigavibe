@@ -50,9 +50,18 @@ export function useAudioRecording() {
   
   // Mix with instrumental
   const mixWithInstrumental = useCallback(async (instrumentalUrl: string) => {
-    const success = await recordingService.mixWithInstrumental(instrumentalUrl);
+    const currentState = recordingService.getRecordingState();
+    if (!currentState.audioBlob) {
+      console.warn('No audio blob available for mixing');
+      return null;
+    }
+    
+    const mixResult = await recordingService.mixWithInstrumental(
+      currentState.audioBlob,
+      instrumentalUrl
+    );
     updateState();
-    return success;
+    return mixResult;
   }, [recordingService, updateState]);
   
   // Set up event listeners

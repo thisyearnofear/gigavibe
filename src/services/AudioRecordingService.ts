@@ -377,6 +377,18 @@ class EnhancedAudioRecordingService {
       error: null
     };
   }
+
+  /**
+   * Clear recording data for compatibility with hooks
+   */
+  clearRecording(): void {
+    this.audioChunks = [];
+    if (this.isRecording && this.mediaRecorder) {
+      this.mediaRecorder.stop();
+    }
+    this.isRecording = false;
+    console.log('🧹 Recording data cleared');
+  }
 }
 
 // Export types for compatibility
