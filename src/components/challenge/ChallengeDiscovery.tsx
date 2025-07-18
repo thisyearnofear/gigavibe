@@ -117,47 +117,38 @@ export default function ChallengeDiscovery({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">
-            {viewMode === 'featured' && 'Featured Challenges'}
-            {viewMode === 'trending' && 'Trending Challenges'}
-            {viewMode === 'all' && (searchQuery ? `Search: "${searchQuery}"` : 'All Challenges')}
-          </h2>
-          <p className="text-slate-400">
-            {viewMode === 'featured' && 'Jump into our top vocal challenges'}
-            {viewMode === 'trending' && 'What\'s hot right now'}
-            {viewMode === 'all' && `${getCurrentChallenges().length} challenges found`}
-          </p>
-        </div>
-        {onViewAllChallenges && (
-          <Button 
-            variant="outline" 
-            onClick={onViewAllChallenges}
-            className="border-gigavibe-500/30 text-gigavibe-400 hover:bg-gigavibe-500/10"
-          >
-            View All
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        )}
+      {/* Centered Header */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-white">
+          {viewMode === 'featured' && 'Featured Challenges'}
+          {viewMode === 'trending' && 'Trending Challenges'}
+          {viewMode === 'all' && (searchQuery ? `Search: "${searchQuery}"` : 'All Challenges')}
+        </h2>
+        <p className="text-slate-400">
+          {viewMode === 'featured' && 'Jump into our top vocal challenges'}
+          {viewMode === 'trending' && 'What\'s hot right now'}
+          {viewMode === 'all' && `${getCurrentChallenges().length} challenges found`}
+        </p>
       </div>
 
       {/* Search and Filters */}
       <div className="space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            placeholder="Search challenges by title, artist, or genre..."
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 focus:border-gigavibe-500"
-          />
+        {/* Centered Search Bar */}
+        <div className="flex justify-center">
+          <div className="relative max-w-md w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search challenges by title, artist, or genre..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-slate-400 focus:border-gigavibe-500"
+            />
+          </div>
         </div>
 
-        {/* View Mode Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        {/* Centered View Mode Tabs */}
+        <div className="flex justify-center">
+          <div className="flex gap-2 overflow-x-auto pb-2">
           {[
             { id: 'featured', label: 'Featured', icon: Sparkles },
             { id: 'trending', label: 'Trending', icon: TrendingUp },
@@ -178,10 +169,12 @@ export default function ChallengeDiscovery({
               {label}
             </Button>
           ))}
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-3">
+        {/* Centered Filters */}
+        <div className="flex justify-center">
+          <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
@@ -217,6 +210,7 @@ export default function ChallengeDiscovery({
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
+          </div>
         </div>
 
         {/* Filter Panel */}

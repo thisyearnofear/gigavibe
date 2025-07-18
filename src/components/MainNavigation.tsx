@@ -159,10 +159,7 @@ export default function MainNavigation() {
             />
 
             {/* Challenge Discovery Hub */}
-            <Section
-              title="Featured Challenges"
-              subtitle="Jump into our top vocal challenges"
-            >
+            <Section centerTitle>
               <ChallengeDiscovery
                 onChallengeSelect={handleChallengeSelect}
                 onViewAllChallenges={() => {
