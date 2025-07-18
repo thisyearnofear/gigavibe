@@ -363,6 +363,20 @@ class EnhancedAudioRecordingService {
     if (!this.isRecording) return 0;
     return (Date.now() - this.startTime) / 1000;
   }
+
+  /**
+   * Get current recording state for compatibility with hooks
+   */
+  getRecordingState(): RecordingState {
+    return {
+      isRecording: this.isRecording,
+      hasRecording: this.audioChunks.length > 0,
+      audioBlob: this.audioChunks.length > 0 ? new Blob(this.audioChunks, { type: this.getSupportedMimeType() }) : null,
+      mixedAudioBlob: null, // Mixed audio is handled separately
+      duration: this.duration,
+      error: null
+    };
+  }
 }
 
 // Export types for compatibility
