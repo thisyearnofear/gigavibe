@@ -270,8 +270,8 @@ export default function ChallengePrepare({
           </Button>
         )}
         <Button
-          onClick={onNext}
-          disabled={!canProceed}
+          onClick={canProceed ? onNext : checkMicrophonePermission}
+          disabled={micPermission === 'pending'}
           className="flex-1 bg-gradient-to-r from-gigavibe-500 to-purple-500 hover:from-gigavibe-600 hover:to-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {canProceed ? (
@@ -279,6 +279,8 @@ export default function ChallengePrepare({
               Ready to Record
               <ArrowRight className="w-4 h-4 ml-2" />
             </>
+          ) : micPermission === 'pending' ? (
+            'Checking Microphone...'
           ) : (
             'Grant Microphone Access'
           )}

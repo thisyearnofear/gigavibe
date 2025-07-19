@@ -325,7 +325,7 @@ export default function ChallengeDiscovery({
               exit={{ opacity: 0 }}
               className="flex justify-center"
             >
-              <div className="grid gap-4 max-w-2xl w-full">
+              <div className="grid gap-4 max-w-2xl w-full mx-auto">
               {getCurrentChallenges().map((challenge, index) => (
                 <motion.div
                   key={challenge.id}
