@@ -39,7 +39,14 @@ export default function ViralChallengeComponent({
   } = useAudioRecording();
 
   const [phase, setPhase] = useState<
-    "loading" | "listen" | "countdown" | "singing" | "processing" | "complete" | "submission"
+    | "loading"
+    | "listen"
+    | "requesting-permission"
+    | "countdown"
+    | "singing"
+    | "processing"
+    | "complete"
+    | "submission"
   >("loading");
   const [currentChallenge, setCurrentChallenge] =
     useState<ViralChallenge | null>(null);
@@ -224,6 +231,18 @@ export default function ViralChallengeComponent({
   const startChallenge = async () => {
     try {
       console.log("Starting challenge...");
+      setPhase("requesting-permission");
+      // Request microphone permission before anything else
+      console.log("Requesting microphone access...");
+      const permissionGranted = await audioRecordingService.requestPermission();
+      if (!permissionGranted) {
+        alert(
+          "Microphone access denied. Please allow microphone access to participate in the challenge."
+        );
+        setPhase("listen");
+        return;
+      }
+
       setPhase("countdown");
 
       // 3-second countdown
@@ -238,7 +257,6 @@ export default function ViralChallengeComponent({
       recordingStartTime.current = Date.now();
 
       // Start recording and instrumental playback
-      console.log("Requesting microphone access...");
       await startRecording();
       console.log("Microphone access granted, starting recording");
 
@@ -567,22 +585,25 @@ export default function ViralChallengeComponent({
       try {
         const castResult = await createFarcasterCast(recordingId);
         console.log("✅ Farcaster cast created:", castResult.castHash);
-        
+
         // 3. Navigate to Discovery tab with cast context
         if (window.parent && window.parent.postMessage) {
-          window.parent.postMessage({
-            type: 'GIGAVIBE_NAVIGATE',
-            payload: {
-              tab: 'discovery',
-              context: {
-                highlightCast: castResult.castHash,
-                channelFocus: 'gigavibe',
-                showSuccessMessage: true
-              }
-            }
-          }, '*');
+          window.parent.postMessage(
+            {
+              type: "GIGAVIBE_NAVIGATE",
+              payload: {
+                tab: "discovery",
+                context: {
+                  highlightCast: castResult.castHash,
+                  channelFocus: "gigavibe",
+                  showSuccessMessage: true,
+                },
+              },
+            },
+            "*"
+          );
         }
-        
+
         // 4. Call original onComplete for backward compatibility
         onComplete(accuracy, recordingId, currentChallenge.id);
       } catch (error) {
@@ -599,24 +620,26 @@ export default function ViralChallengeComponent({
   // Helper function to create Farcaster cast
   const createFarcasterCast = async (recordingId: string) => {
     const { userInfo, signerUuid } = useFarcasterIntegration();
-    
+
     if (!userInfo?.fid) {
       throw new Error("User not authenticated with Farcaster");
     }
 
-    const response = await fetch('/api/farcaster/cast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/farcaster/cast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: 'publishCast',
+        action: "publishCast",
         signerUuid: signerUuid,
-        text: `🎤 Reality Check: "${currentChallenge?.title}" - I thought ${Math.ceil(accuracy / 20)}⭐ #GigaVibe`,
+        text: `🎤 Reality Check: "${
+          currentChallenge?.title
+        }" - I thought ${Math.ceil(accuracy / 20)}⭐ #GigaVibe`,
         embeds: [
           { url: `lens://${recordingId}` }, // Grove audio URI
-          { url: `https://gigavibe.app/performance/${recordingId}` } // Deep link
+          { url: `https://gigavibe.app/performance/${recordingId}` }, // Deep link
         ],
-        channelId: 'gigavibe'
-      })
+        channelId: "gigavibe",
+      }),
     });
 
     if (!response.ok) {
@@ -642,6 +665,35 @@ export default function ViralChallengeComponent({
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 flex items-center justify-center p-6">
       <div className="w-full max-w-md text-white">
         <AnimatePresence mode="wait">
+          {phase === "requesting-permission" && (
+            <motion.div
+              key="requesting-permission"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center"
+            >
+              <div className="mb-8">
+                <div className="text-4xl mb-4">🎤</div>
+                <h2 className="text-2xl font-bold mb-4">
+                  Waiting for Microphone Access
+                </h2>
+                <p className="text-gray-300">
+                  Please grant microphone access to continue.
+                  <br />
+                  If you don't see a prompt, check your browser settings.
+                </p>
+              </div>
+              <div className="flex justify-center mb-8">
+                <motion.div
+                  className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              </div>
+              <p className="text-sm text-gray-400">This may take a moment...</p>
+            </motion.div>
+          )}
           {phase === "listen" && (
             <motion.div
               key="listen"
@@ -926,28 +978,40 @@ export default function ViralChallengeComponent({
 
                 {/* Enhanced Submission Flow Component */}
                 <PerformanceSubmissionFlow
-                  audioBlob={localMixedAudioBlob || localAudioBlob || new Blob()}
+                  audioBlob={
+                    localMixedAudioBlob || localAudioBlob || new Blob()
+                  }
                   performanceData={{
-                    challengeId: currentChallenge?.id || 'unknown',
-                    challengeTitle: currentChallenge?.title || 'Unknown Challenge',
-                    challengeType: 'viral',
-                    challengeDifficulty: currentChallenge?.difficulty || 'Medium',
+                    challengeId: currentChallenge?.id || "unknown",
+                    challengeTitle:
+                      currentChallenge?.title || "Unknown Challenge",
+                    challengeType: "viral",
+                    challengeDifficulty:
+                      currentChallenge?.difficulty || "Medium",
                     accuracy: accuracy,
                     duration: currentChallenge?.duration || 30,
                     selfRating: Math.ceil(accuracy / 20), // Convert accuracy to star rating
-                    audioFormat: 'audio/webm',
-                    fileSize: localMixedAudioBlob?.size || localAudioBlob?.size || 0,
+                    audioFormat: "audio/webm",
+                    fileSize:
+                      localMixedAudioBlob?.size || localAudioBlob?.size || 0,
                     isMixed: !!localMixedAudioBlob,
-                    recordingQuality: 'high',
+                    recordingQuality: "high",
                     timestamp: Date.now(),
-                    completedAt: new Date().toISOString()
+                    completedAt: new Date().toISOString(),
                   }}
                   onComplete={(recordingId) => {
-                    console.log('✅ Performance submitted successfully:', recordingId);
-                    onComplete(accuracy, recordingId, currentChallenge?.id || 'unknown');
+                    console.log(
+                      "✅ Performance submitted successfully:",
+                      recordingId
+                    );
+                    onComplete(
+                      accuracy,
+                      recordingId,
+                      currentChallenge?.id || "unknown"
+                    );
                   }}
                   onRetry={() => {
-                    console.log('🔄 User requested retry');
+                    console.log("🔄 User requested retry");
                     resetChallenge();
                   }}
                 />
@@ -970,7 +1034,7 @@ export default function ViralChallengeComponent({
                 <p className="text-gray-300 mb-6">
                   Your performance has been submitted successfully!
                 </p>
-                
+
                 <div className="flex gap-4">
                   <motion.button
                     onClick={() => {
@@ -987,7 +1051,11 @@ export default function ViralChallengeComponent({
 
                   <motion.button
                     onClick={() => {
-                      onComplete(accuracy, userRecording, currentChallenge?.id || 'unknown');
+                      onComplete(
+                        accuracy,
+                        userRecording,
+                        currentChallenge?.id || "unknown"
+                      );
                     }}
                     className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-semibold"
                     whileHover={{ scale: 1.02 }}
