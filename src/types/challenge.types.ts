@@ -79,6 +79,7 @@ export interface ChallengeResult {
   gap?: number;
   submissionId?: string;
   castHash?: string;
+  userFid?: number;
 }
 
 // Challenge progress tracking

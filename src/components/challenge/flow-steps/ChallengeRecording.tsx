@@ -28,12 +28,14 @@ export default function ChallengeRecording({
   const [audioLevel, setAudioLevel] = useState(0);
   const [recordingResult, setRecordingResult] = useState<any>(null);
 
-  // Auto-start recording when component mounts
+  // Prepare recording on mount but don't auto-start
   useEffect(() => {
-    const timer = setTimeout(() => {
-      handleStartRecording();
-    }, 500);
-    return () => clearTimeout(timer);
+    // Request permission early but don't start recording
+    audioRecordingService.requestPermission().then(hasPermission => {
+      if (!hasPermission) {
+        console.warn('Microphone permission not granted');
+      }
+    });
   }, []);
 
   // Recording timer and audio level monitoring

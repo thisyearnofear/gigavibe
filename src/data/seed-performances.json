@@ -1,0 +1,233 @@
+[
+  {
+    "id": "perf_001",
+    "author": {
+      "fid": 12345,
+      "username": "singmaster",
+      "displayName": "Alex Chen",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=alex"
+    },
+    "challenge": "Happy Birthday",
+    "audioUrl": "/audio/espanol.mp3",
+    "duration": 30,
+    "selfRating": 5,
+    "communityRating": 3,
+    "gap": -2,
+    "likes": 42,
+    "comments": 8,
+    "shares": 12,
+    "timestamp": "2025-01-15T10:30:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_002",
+    "author": {
+      "fid": 23456,
+      "username": "vocalvirtuoso",
+      "displayName": "Sarah Kim",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah"
+    },
+    "challenge": "Español Challenge",
+    "audioUrl": "/audio/espanol-instrumental.mp3",
+    "duration": 45,
+    "selfRating": 3,
+    "communityRating": 4,
+    "gap": 1,
+    "likes": 89,
+    "comments": 15,
+    "shares": 23,
+    "timestamp": "2025-01-15T09:15:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_003",
+    "author": {
+      "fid": 34567,
+      "username": "rhythmrider",
+      "displayName": "Marcus Johnson",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=marcus"
+    },
+    "challenge": "Rock Anthem",
+    "audioUrl": "/audio/espanol.mp3",
+    "duration": 60,
+    "selfRating": 4,
+    "communityRating": 2,
+    "gap": -2,
+    "likes": 156,
+    "comments": 32,
+    "shares": 45,
+    "timestamp": "2025-01-15T08:45:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_004",
+    "author": {
+      "fid": 45678,
+      "username": "melodymaven",
+      "displayName": "Emma Rodriguez",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=emma"
+    },
+    "challenge": "Jazz Standard",
+    "audioUrl": "/audio/espanol-instrumental.mp3",
+    "duration": 40,
+    "selfRating": 2,
+    "communityRating": 4,
+    "gap": 2,
+    "likes": 203,
+    "comments": 28,
+    "shares": 67,
+    "timestamp": "2025-01-15T07:20:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_005",
+    "author": {
+      "fid": 56789,
+      "username": "harmonyhero",
+      "displayName": "David Park",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=david"
+    },
+    "challenge": "Pop Ballad",
+    "audioUrl": "/audio/espanol.mp3",
+    "duration": 50,
+    "selfRating": 5,
+    "communityRating": 5,
+    "gap": 0,
+    "likes": 342,
+    "comments": 56,
+    "shares": 89,
+    "timestamp": "2025-01-15T06:10:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_006",
+    "author": {
+      "fid": 67890,
+      "username": "pitchperfect",
+      "displayName": "Lisa Wang",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=lisa"
+    },
+    "challenge": "Country Classic",
+    "audioUrl": "/audio/espanol-instrumental.mp3",
+    "duration": 35,
+    "selfRating": 4,
+    "communityRating": 3,
+    "gap": -1,
+    "likes": 78,
+    "comments": 12,
+    "shares": 19,
+    "timestamp": "2025-01-14T22:30:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_007",
+    "author": {
+      "fid": 78901,
+      "username": "soulsinger",
+      "displayName": "Jordan Taylor",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=jordan"
+    },
+    "challenge": "R&B Groove",
+    "audioUrl": "/audio/espanol.mp3",
+    "duration": 42,
+    "selfRating": 3,
+    "communityRating": 5,
+    "gap": 2,
+    "likes": 267,
+    "comments": 43,
+    "shares": 72,
+    "timestamp": "2025-01-14T21:15:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_008",
+    "author": {
+      "fid": 89012,
+      "username": "acousticace",
+      "displayName": "Ryan Murphy",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=ryan"
+    },
+    "challenge": "Folk Favorite",
+    "audioUrl": "/audio/espanol-instrumental.mp3",
+    "duration": 55,
+    "selfRating": 5,
+    "communityRating": 2,
+    "gap": -3,
+    "likes": 123,
+    "comments": 67,
+    "shares": 34,
+    "timestamp": "2025-01-14T20:00:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_009",
+    "author": {
+      "fid": 90123,
+      "username": "vocalvibe",
+      "displayName": "Zoe Chen",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=zoe"
+    },
+    "challenge": "Hip Hop Hit",
+    "audioUrl": "/audio/espanol.mp3",
+    "duration": 38,
+    "selfRating": 2,
+    "communityRating": 3,
+    "gap": 1,
+    "likes": 95,
+    "comments": 21,
+    "shares": 28,
+    "timestamp": "2025-01-14T19:45:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_010",
+    "author": {
+      "fid": 101234,
+      "username": "tunetime",
+      "displayName": "Alex Rivera",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=alex2"
+    },
+    "challenge": "Opera Aria",
+    "audioUrl": "/audio/espanol-instrumental.mp3",
+    "duration": 65,
+    "selfRating": 4,
+    "communityRating": 4,
+    "gap": 0,
+    "likes": 178,
+    "comments": 29,
+    "shares": 41,
+    "timestamp": "2025-01-14T18:30:00Z",
+    "realityRevealed": true,
+    "isNew": false
+  },
+  {
+    "id": "perf_011",
+    "author": {
+      "fid": 111222,
+      "username": "newuser",
+      "displayName": "Taylor Swift Fan",
+      "pfpUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=newuser"
+    },
+    "challenge": "Español Challenge",
+    "audioUrl": "/audio/espanol.mp3",
+    "duration": 32,
+    "selfRating": 5,
+    "communityRating": 0,
+    "gap": 0,
+    "likes": 5,
+    "comments": 1,
+    "shares": 0,
+    "timestamp": "2025-01-15T11:00:00Z",
+    "realityRevealed": false,
+    "isNew": true
+  }
+]
