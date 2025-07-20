@@ -51,6 +51,10 @@ class UnifiedChallengeService implements ChallengeServiceInterface {
    * Transform API challenges to unified format
    */
   private transformApiChallenges(apiChallenges: any[]): Challenge[] {
+    if (!Array.isArray(apiChallenges)) {
+      console.warn('transformApiChallenges received non-array input:', apiChallenges);
+      return [];
+    }
     return apiChallenges.map(challenge => ({
       id: challenge.id,
       title: challenge.title,
@@ -224,22 +228,44 @@ class UnifiedChallengeService implements ChallengeServiceInterface {
    */
   async submitChallengeResult(result: ChallengeResult): Promise<void> {
     try {
-      // Use ApiService for consistent error handling and retries
-      const success = await apiService.submitChallengeResult(result);
+      console.log('🚀 Submitting challenge result:', result);
       
-      if (!success) {
-        throw new Error('Failed to submit challenge result');
+      // Direct API call to challenge submission endpoint
+      const response = await fetch('/api/challenges/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          challengeId: result.challengeId,
+          challengeTitle: result.challengeTitle,
+          audioUrl: result.audioUrl,
+          selfRating: result.selfRating,
+          confidence: result.confidence,
+          duration: result.duration,
+          userFid: result.userFid,
+          castHash: result.castHash,
+          accuracy: result.accuracy,
+          submissionId: result.submissionId
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`Submission failed: ${response.status} - ${errorData.error}`);
       }
-
+      
+      const responseData = await response.json();
+      console.log('✅ Challenge result submitted successfully:', responseData);
+      
       // Update local challenge data with new participant
       const challengeIndex = this.challenges.findIndex(c => c.id === result.challengeId);
       if (challengeIndex !== -1) {
         this.challenges[challengeIndex].participants += 1;
       }
-
-      console.log('✅ Challenge result submitted successfully');
+      
     } catch (error) {
-      console.error('Error submitting challenge result:', error);
+      console.error('❌ Error submitting challenge result:', error);
       throw error;
     }
   }
