@@ -55,7 +55,7 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'origin-when-cross-origin',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://*.supabase.co https://*.farcaster.xyz https://*.zora.co https://*.filcdn.io https://api.web3.bio https://ensdata.net; img-src 'self' data: blob: https://*.farcaster.xyz https://*.zora.co https://via.placeholder.com; media-src 'self' blob: https://*.filcdn.io; style-src 'self' 'unsafe-inline';"
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://*.supabase.co https://*.farcaster.xyz https://*.zora.co https://*.filcdn.io https://api.web3.bio https://ensdata.net; img-src 'self' data: blob: https://*.farcaster.xyz https://*.zora.co https://via.placeholder.com https://i2.seadn.io; media-src 'self' blob: https://*.filcdn.io; style-src 'self' 'unsafe-inline';"
 };
 
 // Validate request body against expected schema (basic implementation)

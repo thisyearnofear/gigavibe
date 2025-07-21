@@ -50,7 +50,7 @@ class UnifiedChallengeService implements ChallengeServiceInterface {
   /**
    * Transform API challenges to unified format
    */
-  private transformApiChallenges(apiChallenges: any[]): Challenge[] {
+  private transformApiChallenges(apiChallenges: any): Challenge[] {
     if (!Array.isArray(apiChallenges)) {
       console.warn('transformApiChallenges received non-array input:', apiChallenges);
       return [];

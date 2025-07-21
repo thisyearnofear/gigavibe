@@ -64,6 +64,7 @@ class FarcasterService {
    * Get user information by FID
    */
   async getUserByFid(fid: number): Promise<FarcasterUser | null> {
+    if (!fid) return null;
     try {
       const response = await fetch(`${this.baseUrl}/farcaster/user?fid=${fid}`, {
         headers: {
@@ -73,6 +74,9 @@ class FarcasterService {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          return null; // User not found
+        }
         throw new Error(`Failed to fetch user: ${response.statusText}`);
       }
 
