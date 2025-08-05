@@ -412,7 +412,7 @@ export default function PeerJudging() {
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 flex items-center justify-center p-6">
         <div className="text-center text-white bg-red-500/20 p-6 rounded-xl max-w-md">
           <p className="text-xl mb-4">Error</p>
-          <p>{error}</p>
+          <p>There was an error loading the attempts. Please try again later.</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-6 py-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors min-h-[44px] touch-manipulation"

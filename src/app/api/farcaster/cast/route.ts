@@ -26,13 +26,12 @@ export async function GET(request: NextRequest) {
       const hash = searchParams.get('hash');
       if (!hash) return NextResponse.json({ error: 'Missing hash parameter' }, { status: 400 });
       
-      // For now, return an empty response since we need to check
-      // which method is available in the current SDK version
-      console.warn('Reply fetching not yet implemented - needs SDK version check');
-      return NextResponse.json({
-        casts: [],
-        meta: { count: 0 }
+      // Use lookupCastByHashOrUrl to get the cast and its conversation
+      const response = await client.lookupCastByHashOrUrl({
+        identifier: hash,
+        type: 'hash' as any
       });
+      return NextResponse.json(response);
     }
     
     // Search for casts
@@ -48,16 +47,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
     }
     
+    // Get a specific cast by hash
+    if (action === 'getCast') {
+      const hash = searchParams.get('hash');
+      if (!hash) return NextResponse.json({ error: 'Missing hash parameter' }, { status: 400 });
+
+      const response = await client.lookupCastByHashOrUrl({
+        identifier: hash,
+        type: 'hash' as any
+      });
+      return NextResponse.json(response.cast);
+    }
+
     // Get casts in a channel
     if (action === 'fetchChannel') {
       const channelId = searchParams.get('channelId');
       if (!channelId) return NextResponse.json({ error: 'Missing channelId parameter' }, { status: 400 });
       
-      // Try using the lookupChannel method with the correct parameters
+      // Try using the fetchFeed method with the correct parameters
       try {
-        const response = await client.lookupChannel({
-          id: channelId,
-          type: 'id',
+        const response = await client.fetchFeed({
+          feedType: 'filter',
+          filterType: 'channel_id',
+          channelId: channelId,
+          withRecasts: true,
         });
         
         return NextResponse.json(response);

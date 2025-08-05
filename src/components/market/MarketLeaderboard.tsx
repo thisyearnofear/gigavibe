@@ -75,6 +75,7 @@ export default function MarketLeaderboard() {
   const [activeCategory, setActiveCategory] = useState<keyof typeof LEADERBOARD_CATEGORIES>('byViralScore');
   const [viralCasts, setViralCasts] = useState<CastMetrics[]>([]);
   const [isLoadingCasts, setIsLoadingCasts] = useState(false);
+  const [viralCastsError, setViralCastsError] = useState<string | null>(null);
   
   // Get tab context for cast tracking
   const { context: tabContext, clearContext } = useTabContext('market');
@@ -149,8 +150,10 @@ export default function MarketLeaderboard() {
           .slice(0, 20);
         
         setViralCasts(sortedCasts);
+        setViralCastsError(null);
       } catch (error) {
         console.error('Failed to load viral casts:', error);
+        setViralCastsError('Failed to load viral casts');
       } finally {
         setIsLoadingCasts(false);
       }
@@ -228,7 +231,7 @@ export default function MarketLeaderboard() {
     );
   }
 
-  if (error) {
+  if (error || viralCastsError) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6">
         <div className="text-center text-white">

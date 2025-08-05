@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
 import { useCrossTab, useTabContext } from "@/contexts/CrossTabContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface DiscoveryFeedProps {
   initialFeedType?: string;
@@ -270,89 +271,55 @@ export default function DiscoveryFeed({
   initialFeedType = "foryou",
 }: DiscoveryFeedProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [performances, setPerformances] = useState<PerformancePost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { likePerformance, commentOnPerformance } = useFarcasterIntegration();
   const { context: tabContext, clearContext } = useTabContext("discovery");
+  const queryClient = useQueryClient();
 
-  // Mock data for now - will be replaced with real Farcaster data
-  useEffect(() => {
-    const mockPerformances: PerformancePost[] = [
-      {
-        id: "1",
-        author: {
-          fid: 123,
-          username: "vocalist1",
-          displayName: "Sarah Chen",
-          pfpUrl: "https://via.placeholder.com/40",
-        },
-        challenge: "Español",
-        audioUrl:
-          "https://gateway.pinata.cloud/ipfs/bafybeicq27s6mkmllsxdaj3y2gdkmc4ddul5urxqn2zgs2al3wc6gmmbyy",
-        duration: 12,
-        selfRating: 5,
-        communityRating: 2,
-        gap: -3,
-        likes: 24,
-        comments: 8,
-        shares: 3,
-        timestamp: new Date(),
-        realityRevealed: true,
-        isNew: tabContext?.highlightCast === "1",
-      },
-      {
-        id: "2",
-        author: {
-          fid: 456,
-          username: "singer_mike",
-          displayName: "Mike Rodriguez",
-          pfpUrl: "https://via.placeholder.com/40",
-        },
-        challenge: "Happy Birthday",
-        audioUrl: "/audio/sample2.mp3",
-        duration: 8,
-        selfRating: 3,
-        communityRating: 4,
-        gap: 1,
-        likes: 15,
-        comments: 5,
-        shares: 2,
-        timestamp: new Date(),
-        realityRevealed: true,
-      },
-      {
-        id: "3",
-        author: {
-          fid: 789,
-          username: "vocal_queen",
-          displayName: "Emma Thompson",
-          pfpUrl: "https://via.placeholder.com/40",
-        },
-        challenge: "Twinkle Twinkle",
-        audioUrl: "/audio/sample3.mp3",
-        duration: 15,
-        selfRating: 2,
-        communityRating: 5,
-        gap: 3,
-        likes: 42,
-        comments: 12,
-        shares: 8,
-        timestamp: new Date(),
-        realityRevealed: false,
-      },
-    ];
-
-    // Simulate loading
-    setTimeout(() => {
-      setPerformances(mockPerformances);
-      setIsLoading(false);
-    }, 1000);
-
-    // Clear context after highlighting
-    if (tabContext?.highlightCast) {
-      setTimeout(() => clearContext(), 3000);
+  const fetchPerformances = async () => {
+    const response = await fetch("/api/farcaster/cast?action=fetchChannel&channelId=gigavibe");
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
     }
-  }, [tabContext, clearContext]);
+    return response.json();
+  };
+
+  const transformCastToPerformancePost = (cast: any): PerformancePost => {
+    const audioEmbed = cast.embeds?.find(embed => embed.url?.startsWith('lens://'));
+    const selfRatingMatch = cast.text?.match(/(\d+)⭐/);
+
+    return {
+      id: cast.hash,
+      author: {
+        fid: cast.author.fid,
+        username: cast.author.username,
+        displayName: cast.author.display_name,
+        pfpUrl: cast.author.pfp_url,
+      },
+      challenge: cast.text?.split('"')[1] || 'Unknown Challenge',
+      audioUrl: audioEmbed?.url || '',
+      duration: 30, // Default duration
+      selfRating: selfRatingMatch ? parseInt(selfRatingMatch[1]) : 3,
+      communityRating: 0, // Placeholder
+      gap: 0, // Placeholder
+      likes: cast.reactions?.likes_count || 0,
+      comments: cast.reactions?.replies_count || 0,
+      shares: cast.reactions?.recasts_count || 0,
+      timestamp: new Date(cast.timestamp),
+      realityRevealed: false, // Placeholder
+    };
+  };
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["performances"],
+    queryFn: fetchPerformances,
+    select: (data) => {
+      return {
+        performances: data.casts.map(transformCastToPerformancePost),
+      };
+    },
+  });
+
+  const performances = data?.performances || [];
 
   const handleSwipe = (direction: "up" | "down") => {
     if (direction === "up" && currentIndex < performances.length - 1) {
@@ -365,9 +332,16 @@ export default function DiscoveryFeed({
   const handleLike = async (id: string) => {
     try {
       await likePerformance(id);
-      setPerformances((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, likes: p.likes + 1 } : p))
-      );
+      // Update the cache optimistically
+      queryClient.setQueryData(["performances"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          performances: oldData.performances.map((p: PerformancePost) =>
+            p.id === id ? { ...p, likes: p.likes + 1 } : p
+          ),
+        };
+      });
     } catch (error) {
       console.error("Failed to like performance:", error);
     }
