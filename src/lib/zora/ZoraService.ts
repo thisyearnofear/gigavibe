@@ -32,11 +32,8 @@ export class ZoraService {
   private platformReferrer: Address;
 
   constructor() {
-    // Set up Zora API key (for direct SDK usage in this service)
-    const apiKey = process.env.NEXT_PUBLIC_ZORA_API_KEY;
-    if (apiKey) {
-      setApiKey(apiKey);
-    }
+    // Note: API key is handled server-side for security
+    // Client-side operations use proxy endpoints
 
     // Set up viem clients
     this.publicClient = createPublicClient({

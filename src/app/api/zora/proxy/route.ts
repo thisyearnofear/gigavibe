@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'GigaVibe/1.0',
-        // Add API key if available
-        ...(process.env.NEXT_PUBLIC_ZORA_API_KEY && {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ZORA_API_KEY}`
+        // Add API key if available (server-side only)
+        ...(process.env.ZORA_API_KEY && {
+          'Authorization': `Bearer ${process.env.ZORA_API_KEY}`
         })
       },
       body: JSON.stringify({
