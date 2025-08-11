@@ -8,6 +8,8 @@ import FilCDNSetup from "@/components/FilCDNSetup";
 import { FullScreenLoading } from "@/components/ui/loading";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
+import MiniAppView from "@/components/farcaster/MiniAppView";
 
 export default function HomePage() {
   const { setFrameReady, isFrameReady } = useMiniKit();
@@ -19,6 +21,7 @@ export default function HomePage() {
     isOptional,
   } = useFilCDN();
   const { isOnboardingActive, hasCompletedOnboarding } = useOnboarding();
+  const { isMiniApp } = useFarcasterIntegration();
 
   // Initialize MiniKit when ready
   useEffect(() => {
@@ -26,6 +29,10 @@ export default function HomePage() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady, isInitialized]);
+
+  if (isMiniApp) {
+    return <MiniAppView />;
+  }
 
   // Handle FilCDN setup requirements
   if ((filcdnError || needsPaymentSetup) && !isOptional) {

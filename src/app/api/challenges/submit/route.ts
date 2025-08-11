@@ -1,30 +1,30 @@
-/**
- * Challenge Submission API Route
- * Handles challenge result submissions with Supabase integration
- */
-
 import { NextRequest, NextResponse } from 'next/server';
+import { databaseService } from '@/lib/database/DatabaseService';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
-interface ChallengeSubmissionData {
-  challengeId: string;
-  challengeTitle: string;
-  audioUrl: string;
-  selfRating: number;
-  confidence: string;
-  duration: number;
-  userFid?: number;
-  castHash?: string;
-  accuracy?: number;
-  submissionId?: string;
-}
-
+/**
+ * POST - Submit a challenge result to database
+ */
 export async function POST(request: NextRequest) {
   try {
-    const data: ChallengeSubmissionData = await request.json();
-    
+    const body = await request.json();
+    const {
+      challengeId,
+      challengeTitle,
+      audioUrl,
+      selfRating,
+      confidence,
+      duration,
+      userFid,
+      castHash,
+      accuracy,
+      submissionId,
+      userId
+    } = body;
+
     // Validate required fields
-    if (!data.challengeId || !data.challengeTitle || !data.audioUrl || !data.selfRating) {
+    if (!challengeId || !challengeTitle || !audioUrl || !selfRating) {
       return NextResponse.json(
         { error: 'Missing required fields: challengeId, challengeTitle, audioUrl, selfRating' },
         { status: 400 }
@@ -32,93 +32,98 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate rating range
-    if (data.selfRating < 1 || data.selfRating > 10) {
+    if (typeof selfRating !== 'number' || selfRating < 1 || selfRating > 10) {
       return NextResponse.json(
-        { error: 'Self rating must be between 1 and 10' },
+        { error: 'selfRating must be a number between 1 and 10' },
         { status: 400 }
       );
     }
 
-    // supabase is already imported and ready to use
-    
-    // Generate submission ID if not provided
-    const submissionId = data.submissionId || `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Insert challenge result into Supabase
-    const { data: insertData, error: insertError } = await supabase
+    const finalSubmissionId = submissionId || uuidv4();
+
+    // Store challenge result in database
+    const { data: challengeResult, error: insertError } = await supabase
       .from('challenge_results')
       .insert({
-        id: submissionId,
-        challenge_id: data.challengeId,
-        challenge_title: data.challengeTitle,
-        audio_url: data.audioUrl,
-        self_rating: data.selfRating,
-        confidence: data.confidence,
-        duration: data.duration,
-        user_fid: data.userFid,
-        cast_hash: data.castHash,
-        accuracy: data.accuracy,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        id: finalSubmissionId,
+        challenge_id: challengeId,
+        challenge_title: challengeTitle,
+        audio_url: audioUrl,
+        self_rating: selfRating,
+        confidence: confidence,
+        duration: duration,
+        user_fid: userFid,
+        cast_hash: castHash,
+        accuracy: accuracy,
+        user_id: userId,
+        created_at: new Date().toISOString()
       })
       .select()
       .single();
 
     if (insertError) {
-      console.error('Supabase insert error:', insertError);
+      console.error('Database insertion error:', insertError);
       return NextResponse.json(
-        { error: 'Failed to save challenge result' },
+        { error: 'Failed to store challenge result in database' },
         { status: 500 }
       );
     }
 
-    // Update challenge participation count
-    const { error: updateError } = await supabase.rpc('increment_challenge_participants', {
-      challenge_id: data.challengeId
+    // Track analytics event
+    await databaseService.trackEvent({
+      event_type: 'challenge_submitted',
+      user_id: userId,
+      performance_id: finalSubmissionId,
+      event_data: {
+        challenge_id: challengeId,
+        self_rating: selfRating,
+        confidence: confidence,
+        duration: duration,
+        has_cast_hash: !!castHash,
+        accuracy: accuracy
+      }
     });
 
-    if (updateError) {
-      console.warn('Failed to update participation count:', updateError);
-      // Don't fail the request for this
-    }
-
-    // Log successful submission
-    console.log('✅ Challenge result submitted:', {
-      submissionId,
-      challengeId: data.challengeId,
-      selfRating: data.selfRating,
-      duration: data.duration
+    // Initialize performance metrics for this submission
+    await databaseService.updatePerformanceMetrics({
+      performance_id: finalSubmissionId,
+      likes_count: 0,
+      replies_count: 0,
+      recasts_count: 0,
+      views_count: 0,
+      shares_count: 0
     });
 
-    // Return success response with submission data
+    console.log('✅ Challenge result stored in database:', {
+      submissionId: finalSubmissionId,
+      challengeId,
+      userId,
+      selfRating
+    });
+
     return NextResponse.json({
       success: true,
-      submissionId,
-      data: insertData,
-      message: 'Challenge result submitted successfully'
+      message: 'Challenge result submitted and stored successfully',
+      submissionId: finalSubmissionId,
+      challengeId,
+      timestamp: new Date().toISOString(),
+      // Real data from database
+      communityRating: null, // Will be calculated as more ratings come in
+      gap: null, // Will be calculated when community rating is available
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      stored: true
     });
 
   } catch (error) {
-    console.error('❌ Challenge submission error:', error);
-    
+    console.error('Challenge submission error:', error);
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to submit challenge result',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
   }
-}
-
-// Handle OPTIONS for CORS
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
 }

@@ -48,7 +48,7 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
 
       if (!privateKey) {
         // Instead of throwing an error, just log and mark FilCDN as not initialized
-        console.log(
+        console.warn(
           "⚠️ FilCDN disabled: NEXT_PUBLIC_FILECOIN_PRIVATE_KEY not found"
         );
         setIsInitialized(true); // Mark as initialized so the app can continue

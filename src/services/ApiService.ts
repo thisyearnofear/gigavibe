@@ -1,6 +1,7 @@
 /**
  * Production API Service
  * Centralized service for all API calls with error handling and retries
+ * NO MOCK DATA - All responses come from real database
  */
 
 import { Challenge, ChallengeResult, ChallengeFilters } from '@/types/challenge.types';
@@ -126,7 +127,7 @@ class ApiService {
   }
 
   /**
-   * Get featured challenges
+   * Get featured challenges from database
    */
   async getFeaturedChallenges(limit: number = 10): Promise<Challenge[]> {
     const response = await this.fetchWithRetry<{ challenges: any[] }>(
@@ -134,29 +135,40 @@ class ApiService {
     );
 
     if (!response.success || !response.data) {
-      console.warn('Failed to fetch featured challenges, using fallback');
-      return this.getFallbackChallenges();
+      console.warn('Failed to fetch featured challenges - database may be empty');
+      return [];
     }
 
     return this.transformApiChallenges(response.data.challenges);
   }
 
   /**
-   * Get all challenge songs
+   * Get all challenge songs from database
    */
   async getAllChallenges(): Promise<Challenge[]> {
-    const response = await this.fetchWithRetry<any[]>('/api/challenges/songs');
+    const response = await this.fetchWithRetry<{ challenges: any[] }>('/api/challenges/songs');
 
     if (!response.success || !response.data) {
-      console.warn('Failed to fetch all challenges, using fallback');
-      return this.getFallbackChallenges();
+      console.warn('Failed to fetch all challenges - database may be empty');
+      return [];
     }
 
-    return this.transformApiChallenges(response.data);
+    // Handle both direct array and wrapped response formats
+    const challengesData = response.data.challenges || response.data;
+    
+    // Ensure we have an array to transform
+    if (Array.isArray(challengesData)) {
+      return this.transformApiChallenges(challengesData);
+    } else if (challengesData && Array.isArray(challengesData.challenges)) {
+      return this.transformApiChallenges(challengesData.challenges);
+    } else {
+      console.warn('No valid challenges array found in response');
+      return [];
+    }
   }
 
   /**
-   * Submit challenge result
+   * Submit challenge result to database
    */
   async submitChallengeResult(result: ChallengeResult): Promise<boolean> {
     const submissionData: ChallengeSubmissionData = {
@@ -184,7 +196,7 @@ class ApiService {
   }
 
   /**
-   * Get discovery feed
+   * Get discovery feed from database
    */
   async getDiscoveryFeed(
     feedType: 'foryou' | 'trending' | 'viral' | 'recent' = 'foryou',
@@ -196,15 +208,15 @@ class ApiService {
     );
 
     if (!response.success || !response.data) {
-      console.warn('Failed to fetch discovery feed, using fallback');
-      return this.getFallbackPerformances();
+      console.warn('Failed to fetch discovery feed - database may be empty');
+      return [];
     }
 
     return this.transformApiPerformances(response.data.performances);
   }
 
   /**
-   * Like a performance
+   * Like a performance (updates database)
    */
   async likePerformance(performanceId: string): Promise<boolean> {
     const response = await this.fetchWithRetry('/api/discovery/like', {
@@ -216,7 +228,7 @@ class ApiService {
   }
 
   /**
-   * Rate a performance
+   * Rate a performance (updates database)
    */
   async ratePerformance(performanceId: string, rating: number): Promise<boolean> {
     const response = await this.fetchWithRetry('/api/discovery/rate', {
@@ -228,7 +240,7 @@ class ApiService {
   }
 
   /**
-   * Share a performance
+   * Share a performance (updates database)
    */
   async sharePerformance(performanceId: string): Promise<boolean> {
     const response = await this.fetchWithRetry('/api/discovery/share', {
@@ -243,6 +255,12 @@ class ApiService {
    * Transform API challenges to unified format
    */
   private transformApiChallenges(apiChallenges: any[]): Challenge[] {
+    // Ensure we have an array to work with
+    if (!Array.isArray(apiChallenges)) {
+      console.warn('transformApiChallenges received non-array input:', apiChallenges);
+      return [];
+    }
+
     return apiChallenges.map(challenge => ({
       id: challenge.id,
       title: challenge.title,
@@ -255,15 +273,15 @@ class ApiService {
       vocalUrl: challenge.vocalsOnlyAudio,
       bpm: challenge.bpm,
       key: challenge.key,
-      participants: 0, // Will be populated from real data
-      trending: false, // Will be calculated from real engagement metrics
-      recentPerformers: [], // Will be populated from real user data
-      coinValue: 0.01, // Base value, will be updated from market data
-      totalEarnings: Math.random() * 500 + 50,
+      participants: challenge.participants || 0,
+      trending: challenge.trending || false,
+      recentPerformers: challenge.recentPerformers || [],
+      coinValue: challenge.coinValue || 0.01,
+      totalEarnings: challenge.totalEarnings || 0,
       tips: this.generateTips(challenge.title),
-      type: 'featured',
+      type: challenge.type || 'featured',
       tags: challenge.tags?.split(',') || [],
-      createdAt: new Date(challenge.uploadedAt || Date.now())
+      createdAt: new Date(challenge.uploadedAt || challenge.createdAt || Date.now())
     }));
   }
 
@@ -271,6 +289,11 @@ class ApiService {
    * Transform API performances to unified format
    */
   private transformApiPerformances(apiPerformances: any[]): PerformanceData[] {
+    if (!Array.isArray(apiPerformances)) {
+      console.warn('transformApiPerformances received non-array input:', apiPerformances);
+      return [];
+    }
+
     return apiPerformances.map(perf => ({
       id: perf.id,
       challengeId: perf.challengeId,
@@ -305,15 +328,6 @@ class ApiService {
   }
 
   /**
-   * Get real performers from database
-   */
-  private async getRealPerformers(challengeId: string) {
-    // TODO: Implement real database query to get recent performers
-    // This will query the challenge_results table for recent participants
-    return [];
-  }
-
-  /**
    * Generate contextual tips
    */
   private generateTips(title: string): string[] {
@@ -332,79 +346,6 @@ class ApiService {
     }
 
     return baseTips;
-  }
-
-  /**
-   * Fallback challenges when API fails
-   */
-  private getFallbackChallenges(): Challenge[] {
-    return [
-      {
-        id: 'espanol-challenge',
-        title: 'Español',
-        artist: 'GIGAVIBE',
-        difficulty: 'medium',
-        duration: 180,
-        description: 'Sing along to this catchy Spanish track',
-        previewUrl: '/audio/espanol.mp3',
-        instrumentalUrl: '/audio/espanol-instrumental.mp3',
-        bpm: 120,
-        key: 'C Major',
-        participants: 1247,
-        trending: true,
-        recentPerformers: [], // Will be populated from real user data
-        coinValue: 0.024,
-        totalEarnings: 156.7,
-        tips: [
-          "Don't worry about perfect pronunciation",
-          "Focus on the melody and rhythm",
-          "Let the music guide your performance",
-          "Have fun with the Latin vibes!"
-        ],
-        type: 'featured',
-        tags: ['spanish', 'latin', 'upbeat'],
-        createdAt: new Date()
-      }
-    ];
-  }
-
-  /**
-   * Fallback performances when API fails
-   */
-  private getFallbackPerformances(): PerformanceData[] {
-    return [
-      {
-        id: 'perf-001',
-        challengeId: 'espanol-challenge',
-        challengeTitle: 'Español',
-        audioUrl: '/mock-performances/perf1.mp3',
-        selfRating: 8.5,
-        communityRating: 9.2,
-        gap: -0.7,
-        likes: 234,
-        comments: 45,
-        shares: 67,
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        author: {
-          fid: 12345,
-          username: 'vocalqueen',
-          displayName: 'Sarah Chen',
-          pfpUrl: '/avatars/sarah.jpg'
-        },
-        farcasterData: {
-          castHash: '0xabcdef',
-          likes: 234,
-          recasts: 67,
-          replies: 45
-        },
-        coinData: {
-          currentPrice: 0.024,
-          priceChange24h: 15.3,
-          holders: 89,
-          marketCap: 2140
-        }
-      }
-    ];
   }
 }
 

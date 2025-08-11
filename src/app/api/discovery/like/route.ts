@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FarcasterDataService } from '@/lib/farcaster/FarcasterDataService';
+import { databaseService } from '@/lib/database/DatabaseService';
 
+/**
+ * POST - Like a performance
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { performanceId, signerUuid } = await request.json();
-    
+    const body = await request.json();
+    const { performanceId, userId } = body;
+
     if (!performanceId) {
       return NextResponse.json(
         { error: 'Performance ID is required' },
@@ -12,53 +16,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!signerUuid) {
-      return NextResponse.json(
-        { error: 'Farcaster authentication required' },
-        { status: 401 }
-      );
-    }
-    
-    // Use FarcasterDataService to handle the like via Farcaster
-    const farcasterService = FarcasterDataService.getInstance();
-    
-    try {
-      // This will use Farcaster's reaction API
-      const response = await fetch('/api/farcaster/reaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          castHash: performanceId,
-          signerUuid,
-          reactionType: 'like',
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Farcaster API error: ${response.status} ${response.statusText}`);
+    // Get current performance metrics
+    const currentMetrics = await databaseService.getPerformanceMetrics(performanceId);
+    const currentLikes = currentMetrics?.likes_count || 0;
+
+    // Update performance metrics with incremented like count
+    await databaseService.updatePerformanceMetrics({
+      performance_id: performanceId,
+      likes_count: currentLikes + 1
+    });
+
+    // Track analytics event
+    await databaseService.trackEvent({
+      event_type: 'performance_liked',
+      user_id: userId,
+      performance_id: performanceId,
+      event_data: {
+        previous_likes: currentLikes,
+        new_likes: currentLikes + 1
       }
-      
-      const result = await response.json();
-      
-      // Return success response with Farcaster data
-      return NextResponse.json({
-        success: true,
-        reactionHash: result.hash || result.reactionHash,
-        farcasterData: result
-      });
-    } catch (farcasterError) {
-      console.error('Farcaster API error:', farcasterError);
-      return NextResponse.json(
-        { error: 'Failed to like post on Farcaster', details: farcasterError.message },
-        { status: 502 }
-      );
-    }
+    });
+
+    console.log(`✅ Performance ${performanceId} liked successfully. New count: ${currentLikes + 1}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Performance liked successfully',
+      performanceId,
+      newLikeCount: currentLikes + 1,
+      timestamp: new Date().toISOString()
+    });
+
   } catch (error) {
-    console.error('Error processing like request:', error);
+    console.error('Like performance error:', error);
     return NextResponse.json(
-      { error: 'Failed to process like request' },
+      { 
+        error: 'Failed to like performance',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
