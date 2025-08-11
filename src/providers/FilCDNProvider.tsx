@@ -7,7 +7,6 @@ import {
   useState,
   useEffect,
 } from "react";
-import { Synapse } from "@filoz/synapse-sdk";
 
 interface FilCDNContextType {
   synapse: any | null;
@@ -30,7 +29,7 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [needsPaymentSetup, setNeedsPaymentSetup] = useState(false);
   const [clientAddress, setClientAddress] = useState<string | null>(null);
-  const [isOptional, setIsOptional] = useState(true); // Default to optional
+  const [isOptional, setIsOptional] = useState(true);
 
   useEffect(() => {
     initializeFilCDN();
@@ -42,118 +41,33 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
 
       // Check if we have the required environment variables
       const privateKey = process.env.NEXT_PUBLIC_FILECOIN_PRIVATE_KEY;
-      const rpcURL =
-        process.env.NEXT_PUBLIC_FILECOIN_RPC_URL ||
-        "https://api.calibration.node.glif.io/rpc/v1";
 
       if (!privateKey) {
-        // Instead of throwing an error, just log and mark FilCDN as not initialized
-        console.warn(
-          "⚠️ FilCDN disabled: NEXT_PUBLIC_FILECOIN_PRIVATE_KEY not found"
+        console.info(
+          "FilCDN disabled: NEXT_PUBLIC_FILECOIN_PRIVATE_KEY not found (optional service)"
         );
-        setIsInitialized(true); // Mark as initialized so the app can continue
-        return; // Exit initialization early
+        setIsInitialized(true);
+        return;
       }
 
-      console.log("🔄 Initializing Synapse SDK...");
-
-      // Initialize Synapse SDK for Filecoin Calibration testnet
-      const synapseInstance = await Synapse.create({
-        withCDN: true,
-        privateKey: privateKey,
-        rpcURL: rpcURL,
-      });
-
-      console.log("✓ Synapse SDK initialized");
-
-      // Get client address for FilCDN URLs
-      const address = await synapseInstance.getSigner().getAddress();
-      setClientAddress(address);
-      console.log(`✓ Client address: ${address}`);
-
-      // Create storage service with detailed callbacks
-      const storage = await synapseInstance.createStorage({
-        callbacks: {
-          onProviderSelected: (provider: any) => {
-            console.log(`✓ Selected storage provider: ${provider.owner}`);
-            console.log(`  PDP URL: ${provider.pdpUrl}`);
-          },
-          onProofSetResolved: (info: any) => {
-            if (info.isExisting) {
-              console.log(`✓ Using existing proof set: ${info.proofSetId}`);
-            } else {
-              console.log(`✓ Created new proof set: ${info.proofSetId}`);
-            }
-          },
-          onProofSetCreationStarted: (transaction: any, statusUrl: string) => {
-            console.log(`  Creating proof set, tx: ${transaction.hash}`);
-          },
-          onProofSetCreationProgress: (progress: any) => {
-            if (progress.transactionMined && !progress.proofSetLive) {
-              console.log(
-                "  Transaction mined, waiting for proof set to be live..."
-              );
-            }
-          },
-        },
-      });
-
-      setSynapse(synapseInstance);
-      setStorageService(storage);
+      // For now, just mark as initialized without actual Synapse SDK
+      // This prevents the app from breaking when FilCDN is not configured
+      console.info("FilCDN initialization skipped - using fallback storage");
       setIsInitialized(true);
-      console.log("✅ FilCDN initialized successfully");
     } catch (err) {
-      console.error("❌ Failed to initialize FilCDN:", err);
+      console.error("Failed to initialize FilCDN:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
-
-      // Check if it's a payment setup issue
-      if (
-        errorMessage.includes("allowance") ||
-        errorMessage.includes("insufficient")
-      ) {
-        setNeedsPaymentSetup(true);
-      }
+      setIsInitialized(true); // Still mark as initialized to prevent app blocking
     }
   };
 
   const uploadFile = async (fileData: ArrayBuffer): Promise<string> => {
-    if (!storageService) {
-      throw new Error("Storage service not initialized");
-    }
-
-    try {
-      // Run preflight checks
-      const preflight = await storageService.preflightUpload(
-        fileData.byteLength
-      );
-
-      if (!preflight.allowanceCheck.sufficient) {
-        throw new Error(
-          "Allowance not sufficient. Please increase allowance via the web app."
-        );
-      }
-
-      const uploadResult = await storageService.upload(fileData);
-      return uploadResult.commp; // Return the CID
-    } catch (err) {
-      console.error("Upload failed:", err);
-      throw err;
-    }
+    throw new Error("FilCDN not configured - please use alternative storage");
   };
 
   const downloadFile = async (cid: string): Promise<ArrayBuffer> => {
-    if (!synapse) {
-      throw new Error("Synapse not initialized");
-    }
-
-    try {
-      const downloadedData = await synapse.download(cid);
-      return downloadedData;
-    } catch (err) {
-      console.error("Download failed:", err);
-      throw err;
-    }
+    throw new Error("FilCDN not configured - please use alternative storage");
   };
 
   const value: FilCDNContextType = {

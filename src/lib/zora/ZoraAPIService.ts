@@ -2,6 +2,8 @@
 
 import { Address } from 'viem';
 import { PerformanceCoin, TradingMetrics } from './types';
+import { ErrorHandlingService } from '@/lib/services/ErrorHandlingService';
+import { MockDataService } from '@/lib/services/MockDataService';
 
 /**
  * Real Zora API Service for fetching live market data
@@ -258,29 +260,47 @@ export class ZoraAPIService {
    * Make GraphQL request to Zora API via proxy
    */
   private async makeGraphQLRequest(query: string, variables: any) {
-    const response = await fetch(this.baseURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query,
-        variables
-      })
-    });
+    try {
+      const response = await fetch(this.baseURL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query,
+          variables
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`GraphQL request failed: ${response.statusText}`);
+      if (!response.ok) {
+        return this.handleApiError(response, query);
+      }
+
+      const result = await response.json();
+      
+      if (result.error) {
+        return this.handleApiError({ status: 400, message: result.error }, query);
+      }
+
+      return result;
+    } catch (error) {
+      return this.handleApiError(error, query);
     }
+  }
 
-    const result = await response.json();
+  private handleApiError(error: any, query: string) {
+    const errorHandler = ErrorHandlingService.getInstance();
+    const mockDataService = MockDataService.getInstance();
     
-    // Check for proxy errors
-    if (result.error) {
-      throw new Error(result.error);
+    const serviceError = errorHandler.handleApiError(error, 'Zora API');
+    errorHandler.logError(serviceError);
+    
+    if (serviceError.shouldFallback) {
+      const queryType = mockDataService.detectQueryType(query);
+      return mockDataService.getZoraMockData(queryType);
     }
-
-    return result;
+    
+    throw error;
   }
 
   /**

@@ -21,6 +21,20 @@ const nextConfig: NextConfig = {
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
+  // Add headers for better security and external script loading
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://neynarxyz.github.io https://cdn.jsdelivr.net; object-src 'none';"
+          }
+        ],
+      },
+    ];
+  },
   // Temporarily ignore ESLint warnings during builds to prevent build failures
   eslint: {
     ignoreDuringBuilds: true,
