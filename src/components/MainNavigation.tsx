@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Mic, Users, Trophy, Zap, Sparkles, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mic, Users, Trophy, Zap, Sparkles, Plus, Music, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Challenge, ChallengeResult } from "@/types/challenge.types";
 import { useUnifiedChallenge } from "@/hooks/useUnifiedChallenge";
@@ -32,6 +32,8 @@ type MainScreen =
 export default function MainNavigation() {
   const [activeScreen, setActiveScreen] = useState<MainScreen>("home");
   const [isLoading, setIsLoading] = useState(false);
+  const [streak, setStreak] = useState(3); // Example streak counter
+  const [showStreak, setShowStreak] = useState(false);
   const isMobile = useIsMobile();
   
   const { getAudioFeatures } = useFeatureFlags();
@@ -70,6 +72,10 @@ export default function MainNavigation() {
   const handleChallengeComplete = async (result: ChallengeResult) => {
     try {
       await completeChallenge(result);
+      // Show streak animation when completing a challenge
+      setStreak(prev => prev + 1);
+      setShowStreak(true);
+      setTimeout(() => setShowStreak(false), 3000);
       setActiveScreen("discovery");
     } catch (error) {
       console.error("Failed to complete challenge:", error);
@@ -113,14 +119,24 @@ export default function MainNavigation() {
             </Section>
             <Section centerTitle>
               <motion.div
-                className={`max-w-3xl mx-auto rounded-3xl p-${isMobile ? '6' : '10'} bg-gradient-to-r from-purple-500/30 to-blue-600/30 backdrop-blur-md border border-purple-500/20`}
+                className={`max-w-3xl mx-auto rounded-3xl p-${isMobile ? '6' : '10'} bg-gradient-to-r from-purple-500/30 to-blue-600/30 backdrop-blur-md border border-purple-500/20 relative overflow-hidden`}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: 'easeOut' }}
               >
+                {/* Animated background elements */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-gigavibe-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
+                
                 <h3 className={`text-${isMobile ? 'xl' : '2xl'} font-bold text-white mb-4`}>Ready to go viral?</h3>
                 <p className="text-slate-200 mb-8">Kick-off any challenge and watch your performance climb the leaderboards. Become the next vocal sensation on GIGAVIBE!</p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size={isMobile ? 'default' : 'lg'} onClick={handleQuickChallenge} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-0">Start Singing</Button>
-                  <Button size={isMobile ? 'default' : 'lg'} variant="outline" onClick={() => setActiveScreen('discovery')}>Explore Performances</Button>
+                  <Button size={isMobile ? 'default' : 'lg'} onClick={handleQuickChallenge} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-0 group">
+                    <Music className="w-5 h-5 mr-2 group-hover:animate-bounce" />
+                    Start Singing
+                  </Button>
+                  <Button size={isMobile ? 'default' : 'lg'} variant="outline" onClick={() => setActiveScreen('discovery')} className="group">
+                    <Zap className="w-5 h-5 mr-2 group-hover:animate-ping" />
+                    Explore Performances
+                  </Button>
                 </div>
               </motion.div>
             </Section>
@@ -139,6 +155,24 @@ export default function MainNavigation() {
       <motion.div className="pb-20 pt-4" key={activeScreen} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3, ease: "easeInOut" }}>
         {renderScreen()}
       </motion.div>
+      
+      {/* Streak Notification */}
+      <AnimatePresence>
+        {showStreak && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.8 }}
+            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50"
+          >
+            <div className="bg-gradient-to-r from-gigavibe-500 to-purple-500 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-lg">
+              <Star className="w-5 h-5 animate-pulse" />
+              <span className="font-bold">Day {streak} Streak! 🔥</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <motion.nav className="fixed bottom-0 left-0 right-0 gigavibe-glass-dark border-t border-gigavibe-500/20 px-4 py-3 z-50" initial={{ y: 100 }} animate={{ y: 0 }} transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}>
         <div className="flex justify-around items-center max-w-lg mx-auto">
           {navItems.map((item) => {
@@ -152,10 +186,47 @@ export default function MainNavigation() {
                 whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }} disabled={isLoading}
               >
                 {isActive && <motion.div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gigavibe-500/20 to-purple-500/20 blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} />}
-                <motion.div animate={{ scale: isActive ? 1.2 : 1, rotate: isActive ? [0, 5, -5, 0] : 0 }} transition={{ duration: 0.5, ease: "easeInOut" }} className="relative z-10"><Icon className="w-6 h-6" /></motion.div>
+                <motion.div 
+                  animate={{ 
+                    scale: isActive ? 1.2 : 1, 
+                    rotate: isActive ? [0, 5, -5, 0] : 0,
+                    y: isActive ? [0, -5, 0] : 0
+                  }} 
+                  transition={{ 
+                    duration: 0.5, 
+                    ease: "easeInOut",
+                    y: { repeat: Infinity, duration: 2, repeatType: "reverse" }
+                  }} 
+                  className="relative z-10"
+                >
+                  <Icon className="w-6 h-6" />
+                </motion.div>
                 <span className="text-xs font-medium relative z-10">{item.label}</span>
-                {isActive && <motion.div className="w-2 h-2 bg-gradient-to-r from-gigavibe-400 to-purple-400 rounded-full absolute -bottom-1 left-1/2 transform -translate-x-1/2" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.3, delay: 0.1 }} />}
-                {isActive && <motion.div className="absolute -top-1 -right-1 text-gigavibe-400" initial={{ scale: 0, rotate: 0 }} animate={{ scale: [0, 1, 0], rotate: [0, 180, 360] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}><Sparkles className="w-3 h-3" /></motion.div>}
+                {isActive && (
+                  <motion.div 
+                    className="w-2 h-2 bg-gradient-to-r from-gigavibe-400 to-purple-400 rounded-full absolute -bottom-1 left-1/2 transform -translate-x-1/2" 
+                    initial={{ scale: 0, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }} 
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  />
+                )}
+                {isActive && (
+                  <motion.div 
+                    className="absolute -top-1 -right-1 text-gigavibe-400" 
+                    initial={{ scale: 0, rotate: 0 }} 
+                    animate={{ 
+                      scale: [0, 1, 0], 
+                      rotate: [0, 180, 360] 
+                    }} 
+                    transition={{ 
+                      duration: 2, 
+                      repeat: Infinity, 
+                      ease: "easeInOut" 
+                    }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </motion.div>
+                )}
               </motion.button>
             );
           })}
@@ -164,7 +235,11 @@ export default function MainNavigation() {
       <motion.button
         onClick={handleQuickChallenge}
         className={`fixed ${isMobile ? 'bottom-20 right-4' : 'bottom-24 right-6'} w-14 h-14 bg-gradient-to-r from-gigavibe-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-gigavibe-500/25 z-40`}
-        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
+        whileHover={{ scale: 1.1, rotate: [0, 10, -10, 0] }} 
+        whileTap={{ scale: 0.9 }} 
+        initial={{ y: 20, opacity: 0 }} 
+        animate={{ y: 0, opacity: 1 }} 
+        transition={{ delay: 0.3 }}
       >
         <Plus className="w-6 h-6 text-white" />
       </motion.button>

@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, 
   Pause, 
@@ -15,7 +15,8 @@ import {
   Star,
   Coins,
   Trophy,
-  Volume2
+  Volume2,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -57,6 +58,7 @@ export default function ChallengeCard({
   variant = 'detailed' 
 }: ChallengeCardProps) {
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handlePreviewPlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,9 +78,21 @@ export default function ChallengeCard({
         whileTap={{ scale: 0.98 }}
         onClick={handleSelect}
         className="cursor-pointer"
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
       >
-        <Card className="gigavibe-glass-dark border-gigavibe-500/20 hover:border-gigavibe-400/40 transition-all duration-300">
-          <CardContent className="p-4">
+        <Card className="gigavibe-glass-dark border-gigavibe-500/20 hover:border-gigavibe-400/40 transition-all duration-300 relative overflow-hidden">
+          <AnimatePresence>
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-gigavibe-500 pointer-events-none"
+              />
+            )}
+          </AnimatePresence>
+          <CardContent className="p-4 relative z-10">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -133,9 +147,21 @@ export default function ChallengeCard({
         whileHover={{ scale: 1.02 }}
         className="group cursor-pointer"
         onClick={handleSelect}
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
       >
-        <Card className="gigavibe-glass-dark border-gigavibe-500/20 hover:border-gigavibe-400/40 transition-all duration-300 overflow-hidden">
-          <CardContent className="p-0">
+        <Card className="gigavibe-glass-dark border-gigavibe-500/20 hover:border-gigavibe-400/40 transition-all duration-300 overflow-hidden relative">
+          <AnimatePresence>
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.05 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-gigavibe-500 pointer-events-none"
+              />
+            )}
+          </AnimatePresence>
+          <CardContent className="p-0 relative z-10">
             {/* Hero Section */}
             <div className="relative p-6 bg-gradient-to-r from-gigavibe-500/20 to-purple-500/20">
               <div className="flex items-start justify-between mb-4">
@@ -175,8 +201,8 @@ export default function ChallengeCard({
                     </>
                   )}
                 </Button>
-                <Button className="bg-gradient-to-r from-gigavibe-500 to-purple-500 hover:from-gigavibe-600 hover:to-purple-600 text-white border-0">
-                  <Mic className="w-4 h-4 mr-2" />
+                <Button className="bg-gradient-to-r from-gigavibe-500 to-purple-500 hover:from-gigavibe-600 hover:to-purple-600 text-white border-0 group/button">
+                  <Mic className="w-4 h-4 mr-2 group-hover/button:animate-pulse" />
                   Start Challenge
                 </Button>
               </div>
@@ -260,9 +286,21 @@ export default function ChallengeCard({
       whileHover={{ scale: 1.02 }}
       className="group cursor-pointer"
       onClick={handleSelect}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
     >
-      <Card className="gigavibe-glass-dark border-gigavibe-500/20 hover:border-gigavibe-400/40 transition-all duration-300">
-        <CardContent className="p-6">
+      <Card className="gigavibe-glass-dark border-gigavibe-500/20 hover:border-gigavibe-400/40 transition-all duration-300 relative">
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.05 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-gigavibe-500 pointer-events-none"
+            />
+          )}
+        </AnimatePresence>
+        <CardContent className="p-6 relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -356,9 +394,9 @@ export default function ChallengeCard({
               </Button>
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-gigavibe-500 to-purple-500 hover:from-gigavibe-600 hover:to-purple-600 text-white border-0"
+                className="bg-gradient-to-r from-gigavibe-500 to-purple-500 hover:from-gigavibe-600 hover:to-purple-600 text-white border-0 group/button"
               >
-                <Mic className="w-4 h-4 mr-1" />
+                <Mic className="w-4 h-4 mr-1 group-hover/button:animate-bounce" />
                 Sing
               </Button>
             </div>

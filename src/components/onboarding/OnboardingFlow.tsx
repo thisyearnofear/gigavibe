@@ -14,7 +14,10 @@ import {
   Heart,
   Zap,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  Music,
+  Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,14 +51,72 @@ interface OnboardingFlowProps {
 
 // Welcome Step
 function WelcomeStep({ onNext }: OnboardingStepProps) {
+  const [floatingIcons, setFloatingIcons] = useState<Array<{id: number, icon: React.ReactNode, x: number, y: number}>>([]);
+  
+  useEffect(() => {
+    // Create floating icons
+    const icons = [<Mic />, <Music />, <Star />, <Zap />, <Heart />, <Trophy />];
+    const newIcons = Array.from({ length: 6 }, (_, i) => ({
+      id: i,
+      icon: icons[i],
+      x: Math.random() * 100,
+      y: Math.random() * 100
+    }));
+    setFloatingIcons(newIcons);
+    
+    // Animate icons periodically
+    const interval = setInterval(() => {
+      setFloatingIcons(prev => prev.map(icon => ({
+        ...icon,
+        x: Math.random() * 100,
+        y: Math.random() * 100
+      })));
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="text-center space-y-6"
+      className="text-center space-y-6 relative overflow-hidden"
     >
-      <div className="mb-8">
-        <GigavibeLogo className="w-24 h-24 mx-auto mb-4" />
+      {/* Floating background icons */}
+      {floatingIcons.map((icon) => (
+        <motion.div
+          key={icon.id}
+          className="absolute text-gigavibe-500/20"
+          style={{ left: `${icon.x}%`, top: `${icon.y}%` }}
+          animate={{ 
+            x: [0, Math.random() * 20 - 10, 0],
+            y: [0, Math.random() * 20 - 10, 0],
+            rotate: [0, 360]
+          }}
+          transition={{ 
+            duration: 5 + Math.random() * 5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          {icon.icon}
+        </motion.div>
+      ))}
+      
+      <div className="mb-8 relative z-10">
+        <motion.div
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 5, -5, 0]
+          }}
+          transition={{ 
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <GigavibeLogo className="w-24 h-24 mx-auto mb-4" />
+        </motion.div>
         <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
           Welcome to GIGAVIBE
         </h1>
@@ -65,28 +126,45 @@ function WelcomeStep({ onNext }: OnboardingStepProps) {
       </div>
 
       <div className="space-y-4 max-w-md mx-auto">
-        <div className="flex items-center gap-3 p-3 bg-purple-500/20 rounded-lg">
+        <motion.div 
+          className="flex items-center gap-3 p-3 bg-purple-500/20 rounded-lg"
+          whileHover={{ scale: 1.05, x: 10 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
           <Mic className="w-6 h-6 text-purple-400" />
           <span className="text-gray-200">Record vocal performances</span>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-blue-500/20 rounded-lg">
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-3 p-3 bg-blue-500/20 rounded-lg"
+          whileHover={{ scale: 1.05, x: 10 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
           <Users className="w-6 h-6 text-blue-400" />
           <span className="text-gray-200">Get community feedback</span>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg">
+        </motion.div>
+        <motion.div 
+          className="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg"
+          whileHover={{ scale: 1.05, x: 10 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
           <Trophy className="w-6 h-6 text-green-400" />
           <span className="text-gray-200">Turn viral moments into coins</span>
-        </div>
+        </motion.div>
       </div>
 
-      <Button 
-        onClick={onNext}
-        size="lg"
-        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8"
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        Let's Get Started
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
+        <Button 
+          onClick={onNext}
+          size="lg"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 group"
+        >
+          Let's Get Started
+          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+        </Button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -94,6 +172,14 @@ function WelcomeStep({ onNext }: OnboardingStepProps) {
 // Farcaster Connection Step
 function FarcasterConnectionStep({ onNext, onSkip }: OnboardingStepProps) {
   const { isAuthenticated, user } = useFarcasterAuth();
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPulse(prev => !prev);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -109,9 +195,16 @@ function FarcasterConnectionStep({ onNext, onSkip }: OnboardingStepProps) {
       className="text-center space-y-6"
     >
       <div className="mb-6">
-        <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <motion.div 
+          className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+          animate={{ 
+            scale: pulse ? [1, 1.1, 1] : 1,
+            boxShadow: pulse ? ["0 0 0 0 rgba(147, 51, 234, 0)", "0 0 0 10px rgba(147, 51, 234, 0.3)", "0 0 0 0 rgba(147, 51, 234, 0)"] : "0 0 0 0 rgba(147, 51, 234, 0)"
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
           <Users className="w-8 h-8 text-purple-400" />
-        </div>
+        </motion.div>
         <h2 className="text-2xl font-bold text-white mb-2">
           Connect Your Farcaster Account
         </h2>
@@ -127,7 +220,12 @@ function FarcasterConnectionStep({ onNext, onSkip }: OnboardingStepProps) {
           className="space-y-4"
         >
           <div className="flex items-center justify-center gap-2 text-green-400">
-            <CheckCircle className="w-6 h-6" />
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <CheckCircle className="w-6 h-6" />
+            </motion.div>
             <span className="text-lg font-medium">Connected!</span>
           </div>
           <div className="flex items-center justify-center gap-3 p-4 bg-gray-800 rounded-lg max-w-sm mx-auto">
@@ -150,19 +248,48 @@ function FarcasterConnectionStep({ onNext, onSkip }: OnboardingStepProps) {
           <FarcasterAuthStatus showSignInButton={true} />
           
           <div className="text-sm text-gray-400 space-y-2">
-            <p>✨ Share performances to your Farcaster feed</p>
-            <p>🗳️ Vote on community performances</p>
-            <p>💰 Earn ownership in viral performance coins</p>
+            <motion.p 
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              Share performances to your Farcaster feed
+            </motion.p>
+            <motion.p 
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Zap className="w-4 h-4 text-yellow-400" />
+              Vote on community performances
+            </motion.p>
+            <motion.p 
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Trophy className="w-4 h-4 text-green-400" />
+              Earn ownership in viral performance coins
+            </motion.p>
           </div>
 
           {onSkip && (
-            <Button 
-              onClick={onSkip}
-              variant="ghost"
-              className="text-gray-400 hover:text-white"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Skip for now
-            </Button>
+              <Button 
+                onClick={onSkip}
+                variant="ghost"
+                className="text-gray-400 hover:text-white"
+              >
+                Skip for now
+              </Button>
+            </motion.div>
           )}
         </div>
       )}
@@ -233,9 +360,20 @@ function HowItWorksStep({ onNext }: OnboardingStepProps) {
             transition={{ duration: 0.5 }}
             className="text-center space-y-4"
           >
-            <div className={`w-20 h-20 bg-${demoSteps[currentDemo].color}-500/20 rounded-full flex items-center justify-center mx-auto`}>
+            <motion.div 
+              className={`w-20 h-20 bg-${demoSteps[currentDemo].color}-500/20 rounded-full flex items-center justify-center mx-auto`}
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 10, -10, 0]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
               {demoSteps[currentDemo].icon}
-            </div>
+            </motion.div>
             <h3 className="text-xl font-bold text-white">
               {demoSteps[currentDemo].title}
             </h3>
@@ -248,30 +386,46 @@ function HowItWorksStep({ onNext }: OnboardingStepProps) {
 
       <div className="flex justify-center gap-2 mb-6">
         {demoSteps.map((_, index) => (
-          <div
+          <motion.div
             key={index}
             className={`w-2 h-2 rounded-full transition-colors ${
               index === currentDemo ? 'bg-purple-400' : 'bg-gray-600'
             }`}
+            animate={{
+              scale: index === currentDemo ? [1, 1.5, 1] : 1
+            }}
+            transition={{
+              duration: 0.5,
+              repeat: index === currentDemo ? Infinity : 0,
+              repeatType: "reverse"
+            }}
           />
         ))}
       </div>
 
-      <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-4 rounded-lg max-w-md mx-auto">
+      <motion.div 
+        className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-4 rounded-lg max-w-md mx-auto"
+        whileHover={{ scale: 1.02 }}
+      >
         <p className="text-sm text-gray-200">
           💡 <strong>The magic:</strong> Even "bad" singing creates shareable moments like 
           "I thought 5⭐... they said 2⭐ 😅"
         </p>
-      </div>
+      </motion.div>
 
-      <Button 
-        onClick={onNext}
-        size="lg"
-        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8"
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        Try Your First Challenge
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
+        <Button 
+          onClick={onNext}
+          size="lg"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 group"
+        >
+          Try Your First Challenge
+          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+        </Button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -279,6 +433,20 @@ function HowItWorksStep({ onNext }: OnboardingStepProps) {
 // First Challenge Step
 function FirstChallengeStep({ onNext }: OnboardingStepProps) {
   const [hasStarted, setHasStarted] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  
+  const startCountdown = () => {
+    setHasStarted(true);
+    let count = 3;
+    const timer = setInterval(() => {
+      count--;
+      setCountdown(count);
+      if (count === 0) {
+        clearInterval(timer);
+        setTimeout(onNext, 500);
+      }
+    }, 1000);
+  };
   
   return (
     <motion.div
@@ -287,9 +455,20 @@ function FirstChallengeStep({ onNext }: OnboardingStepProps) {
       className="text-center space-y-6"
     >
       <div className="mb-6">
-        <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <motion.div 
+          className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 10, -10, 0]
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
           <Mic className="w-8 h-8 text-purple-400" />
-        </div>
+        </motion.div>
         <h2 className="text-2xl font-bold text-white mb-2">
           Your First Challenge
         </h2>
@@ -298,58 +477,69 @@ function FirstChallengeStep({ onNext }: OnboardingStepProps) {
         </p>
       </div>
 
-      <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30 max-w-md mx-auto">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-purple-500/30 rounded-full flex items-center justify-center">
-              <Volume2 className="w-6 h-6 text-purple-400" />
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30 max-w-md mx-auto">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-purple-500/30 rounded-full flex items-center justify-center">
+                <Volume2 className="w-6 h-6 text-purple-400" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-white">Happy Birthday</h3>
+                <p className="text-sm text-gray-300">Classic & Simple</p>
+              </div>
             </div>
-            <div className="text-left">
-              <h3 className="font-bold text-white">Happy Birthday</h3>
-              <p className="text-sm text-gray-300">Classic & Simple</p>
+            
+            <div className="space-y-3 text-sm text-gray-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>Everyone knows the words</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>Short and sweet (30 seconds)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>Perfect for your first reality check</span>
+              </div>
             </div>
-          </div>
-          
-          <div className="space-y-3 text-sm text-gray-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span>Everyone knows the words</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span>Short and sweet (30 seconds)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span>Perfect for your first reality check</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <div className="space-y-4">
-        <Button 
-          onClick={() => {
-            setHasStarted(true);
-            // This would trigger the actual challenge component
-            setTimeout(onNext, 2000); // Simulate challenge completion
-          }}
-          size="lg"
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8"
-          disabled={hasStarted}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {hasStarted ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              Starting Challenge...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4 mr-2" />
-              Start Recording
-            </>
-          )}
-        </Button>
+          <Button 
+            onClick={startCountdown}
+            size="lg"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8"
+            disabled={hasStarted}
+          >
+            {hasStarted ? (
+              <>
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.5 }}
+                >
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                </motion.div>
+                {countdown > 0 ? `Starting in ${countdown}...` : "Starting Challenge..."}
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Start Recording
+              </>
+            )}
+          </Button>
+        </motion.div>
 
         <p className="text-xs text-gray-400">
           Don't worry about being perfect - the fun is in the surprise!
@@ -361,16 +551,64 @@ function FirstChallengeStep({ onNext }: OnboardingStepProps) {
 
 // Completion Step
 function CompletionStep({ onNext }: OnboardingStepProps) {
+  const [confetti, setConfetti] = useState<Array<{id: number, x: number, y: number}>>([]);
+  
+  useEffect(() => {
+    // Create confetti effect
+    const newConfetti = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100
+    }));
+    setConfetti(newConfetti);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="text-center space-y-6"
+      className="text-center space-y-6 relative overflow-hidden"
     >
-      <div className="mb-6">
-        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      {/* Confetti effect */}
+      {confetti.map((piece) => (
+        <motion.div
+          key={piece.id}
+          className="absolute w-2 h-2 rounded-full"
+          style={{ 
+            left: `${piece.x}%`, 
+            top: `${piece.y}%`,
+            backgroundColor: ['#d946ef', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'][Math.floor(Math.random() * 5)]
+          }}
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ 
+            y: [0, -20, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            opacity: [0, 1, 0],
+            rotate: [0, 360]
+          }}
+          transition={{ 
+            duration: 2 + Math.random() * 2,
+            repeat: Infinity,
+            ease: "easeOut"
+          }}
+        />
+      ))}
+      
+      <div className="mb-6 relative z-10">
+        <motion.div
+          className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 10, -10, 0]
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
           <CheckCircle className="w-10 h-10 text-green-400" />
-        </div>
+        </motion.div>
         <h2 className="text-2xl font-bold text-white mb-2">
           You're All Set! 🎉
         </h2>
@@ -380,51 +618,71 @@ function CompletionStep({ onNext }: OnboardingStepProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 max-w-md mx-auto">
-        <Card className="bg-purple-500/20 border-purple-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-purple-400" />
-              <div className="text-left">
-                <div className="font-medium text-white">Discover Feed</div>
-                <div className="text-sm text-gray-300">Swipe through performances</div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-purple-500/20 border-purple-500/30">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-purple-400" />
+                <div className="text-left">
+                  <div className="font-medium text-white">Discover Feed</div>
+                  <div className="text-sm text-gray-300">Swipe through performances</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="bg-blue-500/20 border-blue-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Heart className="w-6 h-6 text-blue-400" />
-              <div className="text-left">
-                <div className="font-medium text-white">Judge Others</div>
-                <div className="text-sm text-gray-300">Help create reality checks</div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-blue-500/20 border-blue-500/30">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Heart className="w-6 h-6 text-blue-400" />
+                <div className="text-left">
+                  <div className="font-medium text-white">Judge Others</div>
+                  <div className="text-sm text-gray-300">Help create reality checks</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="bg-green-500/20 border-green-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Trophy className="w-6 h-6 text-green-400" />
-              <div className="text-left">
-                <div className="font-medium text-white">Market</div>
-                <div className="text-sm text-gray-300">Trade performance coins</div>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="bg-green-500/20 border-green-500/30">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-6 h-6 text-green-400" />
+                <div className="text-left">
+                  <div className="font-medium text-white">Market</div>
+                  <div className="text-sm text-gray-300">Trade performance coins</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
-      <Button 
-        onClick={onNext}
-        size="lg"
-        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8"
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        Explore GIGAVIBE
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
+        <Button 
+          onClick={onNext}
+          size="lg"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 group"
+        >
+          Explore GIGAVIBE
+          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+        </Button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -433,6 +691,7 @@ function CompletionStep({ onNext }: OnboardingStepProps) {
 export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const { isAuthenticated } = useFarcasterAuth();
+  const [stepDirection, setStepDirection] = useState(0); // -1 for back, 1 for forward
 
   const steps: OnboardingStep[] = [
     {
@@ -474,6 +733,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
+      setStepDirection(1);
       setCurrentStep(currentStep + 1);
     } else {
       onComplete();
@@ -482,6 +742,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
 
   const handleBack = () => {
     if (currentStep > 0) {
+      setStepDirection(-1);
       setCurrentStep(currentStep - 1);
     }
   };
@@ -505,18 +766,34 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <GigavibeLogo className="w-8 h-8" />
+          <motion.div
+            animate={{ 
+              rotate: [0, 360],
+            }}
+            transition={{ 
+              duration: 10,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          >
+            <GigavibeLogo className="w-8 h-8" />
+          </motion.div>
           <span className="font-bold">GIGAVIBE</span>
         </div>
         
-        <Button 
-          onClick={handleSkipAll}
-          variant="ghost" 
-          size="sm"
-          className="text-gray-400 hover:text-white"
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          Skip Setup
-        </Button>
+          <Button 
+            onClick={handleSkipAll}
+            variant="ghost" 
+            size="sm"
+            className="text-gray-400 hover:text-white"
+          >
+            Skip Setup
+          </Button>
+        </motion.div>
       </div>
 
       {/* Progress Bar */}
@@ -536,9 +813,9 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: stepDirection > 0 ? 20 : -20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              exit={{ opacity: 0, x: stepDirection > 0 ? -20 : 20 }}
               transition={{ duration: 0.3 }}
             >
               <CurrentStepComponent
@@ -557,14 +834,19 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
       {currentStep > 0 && currentStep < steps.length - 1 && (
         <div className="p-4">
           <div className="max-w-lg mx-auto flex justify-between">
-            <Button 
-              onClick={handleBack}
-              variant="ghost"
-              className="text-gray-400 hover:text-white"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
-            </Button>
+              <Button 
+                onClick={handleBack}
+                variant="ghost"
+                className="text-gray-400 hover:text-white"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+            </motion.div>
             
             <div className="text-xs text-gray-400 self-center">
               {currentStepData.description}
