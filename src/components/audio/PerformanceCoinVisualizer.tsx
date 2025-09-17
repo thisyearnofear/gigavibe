@@ -282,7 +282,7 @@ export default function PerformanceCoinVisualizer({
                 </Button>
                 <Button
                   onClick={() => onTrade?.('sell')}
-                  variant="outline"
+                  variant="secondary"
                   className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10"
                   size="sm"
                 >
@@ -439,7 +439,7 @@ export default function PerformanceCoinVisualizer({
             </Button>
             <Button
               onClick={() => onTrade?.('sell')}
-              variant="outline"
+              variant="secondary"
               className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10"
             >
               <TrendingDown className="w-4 h-4 mr-2" />

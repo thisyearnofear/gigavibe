@@ -1038,7 +1038,7 @@ class AnalyticsManager {
       window.addEventListener('click', (event) => {
         // Find closest element with data-analytics attribute
         let target = event.target as HTMLElement;
-        let analyticsData = null;
+        let analyticsData: string | null = null;
 
         while (target && !analyticsData) {
           analyticsData = target.getAttribute('data-analytics');

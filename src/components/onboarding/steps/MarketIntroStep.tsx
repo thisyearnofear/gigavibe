@@ -198,7 +198,7 @@ export default function MarketIntroStep() {
                 {/* Action Buttons */}
                 <div className="flex gap-2 mt-4">
                   <Button 
-                    variant="outline" 
+                    variant="secondary" 
                     size="sm" 
                     className="flex-1 border-green-500 text-green-400 hover:bg-green-500/20"
                   >
@@ -206,7 +206,7 @@ export default function MarketIntroStep() {
                     Buy
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="secondary" 
                     size="sm" 
                     className="flex-1 border-red-500 text-red-400 hover:bg-red-500/20"
                   >

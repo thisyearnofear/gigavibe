@@ -45,7 +45,7 @@ export function usePerformanceUpload(): UsePerformanceUploadReturn {
     username: displayName || 'Anonymous',
     displayName: displayName || 'Anonymous User',
     authMethod: authMethod || 'ethereum',
-    avatarUrl,
+    avatarUrl: avatarUrl || undefined,
     canPost,
     fid: user?.fid
   }), [user, displayName, authMethod, avatarUrl, canPost]);

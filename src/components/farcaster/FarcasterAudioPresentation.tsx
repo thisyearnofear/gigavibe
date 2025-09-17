@@ -108,7 +108,7 @@ export function FarcasterAudioCard({
             <Button
               onClick={onOpenInApp}
               size="sm"
-              variant="outline"
+              variant="secondary"
               className="border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0"
             >
               <ExternalLink className="w-3 h-3" />
@@ -223,7 +223,7 @@ export function FarcasterAudioCard({
           </Button>
           <Button
             onClick={onCast}
-            variant="outline"
+            variant="secondary"
             className="border-slate-600 text-slate-300 hover:bg-slate-700"
             size="sm"
           >
@@ -286,7 +286,7 @@ export function FarcasterAudioCard({
                 <Button
                   onClick={onOpenInApp}
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   className="border-slate-600 text-slate-300 hover:bg-slate-700"
                 >
                   <ExternalLink className="w-3 h-3 mr-1" />

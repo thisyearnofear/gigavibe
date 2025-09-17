@@ -7,23 +7,26 @@ import {
   useState,
   useEffect,
 } from "react";
+import { Synapse, RPC_URLS, TOKENS, CONTRACT_ADDRESSES } from '@filoz/synapse-sdk';
+import { ethers } from 'ethers';
 
 interface FilCDNContextType {
-  synapse: any | null;
+  synapse: Synapse | null;
   storageService: any | null;
   isInitialized: boolean;
-  uploadFile: (fileData: ArrayBuffer) => Promise<string>;
-  downloadFile: (cid: string) => Promise<ArrayBuffer>;
+  uploadFile: (fileData: ArrayBuffer, filename?: string) => Promise<string>;
+  downloadFile: (pieceCid: string) => Promise<ArrayBuffer>;
   error: string | null;
   needsPaymentSetup: boolean;
   clientAddress: string | null;
   isOptional: boolean;
+  setupPayments: () => Promise<void>;
 }
 
-const FilCDNContext = createContext<FilCDNContextType | undefined>(undefined);
+export const FilCDNContext = createContext<FilCDNContextType | undefined>(undefined);
 
 export function FilCDNProvider({ children }: { children: ReactNode }) {
-  const [synapse, setSynapse] = useState<any>(null);
+  const [synapse, setSynapse] = useState<Synapse | null>(null);
   const [storageService, setStorageService] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +53,30 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // For now, just mark as initialized without actual Synapse SDK
-      // This prevents the app from breaking when FilCDN is not configured
-      console.info("FilCDN initialization skipped - using fallback storage");
+      console.log("🚀 Initializing Filecoin Onchain Cloud with Synapse SDK...");
+
+      // Initialize Synapse SDK with Calibration testnet for development
+      const synapseInstance = await Synapse.create({
+        privateKey,
+        rpcURL: RPC_URLS.calibration.websocket // Use calibration testnet
+      });
+
+      setSynapse(synapseInstance);
+      
+      // Get client address from the wallet
+      const wallet = new ethers.Wallet(privateKey);
+      setClientAddress(wallet.address);
+
+      // Check if payment setup is needed
+      const balance = await synapseInstance.payments.balance();
+      const hasBalance = balance > ethers.parseUnits('1', 18); // Check for at least 1 USDFC
+      
+      if (!hasBalance) {
+        setNeedsPaymentSetup(true);
+        console.warn("⚠️ Payment setup required: Insufficient USDFC balance");
+      }
+
+      console.log("✅ Filecoin Onchain Cloud initialized successfully");
       setIsInitialized(true);
     } catch (err) {
       console.error("Failed to initialize FilCDN:", err);
@@ -62,12 +86,75 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const uploadFile = async (fileData: ArrayBuffer): Promise<string> => {
-    throw new Error("FilCDN not configured - please use alternative storage");
+  const setupPayments = async () => {
+    if (!synapse) {
+      throw new Error("Synapse not initialized");
+    }
+
+    try {
+      console.log("💰 Setting up Filecoin payments...");
+
+      // 1. Deposit USDFC tokens (100 USDFC for testing)
+      const depositAmount = ethers.parseUnits('100', 18);
+      await synapse.payments.deposit(depositAmount);
+      console.log("✅ Deposited 100 USDFC tokens");
+
+      // 2. Get Warm Storage service address and approve it
+      const warmStorageAddress = await synapse.getWarmStorageAddress();
+      await synapse.payments.approveService(
+        warmStorageAddress,
+        ethers.parseUnits('10', 18),   // Rate allowance: 10 USDFC per epoch
+        ethers.parseUnits('1000', 18), // Lockup allowance: 1000 USDFC total
+        BigInt(86400)                  // Max lockup period: 30 days (in epochs)
+      );
+      console.log("✅ Approved Warm Storage service for payments");
+
+      setNeedsPaymentSetup(false);
+    } catch (err) {
+      console.error("Payment setup failed:", err);
+      throw err;
+    }
   };
 
-  const downloadFile = async (cid: string): Promise<ArrayBuffer> => {
-    throw new Error("FilCDN not configured - please use alternative storage");
+  const uploadFile = async (fileData: ArrayBuffer, filename?: string): Promise<string> => {
+    if (!synapse) {
+      throw new Error("Synapse SDK not initialized");
+    }
+
+    try {
+      console.log("📤 Uploading file to Filecoin Warm Storage...");
+      
+      // Convert ArrayBuffer to Uint8Array for Synapse SDK
+      const data = new Uint8Array(fileData);
+      
+      // Upload using the high-level storage API
+      const uploadResult = await synapse.storage.upload(data);
+      
+      console.log(`✅ File uploaded successfully! PieceCID: ${uploadResult.pieceCid}`);
+      return uploadResult.pieceCid.toString(); // Convert PieceLink to string
+    } catch (err) {
+      console.error("File upload failed:", err);
+      throw new Error(`FilCDN upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const downloadFile = async (pieceCid: string): Promise<ArrayBuffer> => {
+    if (!synapse) {
+      throw new Error("Synapse SDK not initialized");
+    }
+
+    try {
+      console.log(`📥 Downloading file from Filecoin: ${pieceCid}`);
+      
+      // Download using the high-level storage API
+      const data = await synapse.storage.download(pieceCid);
+      
+      console.log("✅ File downloaded successfully");
+      return new ArrayBuffer(data.byteLength).slice(0); // Convert to proper ArrayBuffer
+    } catch (err) {
+      console.error("File download failed:", err);
+      throw new Error(`FilCDN download failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
   };
 
   const value: FilCDNContextType = {
@@ -80,17 +167,10 @@ export function FilCDNProvider({ children }: { children: ReactNode }) {
     needsPaymentSetup,
     clientAddress,
     isOptional,
+    setupPayments,
   };
 
   return (
     <FilCDNContext.Provider value={value}>{children}</FilCDNContext.Provider>
   );
-}
-
-export function useFilCDN() {
-  const context = useContext(FilCDNContext);
-  if (context === undefined) {
-    throw new Error("useFilCDN must be used within a FilCDNProvider");
-  }
-  return context;
 }

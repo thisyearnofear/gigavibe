@@ -17,7 +17,7 @@ import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import ChallengeDiscovery from "./challenge/ChallengeDiscovery";
 import ChallengeFlow from "./challenge/ChallengeFlow";
-import DiscoveryFeed from "./discovery/DiscoveryFeed";
+import EnhancedDiscoveryFeed from "./discovery/EnhancedDiscoveryFeed";
 import PeerJudging from "./PeerJudging";
 import MarketLeaderboard from "./market/MarketLeaderboard";
 import { useFeatureFlags } from "@/lib/features/FeatureFlags";
@@ -50,11 +50,12 @@ export default function MainNavigation() {
   const { userInfo } = useFarcasterIntegration();
   const { navigateWithContext } = useCrossTab();
 
+  // Enhanced navigation with action-oriented labels
   const navItems = [
-    { id: "home" as MainScreen, label: "Home", icon: Sparkles, description: "Discover challenges" },
-    { id: "discovery" as MainScreen, label: "Feed", icon: Zap, description: "Social performances" },
-    { id: "judging" as MainScreen, label: "Judge", icon: Users, description: "Rate others" },
-    { id: "leaderboard" as MainScreen, label: "Market", icon: Trophy, description: "Performance coins" },
+    { id: "home" as MainScreen, label: "Sing", icon: Mic, description: "Start a challenge", color: "text-purple-400" },
+    { id: "discovery" as MainScreen, label: "Discover", icon: Zap, description: "Explore performances", color: "text-blue-400" },
+    { id: "judging" as MainScreen, label: "Judge", icon: Users, description: "Rate others", color: "text-green-400" },
+    { id: "leaderboard" as MainScreen, label: "Earn", icon: Trophy, description: "Performance coins", color: "text-yellow-400" },
   ];
 
   const handleScreenChange = (screen: MainScreen, context?: any) => {
@@ -129,11 +130,11 @@ export default function MainNavigation() {
                 <h3 className={`text-${isMobile ? 'xl' : '2xl'} font-bold text-white mb-4`}>Ready to go viral?</h3>
                 <p className="text-slate-200 mb-8">Kick-off any challenge and watch your performance climb the leaderboards. Become the next vocal sensation on GIGAVIBE!</p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size={isMobile ? 'default' : 'lg'} onClick={handleQuickChallenge} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-0 group">
+                  <Button size={isMobile ? 'default' : 'lg'} variant="primary" onClick={handleQuickChallenge} className="group">
                     <Music className="w-5 h-5 mr-2 group-hover:animate-bounce" />
                     Start Singing
                   </Button>
-                  <Button size={isMobile ? 'default' : 'lg'} variant="outline" onClick={() => setActiveScreen('discovery')} className="group">
+                  <Button size={isMobile ? 'default' : 'lg'} variant="secondary" onClick={() => setActiveScreen('discovery')} className="group">
                     <Zap className="w-5 h-5 mr-2 group-hover:animate-ping" />
                     Explore Performances
                   </Button>
@@ -142,7 +143,7 @@ export default function MainNavigation() {
             </Section>
           </Container>
         );
-      case "discovery": return <DiscoveryFeed initialFeedType="foryou" />;
+      case "discovery": return <EnhancedDiscoveryFeed initialFeedType="foryou" />;
       case "judging": return <PeerJudging />;
       case "leaderboard": return <MarketLeaderboard />;
       default: return <ChallengeDiscovery onChallengeSelect={handleChallengeSelect} onViewAllChallenges={() => {}} />;
@@ -182,7 +183,7 @@ export default function MainNavigation() {
               <motion.button
                 key={item.id}
                 onClick={() => handleScreenChange(item.id)}
-                className={`flex flex-col items-center gap-1 py-3 px-4 rounded-2xl transition-all duration-300 min-h-[64px] min-w-[64px] touch-target haptic-medium gpu-accelerated will-change-transform focus-ring relative ${isActive ? "text-gigavibe-400 bg-gigavibe-500/10" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
+                className={`flex flex-col items-center gap-1 py-3 px-4 rounded-2xl transition-all duration-300 min-h-[64px] min-w-[64px] touch-target relative ${isActive ? `${item.color} bg-white/5` : "text-slate-400 hover:text-white hover:bg-white/5"}`}
                 whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }} disabled={isLoading}
               >
                 {isActive && <motion.div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gigavibe-500/20 to-purple-500/20 blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} />}

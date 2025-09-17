@@ -25,6 +25,7 @@ export interface AudioUploadResult {
   storageType: 'filcdn' | 'grove' | 'local' | 'none';
   url?: string;
   error?: Error;
+  metadata?: Record<string, any>; // Add metadata field for Filecoin-specific data
 }
 
 /**
@@ -93,13 +94,14 @@ export class AudioUploadService {
           },
           body: JSON.stringify({
             filename,
-            data: base64Data,
+            data: Array.from(new Uint8Array(await blob.arrayBuffer())), // Use ArrayBuffer for Synapse SDK
             metadata: {
               sourceType,
               challengeId,
               timestamp,
               ...options.metadata
             },
+            provider: "filcdn", // Explicitly specify provider
           }),
         });
         
@@ -110,9 +112,14 @@ export class AudioUploadService {
         const data = await response.json();
         result = {
           success: true,
-          recordingId: data.ipfsHash,
+          recordingId: data.pieceCid || data.ipfsHash, // Use pieceCid from Synapse SDK
           storageType: 'filcdn',
-          url: data.url || `ipfs://${data.ipfsHash}`
+          url: data.url || `filecoin://${data.pieceCid || data.ipfsHash}`,
+          metadata: {
+            pieceCid: data.pieceCid,
+            storageProof: data.storageProof, // Include PDP proof if available
+            ...options.metadata
+          }
         };
         
         console.log("✅ Audio uploaded to FilCDN successfully with hash:", result.recordingId);

@@ -295,7 +295,13 @@ export class LiveAudioAnalysisService {
 
   // Utility methods
   isSupported(): boolean {
-    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.AudioContext);
+    return !!(
+      typeof navigator !== 'undefined' && 
+      navigator.mediaDevices && 
+      typeof navigator.mediaDevices.getUserMedia === 'function' && 
+      typeof window !== 'undefined' && 
+      (window.AudioContext || (window as any).webkitAudioContext)
+    );
   }
 
   getAnalyserNode(): AnalyserNode | null {

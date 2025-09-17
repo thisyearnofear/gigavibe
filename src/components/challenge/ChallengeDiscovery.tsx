@@ -148,7 +148,7 @@ export default function ChallengeDiscovery({
             >
               <Button 
                 onClick={refreshChallenges}
-                variant="outline"
+                variant="secondary"
                 className="border-red-500/30 text-red-400 hover:bg-red-500/10"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -233,7 +233,7 @@ export default function ChallengeDiscovery({
               whileTap={{ scale: 0.95 }}
             >
               <Button
-                variant={viewMode === id ? "default" : "outline"}
+                variant={viewMode === id ? "primary" : "secondary"}
                 size="sm"
                 onClick={() => setViewMode(id as any)}
                 className={`whitespace-nowrap relative overflow-hidden ${
@@ -266,7 +266,7 @@ export default function ChallengeDiscovery({
             whileTap={{ scale: 0.95 }}
           >
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="border-slate-600 text-slate-300 group"
@@ -473,7 +473,7 @@ export default function ChallengeDiscovery({
                   >
                     <Button
                       onClick={clearFilters}
-                      variant="outline"
+                      variant="secondary"
                       className="border-gigavibe-500/30 text-gigavibe-400 hover:bg-gigavibe-500/10"
                     >
                       Clear Filters
@@ -569,7 +569,7 @@ export default function ChallengeDiscovery({
                     >
                       <Button
                         onClick={onViewAllChallenges}
-                        variant="outline"
+                        variant="secondary"
                         className="border-gigavibe-500/30 text-gigavibe-400 hover:bg-gigavibe-500/10"
                       >
                         Browse All Challenges

@@ -274,7 +274,9 @@ export default function ViralChallengeComponent({
         setTimeRemaining(remaining);
 
         if (remaining <= 0) {
-          clearInterval(timerRef.current);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
           completeChallenge().catch((err) => {
             console.error("Error completing challenge:", err);
             alert(
@@ -509,6 +511,12 @@ export default function ViralChallengeComponent({
 
     // Prefer mixed audio if available
     const blobToUpload = localMixedAudioBlob || localAudioBlob;
+    
+    if (!blobToUpload) {
+      console.error("No audio blob available for upload");
+      return;
+    }
+    
     console.log("📤 Using audio blob for upload:", {
       usingMixed: !!localMixedAudioBlob,
       usingVocals: !!localAudioBlob,
@@ -524,11 +532,11 @@ export default function ViralChallengeComponent({
       // Use our abstracted upload service
       const uploadResult = await AudioUploadService.uploadAudio({
         blob: blobToUpload,
-        challengeId: currentChallenge.id,
+        challengeId: currentChallenge?.id || '',
         sourceType,
-        filename: `${currentChallenge.id}_${sourceType}_${Date.now()}.webm`,
+        filename: `${currentChallenge?.id}_${sourceType}_${Date.now()}.webm`,
         metadata: {
-          challengeId: currentChallenge.id,
+          challengeId: currentChallenge?.id || '',
           sourceType,
           timestamp: Date.now(),
         },
@@ -605,11 +613,11 @@ export default function ViralChallengeComponent({
         }
 
         // 4. Call original onComplete for backward compatibility
-        onComplete(accuracy, recordingId, currentChallenge.id);
+        onComplete(accuracy, recordingId, currentChallenge?.id || '');
       } catch (error) {
         console.error("❌ Failed to create Farcaster cast:", error);
         // Still complete the flow even if Farcaster cast fails
-        onComplete(accuracy, recordingId, currentChallenge.id);
+        onComplete(accuracy, recordingId, currentChallenge?.id || '');
       }
     } else {
       console.error("❌ Upload failed");

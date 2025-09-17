@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { VocalChallenge, ChallengeProgress, ChallengeResult, UseChallengeReturn } from '@/types';
-import { useFilCDN } from '@/providers/FilCDNProvider';
+import { useFilCDN } from '@/hooks/useFilCDN';
 
 export function useChallenge(): UseChallengeReturn {
   const [currentChallenge, setCurrentChallenge] = useState<VocalChallenge | null>(null);

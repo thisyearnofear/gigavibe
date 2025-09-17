@@ -223,7 +223,7 @@ export default function FirstVoteStep() {
         <div className="flex justify-center gap-4">
           <Button
             onClick={() => handleVote('needs-work')}
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="border-red-500 text-red-400 hover:bg-red-500/20"
           >
@@ -232,7 +232,7 @@ export default function FirstVoteStep() {
           </Button>
           <Button
             onClick={() => handleVote('amazing')}
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/20"
           >
@@ -241,7 +241,7 @@ export default function FirstVoteStep() {
           </Button>
           <Button
             onClick={() => handleVote('good')}
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="border-green-500 text-green-400 hover:bg-green-500/20"
           >

@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.15",
-    "@filoz/synapse-sdk": "^0.16.0",
+    "@filoz/synapse-sdk": "^0.24.0",
     "@fontsource/comic-neue": "^5.2.6",
     "@fontsource/fredoka-one": "^5.2.5",
     "@hookform/resolvers": "^5.1.1",

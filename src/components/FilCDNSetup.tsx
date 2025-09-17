@@ -1,147 +1,202 @@
-'use client';
+"use client";
 
-import { ExternalLink, Wallet, CreditCard, FileText, CheckCircle } from 'lucide-react';
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Copy, ExternalLink, Wallet, CheckCircle, AlertCircle } from "lucide-react";
+import { useFilCDN } from "@/hooks/useFilCDN";
 
 interface FilCDNSetupProps {
-  error: string;
-  needsPaymentSetup: boolean;
-  clientAddress: string | null;
+  // Component gets all data from useFilCDN hook, no props needed
 }
 
-export default function FilCDNSetup({ error, needsPaymentSetup, clientAddress }: FilCDNSetupProps) {
-  const setupSteps = [
-    {
-      icon: Wallet,
-      title: "Set up Filecoin Calibration Wallet",
-      description: "Configure your wallet for the Filecoin Calibration testnet",
-      details: [
-        "Add Filecoin Calibration network to MetaMask",
-        "Get testnet FIL from faucets",
-        "Export your private key for the app"
-      ],
-      links: [
-        { text: "Calibration Faucet - Chainsafe", url: "https://faucet.calibration.fildev.network/" },
-        { text: "Calibration Faucet - Zondax", url: "https://beryx.zondax.ch/faucet" }
-      ]
-    },
-    {
-      icon: CreditCard,
-      title: "Get USDFC Tokens",
-      description: "Obtain USDFC tokens to pay for storage deals",
-      details: [
-        "Mint new USDFC tokens",
-        "Or get USDFC from the Chainsafe faucet"
-      ],
-      links: [
-        { text: "USDFC Faucet", url: "https://faucet.calibration.fildev.network/" }
-      ]
-    },
-    {
-      icon: FileText,
-      title: "Set up Payment Authorization",
-      description: "Authorize Filecoin Services to charge your wallet",
-      details: [
-        "Visit the FilCDN demo app",
-        "Connect your Calibration wallet",
-        "Set spending cap and deposit USDFC",
-        "Sign metadata for ProofSet creation"
-      ],
-      links: [
-        { text: "FilCDN Demo App", url: "https://fs-upload-dapp.netlify.app" }
-      ]
-    }
-  ];
+export function FilCDNSetup({}: FilCDNSetupProps = {}) {
+  const { synapse, isInitialized, needsPaymentSetup, clientAddress, setupPayments, error } = useFilCDN();
+  const [isSettingUpPayments, setIsSettingUpPayments] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  if (!error && !needsPaymentSetup) {
-    return null; // No setup needed
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePaymentSetup = async () => {
+    setIsSettingUpPayments(true);
+    try {
+      await setupPayments();
+    } catch (err) {
+      console.error("Payment setup failed:", err);
+    } finally {
+      setIsSettingUpPayments(false);
+    }
+  };
+
+  if (!isInitialized) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            Initializing Filecoin Onchain Cloud
+          </CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="h-5 w-5" />
+            Filecoin Setup Error
+          </CardTitle>
+          <CardDescription>{error}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertDescription>
+              FilCDN is optional. The app will continue to work with alternative storage providers.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!synapse) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>🚀 Filecoin Onchain Cloud Setup</CardTitle>
+          <CardDescription>
+            Enable decentralized storage with Filecoin's Onchain Cloud for enhanced performance and Web3 integration.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h3 className="font-semibold">Step 1: Get a Filecoin Private Key</h3>
+            <p className="text-sm text-muted-foreground">
+              Create a wallet on Calibration testnet and add the private key to your environment:
+            </p>
+            <div className="bg-muted p-3 rounded-md font-mono text-sm">
+              NEXT_PUBLIC_FILECOIN_PRIVATE_KEY=your_private_key_here
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold">Step 2: Get Test Tokens</h3>
+            <p className="text-sm text-muted-foreground">
+              Visit the Calibration faucet to get test FIL and USDFC tokens:
+            </p>
+            <Button variant="secondary" size="sm" asChild>
+              <a href="https://faucet.calibration.fildev.network/" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Calibration Faucet
+              </a>
+            </Button>
+          </div>
+
+          <Alert>
+            <AlertDescription>
+              FilCDN is optional and will gracefully fallback to other storage providers if not configured.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-lg border border-white/20 max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-8 h-8 text-white" />
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-green-600" />
+          Filecoin Onchain Cloud Active
+        </CardTitle>
+        <CardDescription>
+          Your GIGAVIBE app is connected to Filecoin's decentralized storage network.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+          <div>
+            <p className="font-semibold">Wallet Address</p>
+            <p className="text-sm text-muted-foreground font-mono">
+              {clientAddress ? `${clientAddress.slice(0, 6)}...${clientAddress.slice(-4)}` : 'Loading...'}
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-purple-700 mb-2">FilCDN Setup Required</h1>
-          <p className="text-gray-600">
-            GIGAVIBE uses decentralized storage via FilCDN. Let's get you set up!
-          </p>
+          {clientAddress && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => copyToClipboard(clientAddress)}
+            >
+              {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          )}
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-            <h3 className="font-semibold text-red-700 mb-2">Setup Error</h3>
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
+        {needsPaymentSetup && (
+          <Alert>
+            <Wallet className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Payment setup required for storage operations</span>
+              <Button
+                size="sm"
+                onClick={handlePaymentSetup}
+                disabled={isSettingUpPayments}
+              >
+                {isSettingUpPayments ? "Setting up..." : "Setup Payments"}
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
-        {clientAddress && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6">
-            <h3 className="font-semibold text-green-700 mb-2">Wallet Connected</h3>
-            <p className="text-green-600 text-sm font-mono">{clientAddress}</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Badge variant="secondary">Network</Badge>
+            <p className="text-sm">Calibration Testnet</p>
           </div>
-        )}
-
-        <div className="space-y-6">
-          {setupSteps.map((step, index) => (
-            <div key={index} className="border border-gray-200 rounded-2xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <step.icon className="w-5 h-5 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 mb-2">{step.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{step.description}</p>
-                  
-                  <ul className="space-y-1 mb-4">
-                    {step.details.map((detail, detailIndex) => (
-                      <li key={detailIndex} className="flex items-center gap-2 text-sm text-gray-600">
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        {detail}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="flex flex-wrap gap-2">
-                    {step.links.map((link, linkIndex) => (
-                      <a
-                        key={linkIndex}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 font-medium"
-                      >
-                        {link.text}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className="space-y-2">
+            <Badge variant="secondary">Storage Type</Badge>
+            <p className="text-sm">Warm Storage</p>
+          </div>
         </div>
 
-        <div className="mt-8 p-4 bg-blue-50 rounded-2xl">
-          <h4 className="font-semibold text-blue-700 mb-2">💡 Quick Setup Tips</h4>
-          <ul className="text-sm text-blue-600 space-y-1">
-            <li>• Use the same wallet address for all steps</li>
-            <li>• Make sure you have enough tFIL for gas fees</li>
-            <li>• The payment setup only needs to be done once</li>
-            <li>• After setup, refresh this page to continue</li>
+        <div className="space-y-2">
+          <h3 className="font-semibold">Features Enabled</h3>
+          <ul className="text-sm space-y-1">
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Decentralized audio storage
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Automated storage payments
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Content verification & integrity
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Web3 ownership & provenance
+            </li>
           </ul>
         </div>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-2xl font-semibold hover:scale-105 transition-all"
-          >
-            Refresh After Setup
-          </button>
-        </div>
-      </div>
-    </div>
+        <Button variant="secondary" size="sm" asChild>
+          <a href="https://docs.filecoin.io/smart-contracts/developing-contracts/onchain-cloud/" target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Learn More About Filecoin Onchain Cloud
+          </a>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

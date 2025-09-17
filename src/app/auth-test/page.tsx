@@ -196,7 +196,7 @@ export default function AuthTestPage() {
 
         <div className="flex justify-center mt-8">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => window.location.reload()}
             className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800"
           >

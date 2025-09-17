@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RealityCheckResult } from '@/lib/zora/types';
-import { databaseService, Performance } from '@/lib/database/DatabaseService';
+import { databaseService, Performance, User } from '@/lib/database/DatabaseService';
 import { Address } from 'viem';
 
 /**
@@ -69,7 +69,7 @@ async function transformPerformances(performances: Performance[]): Promise<Reali
       const metrics = await databaseService.getPerformanceMetrics(performance.id);
       
       // Get user data
-      let user = null;
+      let user: User | null = null;
       if (performance.user_id) {
         user = await databaseService.getUserByWallet(performance.user_id);
       }

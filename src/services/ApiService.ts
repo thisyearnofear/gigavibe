@@ -154,7 +154,7 @@ class ApiService {
     }
 
     // Handle both direct array and wrapped response formats
-    const challengesData = response.data.challenges || response.data;
+    const challengesData: any = response.data.challenges || response.data;
     
     // Ensure we have an array to transform
     if (Array.isArray(challengesData)) {

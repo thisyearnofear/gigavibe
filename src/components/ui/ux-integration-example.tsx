@@ -152,7 +152,7 @@ export function EnhancedPerformanceCard({
             storageKey={`play-tooltip-${performance.id}`}
           >
             <Button
-              variant="outline"
+              variant="secondary"
               size="icon"
               onClick={() => setIsPlaying(!isPlaying)}
               className="relative"
@@ -225,7 +225,7 @@ export function EnhancedPerformanceCard({
 
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={handleShare}
               disabled={isLoading}
@@ -380,10 +380,10 @@ export function EnhancedRecordingInterface() {
 
         {/* Controls */}
         <div className="flex justify-center gap-4">
-          <Button variant="outline" disabled={isRecording || isUploading}>
+          <Button variant="secondary" disabled={isRecording || isUploading}>
             Settings
           </Button>
-          <Button variant="gigavibe" disabled={isRecording || isUploading}>
+          <Button variant="primary" disabled={isRecording || isUploading}>
             View Performances
           </Button>
         </div>

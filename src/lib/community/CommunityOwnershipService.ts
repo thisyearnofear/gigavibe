@@ -376,7 +376,7 @@ export class CommunityOwnershipService {
     ownedCoins: Array<{
       performanceId: string;
       percentage: number;
-      contributionType: string;
+      contributionType: 'voter' | 'cover_artist' | 'sharer' | 'original_performer';
       estimatedValue: number;
     }>;
   }> {
@@ -394,7 +394,12 @@ export class CommunityOwnershipService {
       
       // Fall back to local calculation as backup
       const userContributions = await this.getUserContributions(userAddress);
-      const ownedCoins = [];
+      const ownedCoins: Array<{
+        performanceId: string;
+        percentage: number;
+        contributionType: 'voter' | 'cover_artist' | 'sharer' | 'original_performer';
+        estimatedValue: number;
+      }> = [];
       let totalValue = 0;
 
       for (const { performanceId, contribution } of userContributions) {

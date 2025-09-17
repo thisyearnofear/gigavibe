@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useFilCDN } from "@/providers/FilCDNProvider";
+import { useFilCDN } from "@/hooks/useFilCDN";
 import MainNavigation from "@/components/MainNavigation";
-import FilCDNSetup from "@/components/FilCDNSetup";
+import { FilCDNSetup } from "@/components/FilCDNSetup";
 import { FullScreenLoading } from "@/components/ui/loading";
-import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
+import StreamlinedOnboarding from "@/components/onboarding/StreamlinedOnboarding";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useFarcasterIntegration } from "@/hooks/useFarcasterIntegration";
 import MiniAppView from "@/components/farcaster/MiniAppView";
@@ -37,11 +37,7 @@ export default function HomePage() {
   // Handle FilCDN setup requirements
   if ((filcdnError || needsPaymentSetup) && !isOptional) {
     return (
-      <FilCDNSetup
-        error={filcdnError || ""}
-        needsPaymentSetup={needsPaymentSetup}
-        clientAddress={clientAddress}
-      />
+      <FilCDNSetup />
     );
   }
 
@@ -50,13 +46,13 @@ export default function HomePage() {
     return <FullScreenLoading />;
   }
 
-  // 🎯 KEY CHANGE: Show onboarding FIRST for new users
+  // 🎯 ENHANCED: Streamlined onboarding for faster time-to-value
   // Only show main app after onboarding is complete
   if (isOnboardingActive && !hasCompletedOnboarding) {
     return (
-      <OnboardingFlow
+      <StreamlinedOnboarding
         onComplete={() => {
-          console.log("🎉 Onboarding completed! User ready for main app.");
+          console.log("🎉 Streamlined onboarding completed! User ready for main app.");
         }}
         onSkip={() => {
           console.log("⏭️ Onboarding skipped. User entering main app.");

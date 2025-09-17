@@ -232,7 +232,7 @@ export default function PostChallengeGuidance({
                   <>
                     <Button
                       onClick={handleNext}
-                      variant="outline"
+                      variant="secondary"
                       className="flex-1 border-white/20 text-white hover:bg-white/10"
                     >
                       Next Tip
@@ -248,7 +248,7 @@ export default function PostChallengeGuidance({
                 ) : (
                   <Button
                     onClick={handleSkip}
-                    variant="outline"
+                    variant="secondary"
                     className="w-full border-white/20 text-white hover:bg-white/10"
                   >
                     Done

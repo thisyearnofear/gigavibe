@@ -320,7 +320,7 @@ class EnhancedErrorBoundary extends Component<EnhancedErrorBoundaryProps, Enhanc
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" onClick={this.handleRetry}>
+              <Button variant="secondary" className="w-full" onClick={this.handleRetry}>
                 Continue as Guest
               </Button>
             </CardFooter>
@@ -345,7 +345,7 @@ class EnhancedErrorBoundary extends Component<EnhancedErrorBoundaryProps, Enhanc
               </ol>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" onClick={this.handleRetry}>
+              <Button variant="secondary" className="w-full" onClick={this.handleRetry}>
                 Try Again
               </Button>
             </CardFooter>
@@ -368,7 +368,7 @@ class EnhancedErrorBoundary extends Component<EnhancedErrorBoundaryProps, Enhanc
               </p>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" onClick={this.handleRetry}>
+              <Button variant="secondary" className="w-full" onClick={this.handleRetry}>
                 Continue in Fallback Mode
               </Button>
             </CardFooter>
@@ -423,7 +423,7 @@ class EnhancedErrorBoundary extends Component<EnhancedErrorBoundaryProps, Enhanc
             
             {showReportButton && (
               <Button 
-                variant="outline" 
+                variant="secondary" 
                 onClick={this.handleReport}
                 disabled={isReporting}
                 className="flex-1"

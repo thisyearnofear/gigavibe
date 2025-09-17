@@ -242,7 +242,7 @@ export function FarcasterProfile({
           </Badge>
           <Button
             onClick={onSignOut}
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="text-gray-400 hover:text-white"
           >

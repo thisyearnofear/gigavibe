@@ -183,6 +183,10 @@ export class ZoraService {
         performance: performance.id
       });
 
+      if (!coinResult.address) {
+        throw new Error('Coin creation failed: No address returned');
+      }
+
       return {
         address: coinResult.address,
         hash: coinResult.hash

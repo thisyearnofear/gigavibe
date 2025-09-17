@@ -472,14 +472,14 @@ export default function SocialAudioRooms({
                 
                 <div className="grid grid-cols-2 gap-4">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     className="border-white/20 text-white hover:bg-white/10"
                   >
                     <Volume2 className="w-4 h-4 mr-2" />
                     Audio
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     className="border-white/20 text-white hover:bg-white/10"
                   >
                     <Settings className="w-4 h-4 mr-2" />

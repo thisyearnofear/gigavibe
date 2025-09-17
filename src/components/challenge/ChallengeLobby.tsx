@@ -439,7 +439,7 @@ export default function CollaborativeChallenges({
                       {activeTab === 'joined' && (
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             className="flex-1 border-white/20 text-white hover:bg-white/10"
                           >
                             <Play className="w-4 h-4 mr-2" />

@@ -334,9 +334,13 @@ export class RealAudioRecorder {
    * Check if audio recording is supported
    */
   static isSupported(): boolean {
-    return !!(navigator.mediaDevices && 
-              navigator.mediaDevices.getUserMedia && 
-              window.MediaRecorder);
+    return !!(
+      typeof navigator !== 'undefined' && 
+      navigator.mediaDevices && 
+      typeof navigator.mediaDevices.getUserMedia === 'function' && 
+      typeof window !== 'undefined' && 
+      window.MediaRecorder
+    );
   }
 
   /**

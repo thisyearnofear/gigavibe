@@ -118,7 +118,7 @@ export default function ChallengeCard({
               <div className="flex items-center gap-2 ml-4">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={handlePreviewPlay}
                   className="border-slate-600 text-slate-300 hover:bg-slate-700"
                 >
@@ -186,7 +186,7 @@ export default function ChallengeCard({
               <div className="flex gap-3">
                 <Button
                   onClick={handlePreviewPlay}
-                  variant="outline"
+                  variant="secondary"
                   className="border-gigavibe-500/30 text-gigavibe-400 hover:bg-gigavibe-500/10"
                 >
                   {isPlayingPreview ? (
@@ -377,7 +377,7 @@ export default function ChallengeCard({
             <div className="flex flex-col gap-2 ml-4">
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 onClick={handlePreviewPlay}
                 className="border-slate-600 text-slate-300 hover:bg-slate-700"
               >

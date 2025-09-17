@@ -1464,7 +1464,7 @@ class PerformanceOptimizer {
         if (typeof window !== 'undefined' && (window as any).gc) {
           (window as any).gc();
         } else {
-          const arr = [];
+          const arr: string[] = [];
           for (let i = 0; i < 1000000; i++) {
             arr.push(new Array(10000).join('x'));
           }

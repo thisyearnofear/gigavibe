@@ -263,7 +263,7 @@ const ProgressiveOnboarding = () => {
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={skipToGuest}>
+              <Button variant="secondary" onClick={skipToGuest}>
                 Continue as Guest
               </Button>
               <Button onClick={advanceStage}>
@@ -319,7 +319,7 @@ const ProgressiveOnboarding = () => {
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setStage("guest")}>
+              <Button variant="secondary" onClick={() => setStage("guest")}>
                 Back
               </Button>
               <Button onClick={advanceStage}>
@@ -369,10 +369,10 @@ const ProgressiveOnboarding = () => {
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setStage("email")}>
+              <Button variant="secondary" onClick={() => setStage("email")}>
                 Back
               </Button>
-              <Button variant="outline" onClick={advanceStage}>
+              <Button variant="secondary" onClick={advanceStage}>
                 Skip for Now
               </Button>
               <Button

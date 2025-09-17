@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Synapse, RPC_URLS } from '@filoz/synapse-sdk';
 
 /**
- * Enhanced Audio Upload API with Real Pinata IPFS Integration
+ * Enhanced Audio Upload API with Filecoin and Pinata IPFS Integration
  * 
  * Handles audio file uploads with proper error handling and fallbacks
+ * Priority: FilCDN (Filecoin) -> Pinata IPFS -> Error
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { filename, data, metadata } = body;
+    const { filename, data, metadata, provider } = body;
 
     if (!filename || !data) {
       return NextResponse.json(
@@ -18,12 +20,62 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Upload request for: ${filename}`, {
-      dataSize: data.length,
+      dataSize: Array.isArray(data) ? data.length : data.length,
       sourceType: metadata?.sourceType,
-      challengeId: metadata?.challengeId
+      challengeId: metadata?.challengeId,
+      provider: provider || 'auto'
     });
 
-    // Try Pinata IPFS as primary storage
+    // Try FilCDN (Filecoin) first if provider is 'filcdn' or 'auto'
+    if ((provider === 'filcdn' || !provider) && process.env.NEXT_PUBLIC_FILECOIN_PRIVATE_KEY) {
+      try {
+        console.log('Attempting FilCDN (Filecoin) upload...');
+        
+        // Initialize Synapse SDK
+        const synapse = await Synapse.create({
+          privateKey: process.env.NEXT_PUBLIC_FILECOIN_PRIVATE_KEY,
+          rpcURL: RPC_URLS.calibration.websocket
+        });
+
+        // Convert data to Uint8Array (handle both base64 string and array formats)
+        let fileData: Uint8Array;
+        if (Array.isArray(data)) {
+          fileData = new Uint8Array(data);
+        } else if (typeof data === 'string') {
+          const buffer = Buffer.from(data, 'base64');
+          fileData = new Uint8Array(buffer);
+        } else {
+          throw new Error('Invalid data format');
+        }
+
+        // Upload to Filecoin Warm Storage
+        console.log(`📤 Uploading ${filename} to Filecoin...`);
+        const uploadResult = await synapse.storage.upload(fileData);
+
+        const response = {
+          success: true,
+          pieceCid: uploadResult.pieceCid.toString(),
+          ipfsHash: uploadResult.pieceCid.toString(), // For backward compatibility
+          url: `filecoin://${uploadResult.pieceCid}`,
+          storageType: 'filcdn',
+          metadata: {
+            filename,
+            uploadedAt: new Date().toISOString(),
+            storageProvider: 'filecoin',
+            ...metadata
+          }
+        };
+
+        console.log(`✅ File uploaded to Filecoin successfully! PieceCID: ${uploadResult.pieceCid}`);
+        return NextResponse.json(response);
+
+      } catch (fileCdnError) {
+        console.warn('⚠️ FilCDN upload failed, trying Pinata fallback:', fileCdnError);
+        // Continue to Pinata fallback
+      }
+    }
+
+    // Try Pinata IPFS as fallback storage
     if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_API_KEY) {
       try {
         console.log('Attempting Pinata IPFS upload...');

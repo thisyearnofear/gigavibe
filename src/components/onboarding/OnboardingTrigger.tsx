@@ -14,7 +14,7 @@ import {
 
 interface OnboardingTriggerProps {
   variant?: "icon" | "button" | "text";
-  size?: "default" | "sm" | "lg" | "icon" | "xl";
+  size?: "default" | "sm" | "lg" | "icon";
   className?: string;
 }
 
@@ -65,8 +65,8 @@ export default function OnboardingTrigger({
     return (
       <Button
         onClick={handleClick}
-        variant="outline"
-        size={size}
+        variant="secondary"
+        size={size === "icon" ? "default" : size}
         className={`border-purple-500 text-purple-400 hover:bg-purple-500/20 ${className}`}
       >
         {hasCompletedOnboarding ? (

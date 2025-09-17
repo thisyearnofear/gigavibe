@@ -113,7 +113,7 @@ export default function FirstChallengeStep() {
               </div>
               <p className="text-green-400 font-semibold">Recording Complete! 🎉</p>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 className="border-gray-600 text-gray-300 hover:bg-gray-800"
               >
@@ -145,7 +145,7 @@ export default function FirstChallengeStep() {
                     <Button
                       key={rating}
                       onClick={() => handleRating(rating)}
-                      variant={selfRating === rating ? "default" : "outline"}
+                      variant={selfRating === rating ? "primary" : "secondary"}
                       size="lg"
                       className={`w-12 h-12 rounded-full ${
                         selfRating === rating 

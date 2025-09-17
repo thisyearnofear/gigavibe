@@ -84,7 +84,7 @@ export const useProgressData = () => {
     const { sessions } = progressData;
 
     const totalPracticeTimeMs = sessions.reduce((sum, s) => sum + calculateExerciseDurationMs(s.exercises?.notes), 0);
-    const averageAccuracy = sessions.length > 0 ? Math.round(sessions.reduce((sum, s) => sum + s.score, 0) / sessions.length) : 0;
+    const averageAccuracy = sessions.length > 0 ? Math.round(sessions.reduce((sum, s) => sum + (s.score || 0), 0) / sessions.length) : 0;
     const exercisesCompleted = sessions.length;
 
     const practiceDays = [...new Set(sessions.map(s => format(parseISO(s.completed_at), 'yyyy-MM-dd')))].sort().reverse();
@@ -120,7 +120,7 @@ export const useProgressData = () => {
     return last7Days.map(day => {
       const sessionsOnDay = progressData.sessions.filter(s => isSameDay(parseISO(s.completed_at), day));
       const totalMinutes = sessionsOnDay.length > 0 ? Math.round(sessionsOnDay.reduce((sum, s) => sum + calculateExerciseDurationMs(s.exercises?.notes), 0) / 60000) : 0;
-      const avgAccuracy = sessionsOnDay.length > 0 ? Math.round(sessionsOnDay.reduce((sum, s) => sum + s.score, 0) / sessionsOnDay.length) : 0;
+      const avgAccuracy = sessionsOnDay.length > 0 ? Math.round(sessionsOnDay.reduce((sum, s) => sum + (s.score || 0), 0) / sessionsOnDay.length) : 0;
       return { day: format(day, 'E'), minutes: totalMinutes, accuracy: avgAccuracy };
     });
   }, [progressData]);

@@ -346,7 +346,7 @@ export function ContextualHelp({
               <Button
                 onClick={step.action.onClick}
                 className="mt-4 w-full"
-                variant="gigavibe"
+                variant="primary"
               >
                 {step.action.label}
               </Button>
@@ -373,7 +373,7 @@ export function ContextualHelp({
             <Button
               onClick={handlePrevious}
               disabled={currentStep === 0}
-              variant="outline"
+              variant="secondary"
               size="sm"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
@@ -381,11 +381,11 @@ export function ContextualHelp({
             </Button>
 
             {currentStep === steps.length - 1 ? (
-              <Button onClick={handleComplete} variant="gigavibe" size="sm">
+              <Button onClick={handleComplete} variant="primary" size="sm">
                 Complete
               </Button>
             ) : (
-              <Button onClick={handleNext} variant="gigavibe" size="sm">
+              <Button onClick={handleNext} variant="primary" size="sm">
                 Next
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
@@ -490,10 +490,10 @@ export function FeatureSpotlight({
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={onNext} size="sm" variant="gigavibe">
+            <Button onClick={onNext} size="sm" variant="primary">
               Got it
             </Button>
-            <Button onClick={onSkip} size="sm" variant="outline">
+            <Button onClick={onSkip} size="sm" variant="secondary">
               Skip tour
             </Button>
           </div>
@@ -557,7 +557,7 @@ export function HelpButton({ context }: { context: GuidanceContext }) {
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        variant="outline"
+        variant="secondary"
         size="sm"
         className="gap-2"
       >

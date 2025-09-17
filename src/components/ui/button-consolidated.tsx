@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
  * - AGGRESSIVE CONSOLIDATION: Reduced from 12 to 5 variants
  * - DRY: Single source of truth for button styling
  * - CLEAN: Clear semantic naming and purpose
- * - PERFORMANT: Optimized animations and accessibility
  */
 
 const buttonVariants = cva(
@@ -19,7 +18,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // PRIMARY: Main call-to-action buttons (consolidates default, gigavibe)
+        // PRIMARY: Main call-to-action buttons
         primary: [
           "bg-gigavibe-500 text-white",
           "hover:bg-gigavibe-600 hover:scale-105",
@@ -28,21 +27,21 @@ const buttonVariants = cva(
           "focus:ring-gigavibe-500"
         ].join(" "),
         
-        // SECONDARY: Supporting actions (consolidates outline)
+        // SECONDARY: Supporting actions
         secondary: [
           "border-2 border-gigavibe-500/50 bg-transparent text-gigavibe-400",
           "hover:bg-gigavibe-500/10 hover:border-gigavibe-400 hover:text-gigavibe-300",
           "backdrop-blur-sm"
         ].join(" "),
         
-        // GHOST: Subtle actions, navigation (consolidates ghost, link, glassmorphism)
+        // GHOST: Subtle actions, navigation
         ghost: [
           "text-slate-300 hover:text-white",
           "hover:bg-white/5",
           "backdrop-blur-sm"
         ].join(" "),
         
-        // DESTRUCTIVE: Delete, cancel, dangerous actions (consolidates destructive, error, warning)
+        // DESTRUCTIVE: Delete, cancel, dangerous actions
         destructive: [
           "bg-red-500 text-white",
           "hover:bg-red-600 hover:scale-105",
@@ -144,10 +143,10 @@ export { Button, buttonVariants };
  * variant="ghost" → variant="ghost"
  * variant="destructive" → variant="destructive"
  * variant="success" → variant="success"
- * variant="warning" → variant="destructive"
- * variant="error" → variant="destructive"
- * variant="glassmorphism" → variant="ghost"
+ * variant="warning" → variant="destructive" (consolidate to destructive)
+ * variant="error" → variant="destructive" (consolidate to destructive)
+ * variant="glassmorphism" → variant="ghost" (consolidate to ghost)
  * variant="floating" → variant="primary" floating={true}
- * variant="link" → variant="ghost"
+ * variant="link" → variant="ghost" (consolidate to ghost)
  * variant="secondary" → variant="secondary"
  */

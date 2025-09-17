@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 interface PitchWheelProps {
   cents: number;
   isInTune: boolean;
@@ -23,7 +25,7 @@ export function PitchWheel({ cents, isInTune, isListening, size = 'normal' }: Pi
   const needleY = centerY - needleLength * Math.cos(angleRad);
 
   // Create tick marks
-  const ticks = [];
+  const ticks: React.ReactElement[] = [];
   for (let i = -50; i <= 50; i += 10) {
     const tickAngle = (i / 50) * 90;
     const tickAngleRad = (tickAngle * Math.PI) / 180;

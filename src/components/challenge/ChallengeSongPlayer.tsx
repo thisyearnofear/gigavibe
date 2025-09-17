@@ -213,7 +213,7 @@ export default function ChallengeSongPlayer({
         <div className="flex items-center justify-center gap-4 mb-4">
           <Button
             onClick={() => setShowVocals(!showVocals)}
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="border-purple-500 text-purple-400 hover:bg-purple-500/20"
           >

@@ -168,7 +168,7 @@ export default function PerformanceSubmissionFlow({
               </Button>
             </MobileAuthSheet>
 
-            <Button onClick={onRetry} variant="outline" className="w-full">
+            <Button onClick={onRetry} variant="secondary" className="w-full">
               <RotateCcw className="w-4 h-4 mr-2" />
               Try Again
             </Button>
@@ -306,7 +306,7 @@ export default function PerformanceSubmissionFlow({
       {/* Action Buttons */}
       <div className="flex gap-4">
         {uploadState === "error" && (
-          <Button onClick={retryUpload} variant="outline" className="flex-1">
+          <Button onClick={retryUpload} variant="secondary" className="flex-1">
             <RotateCcw className="w-4 h-4 mr-2" />
             Retry Upload
           </Button>
@@ -328,7 +328,7 @@ export default function PerformanceSubmissionFlow({
               <Button
                 onClick={handleShare}
                 disabled={isSharing}
-                variant="outline"
+                variant="secondary"
                 className="flex-1"
               >
                 {isSharing ? (

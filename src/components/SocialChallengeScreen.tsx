@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
-import { useFilCDN } from '@/providers/FilCDNProvider';
+import { useFilCDN } from '@/hooks/useFilCDN';
 import { usePitchDetection } from '@/hooks/usePitchDetection';
 import { useChallenge } from '@/hooks/useChallenge';
 import { AIChallengeGenerator } from '@/lib/aiChallengeGenerator';
@@ -45,13 +45,13 @@ export default function SocialChallengeScreen() {
 
   // Handle challenge completion
   useEffect(() => {
-    if (challengeProgress.isComplete && currentChallenge) {
+    if (challengeProgress?.isComplete && currentChallenge) {
       handleChallengeComplete();
     }
-  }, [challengeProgress.isComplete]);
+  }, [challengeProgress?.isComplete]);
 
   const handleChallengeComplete = async () => {
-    if (!currentChallenge) return;
+    if (!currentChallenge || !challengeProgress) return;
 
     const result: ChallengeResult = {
       challengeId: currentChallenge.id,
@@ -151,9 +151,9 @@ export default function SocialChallengeScreen() {
             <div
               key={index}
               className={`px-4 py-2 rounded-xl font-mono text-lg transition-all ${
-                challengeProgress.currentNoteIndex === index && isListening
+                challengeProgress?.currentNoteIndex === index && isListening
                   ? 'bg-yellow-400 text-yellow-900 scale-110'
-                  : challengeProgress.notesHit[index]
+                  : challengeProgress?.notesHit[index]
                   ? 'bg-green-400 text-green-900'
                   : 'bg-gray-200 text-gray-700'
               }`}

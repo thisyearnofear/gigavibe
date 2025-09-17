@@ -32,7 +32,7 @@ export function ErrorState({
           <p className="text-sm text-red-400">{message}</p>
           {showRetry && onRetry && (
             <Button 
-              variant="outline" 
+              variant="secondary" 
               size="sm" 
               onClick={onRetry}
               className="text-xs"
@@ -77,7 +77,7 @@ export function ErrorState({
           <div className="flex gap-3 justify-center">
             {showRetry && onRetry && (
               <Button 
-                variant="error" 
+                variant="destructive" 
                 onClick={onRetry}
                 className="gap-2"
               >
@@ -87,7 +87,7 @@ export function ErrorState({
             )}
             {showHome && onGoHome && (
               <Button 
-                variant="outline" 
+                variant="secondary" 
                 onClick={onGoHome}
                 className="gap-2"
               >
@@ -121,7 +121,7 @@ export function ErrorState({
         <div className="flex gap-3 justify-center">
           {showRetry && onRetry && (
             <Button 
-              variant="error" 
+              variant="destructive" 
               onClick={onRetry}
               className="gap-2"
             >
@@ -131,7 +131,7 @@ export function ErrorState({
           )}
           {showHome && onGoHome && (
             <Button 
-              variant="outline" 
+              variant="secondary" 
               onClick={onGoHome}
               className="gap-2"
             >
@@ -192,7 +192,7 @@ export function EmptyState({
 
         {action && (
           <Button 
-            variant="gigavibe" 
+            variant="primary" 
             onClick={action.onClick}
             className="mt-6"
           >
