@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 // Note: These would be properly imported from your actual service files
 import { ZoraAPIService } from '@/lib/zora/ZoraAPIService';
 import { FarcasterDataService } from '@/lib/farcaster/FarcasterDataService';
-import { GroveService } from '@/lib/storage/GroveService';
 
 // Service health check timeout (ms)
 const SERVICE_TIMEOUT = 5000;
@@ -94,54 +93,12 @@ async function checkSupabaseHealth(): Promise<ServiceHealth> {
 
 // Check IPFS/FileCDN storage health
 async function checkStorageHealth(): Promise<ServiceHealth> {
-  const startTime = performance.now();
-  
-  try {
-    // Initialize storage service
-    const groveApiKey = process.env.GROVE_API_KEY || '';
-    
-    if (!groveApiKey) {
-      throw new Error('Storage API key not configured');
-    }
-    
-    // This would be replaced with your actual storage service check
-    // For example, trying to fetch a known test file
-    const storageService = GroveService.getInstance();
-    
-    // Test storage access with timeout - for now just check if it's supported
-    await Promise.race([
-      Promise.resolve(GroveService.isSupported()),
-      timeoutPromise(SERVICE_TIMEOUT)
-    ]);
-    
-    const responseTime = performance.now() - startTime;
-    
-    // Consider service degraded if response time is too high
-    if (responseTime > 2000) {
-      return {
-        status: 'degraded',
-        responseTime,
-        message: `Storage responding slowly (${responseTime.toFixed(0)}ms)`,
-        lastChecked: new Date().toISOString()
-      };
-    }
-    
-    return {
-      status: 'operational',
-      responseTime,
-      message: 'Storage is operational',
-      lastChecked: new Date().toISOString()
-    };
-  } catch (error) {
-    const responseTime = performance.now() - startTime;
-    
-    return {
-      status: 'down',
-      responseTime,
-      message: `Storage error: ${(error as Error).message}`,
-      lastChecked: new Date().toISOString()
-    };
-  }
+  return {
+    status: 'operational',
+    responseTime: 0,
+    message: 'Storage is client-side and not checked by the server.',
+    lastChecked: new Date().toISOString()
+  };
 }
 
 // Check Farcaster API health
@@ -150,10 +107,10 @@ async function checkFarcasterHealth(): Promise<ServiceHealth> {
   
   try {
     // Initialize Farcaster service
-    const farcasterApiKey = process.env.FARCASTER_API_KEY || '';
+    const neynarApiKey = process.env.NEYNAR_API_KEY || process.env.NEXT_PUBLIC_NEYNAR_API_KEY || '';
     
-    if (!farcasterApiKey) {
-      throw new Error('Farcaster API key not configured');
+    if (!neynarApiKey) {
+      throw new Error('Neynar API key not configured');
     }
     
     const farcasterService = FarcasterDataService.getInstance();
