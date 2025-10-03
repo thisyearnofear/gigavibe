@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -16,6 +17,22 @@ const nextConfig: NextConfig = {
       net: false,
       tls: false,
     };
+    
+    // Exclude TypeScript definition files from being processed
+    config.module.rules.push({
+      test: /\.d\.ts$/,
+      loader: 'ignore-loader'
+    });
+    
+    // Stub React-Native AsyncStorage so @metamask/sdk doesn't break
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@react-native-async-storage/async-storage": path.resolve(
+        __dirname,
+        "src/polyfills/emptyAsyncStorage.js"
+      ),
+    };
+    
     return config;
   },
   env: {
